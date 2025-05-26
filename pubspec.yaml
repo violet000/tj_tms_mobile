@@ -1,0 +1,69 @@
+# 项目名称
+name: tj_tms_mobile
+# 项目描述
+description: "天津银行外勤手持机项目应用APP"
+# 发布位置
+publish_to: 'none'
+# 版本号
+version: 1.0.0+1
+
+environment:
+  sdk: '>=2.19.0-146.2.beta <3.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.2
+  image_picker: ^0.8.9
+  provider: ^6.0.5
+  dio: ^5.4.0
+  device_info_plus: ^9.1.2
+  network_info_plus: ^3.0.3
+  sim_data: ^0.0.2
+  path: ^1.8.2
+  flutter_svg: ^1.1.6
+  flutter_baidu_mapapi_map: ^3.1.0+1
+  permission_handler: ^8.3.0
+  
+  flutter_bmflocation:
+    path: ../flutter_bmflocation/
+
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+  flutter_native_splash: ^2.1.6
+  build_runner: ^2.3.3
+  build: ^2.3.1
+
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: assets/splash/splash.png
+  android: true
+  ios: true
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/splash/
+    - assets/icons/
+
+# 配置路径别名
+module:
+  androidX: true
+  android: true
+  ios: true
+  module:
+    androidPackage: com.example.tj_tms_mobile
+    moduleName: tj_tms_mobile
+    androidX: true
+    android: true
+    ios: true
+
+# 添加路径别名配置
+flutter_assets:
+  - lib/
+  - lib/pages/
+  - lib/providers/
+  - lib/routes/
