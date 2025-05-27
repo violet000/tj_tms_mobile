@@ -2,6 +2,7 @@ class UserInfo {
   final String id;
   final String username;
   final String name;
+  final String? avatar;
   final String token;
   final List<String> roles;
   final List<String> permissions;
@@ -10,6 +11,7 @@ class UserInfo {
     required this.id,
     required this.username,
     required this.name,
+    this.avatar,
     required this.token,
     required this.roles,
     required this.permissions,
@@ -20,9 +22,10 @@ class UserInfo {
       id: json['id'] as String,
       username: json['username'] as String,
       name: json['name'] as String,
+      avatar: json['avatar'] as String?,
       token: json['token'] as String,
-      roles: List<String>.from(json['roles'] as List),
-      permissions: List<String>.from(json['permissions'] as List),
+      roles: (json['roles'] as List).map((e) => e as String).toList(),
+      permissions: (json['permissions'] as List).map((e) => e as String).toList(),
     );
   }
 
@@ -31,6 +34,7 @@ class UserInfo {
       'id': id,
       'username': username,
       'name': name,
+      'avatar': avatar,
       'token': token,
       'roles': roles,
       'permissions': permissions,

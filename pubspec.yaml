@@ -62,6 +62,16 @@ module:
     ios: true
 
 # 添加路径别名配置
+path_aliases:
+  core: lib/core
+  data: lib/data
+  presentation: lib/presentation
+  utils: lib/utils
+  widgets: lib/widgets
+  pages: lib/presentation/pages
+  models: lib/data/models
+
+# 添加路径别名配置
 flutter_assets:
   - lib/
   - lib/pages/

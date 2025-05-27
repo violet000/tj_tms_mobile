@@ -17,7 +17,6 @@ class HttpService {
     receiveTimeout: const Duration(seconds: 3),
     headers: {
       'Content-Type': 'application/json',
-      // 可以在这里添加token等认证信息
       // 'Authorization': 'Bearer $token',
     },
   ));

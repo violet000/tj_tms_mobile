@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
-import '../services/api_service.dart';
-import '../models/user_model.dart';
-import '../models/menu_model.dart';
+import 'package:tj_tms_mobile/data/datasources/remote/api_service.dart';
+import 'package:tj_tms_mobile/models/user_model.dart';
+import 'package:tj_tms_mobile/models/menu_model.dart';
 
 class AuthProvider with ChangeNotifier {
-  final ApiService _api = ApiService(); // 初始化ApiService
+  final ApiService _api = ApiService(baseUrl: 'https://api.example.com');
   
   bool _isLoading = false;
   bool get isLoading => _isLoading;
@@ -130,10 +130,6 @@ class AuthProvider with ChangeNotifier {
       _error = null;
       notifyListeners();
 
-      // 这里可以添加最终的验证逻辑
-      await Future<void>.delayed(const Duration(seconds: 2)); // 模拟网络请求
-
-
       // 模拟登录成功响应
       final response = <String, dynamic>{
         'id': '1',
@@ -190,31 +186,14 @@ class AuthProvider with ChangeNotifier {
         ],
       };
 
-      print('Debug: 登录响应数据: $response');
-      print('Debug: 菜单数据: ${response['menus']}');
-
       // 更新用户信息
       _userInfo = UserInfo.fromJson(response);
-      print('Debug: 用户信息已更新: ${_userInfo?.toJson()}');
       
       // 更新菜单信息
-      print('Debug: 开始更新菜单信息');
       final menuList = response['menus'] as List<dynamic>;
-      print('Debug: 菜单列表长度: ${menuList.length}');
-      
       _menuItems = menuList.map<MenuItem>((dynamic e) {
-        print('Debug: 处理菜单项: $e');
-        final menuItem = MenuItem.fromJson(e as Map<String, dynamic>);
-        print('Debug: 转换后的菜单项: ${menuItem.name}');
-        return menuItem;
+        return MenuItem.fromJson(e as Map<String, dynamic>);
       }).toList();
-      
-      print('Debug: 菜单项已更新，数量: ${_menuItems?.length ?? 0}');
-      if (_menuItems != null) {
-        for (var menu in _menuItems!) {
-          print('Debug: 菜单项: ${menu.name}, 子菜单数量: ${menu.children?.length ?? 0}');
-        }
-      }
 
       _isLoading = false;
       notifyListeners();
@@ -242,39 +221,28 @@ class AuthProvider with ChangeNotifier {
 
   // 获取有权限的菜单
   List<MenuItem> getAuthorizedMenus() {
-    print('Debug: getAuthorizedMenus - _menuItems 是否为空: ${_menuItems == null}');
     if (_menuItems == null) return [];
     
-    print('Debug: getAuthorizedMenus - 原始菜单数量: ${_menuItems!.length}');
     final authorizedMenus = _menuItems!
-        .where((menu) {
-          final hasPermission = hasMenuPermission(menu);
-          print('Debug: getAuthorizedMenus - 菜单 ${menu.name} 是否有权限: $hasPermission');
-          return hasPermission;
-        })
+        .where((menu) => hasMenuPermission(menu))
         .map((menu) {
-          if (menu.children != null) {
-            final authorizedChildren = menu.children!
-                .where((child) {
-                  final hasPermission = hasMenuPermission(child);
-                  print('Debug: getAuthorizedMenus - 子菜单 ${child.name} 是否有权限: $hasPermission');
-                  return hasPermission;
-                })
-                .toList();
-            return MenuItem(
-              id: menu.id,
-              name: menu.name,
-              icon: menu.icon,
-              route: menu.route,
-              children: authorizedChildren,
-              permissions: menu.permissions,
-            );
-          }
-          return menu;
+          if (menu.children == null) return menu;
+          
+          final authorizedChildren = menu.children!
+              .where((child) => hasMenuPermission(child))
+              .toList();
+          
+          return MenuItem(
+            id: menu.id,
+            name: menu.name,
+            icon: menu.icon,
+            route: menu.route,
+            permissions: menu.permissions,
+            children: authorizedChildren,
+          );
         })
         .toList();
     
-    print('Debug: getAuthorizedMenus - 过滤后的菜单数量: ${authorizedMenus.length}');
     return authorizedMenus;
   }
 

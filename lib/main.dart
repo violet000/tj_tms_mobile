@@ -9,7 +9,7 @@ import 'services/location_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize location service only for mobile platforms
+  // 初始化位置服务
   if (!kIsWeb) {
     final locationService = LocationService();
     await locationService.initialize();
@@ -28,12 +28,12 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
       ],
       child: MaterialApp(
-        title: '外勤配送',
+        title: '天津银行外勤手持机',
         theme: ThemeData(
           primarySwatch: Colors.blue,
-          visualDensity: VisualDensity.adaptivePlatformDensity,
+          useMaterial3: true,
         ),
-        initialRoute: AppRoutes.login,
+        initialRoute: '/',
         routes: AppRoutes.getRoutes(),
         onGenerateRoute: RouteGenerator.generateRoute,
       ),

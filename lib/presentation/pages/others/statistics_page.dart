@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../utils/location_helper.dart';
+import '../core/utils/location_helper.dart';
 
 class StatisticsPage extends StatefulWidget {
   const StatisticsPage({super.key});

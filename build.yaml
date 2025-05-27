@@ -14,6 +14,14 @@ targets:
             - lib/**.freezed.dart
             - test/**.g.dart
             - test/**.freezed.dart
+      build_web_compilers|entrypoint:
+        generate_for:
+          - web/**.dart
+          - lib/**.dart
+        options:
+          dart2js_args:
+            - --minify
+            - --no-source-maps
 
 # 配置路径别名
 module:
@@ -25,4 +33,14 @@ module:
     moduleName: tj_tms_mobile
     androidX: true
     android: true
-    ios: true 
+    ios: true
+path_aliases:
+  core: lib/core
+  data: lib/data
+  presentation: lib/presentation
+  utils: lib/utils
+  widgets: lib/widgets
+  models: lib/models
+  services: lib/services
+  providers: lib/providers
+  routes: lib/routes

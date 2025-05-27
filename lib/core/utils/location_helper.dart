@@ -1,6 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../services/location_manager.dart';
+import '../../services/location_manager.dart';
+
+// 位置帮助类
+// 获取单次位置信息
+// 开始持续定位
+// 释放资源
 
 class LocationResult {
   final Map<String, dynamic>? location;
@@ -23,7 +28,6 @@ class LocationHelper {
   StreamSubscription<Map<String, dynamic>>? _locationSubscription;
   bool _isInitialized = false;
 
-  /// 初始化位置服务
   Future<void> initialize() async {
     if (!_isInitialized) {
       await _locationManager.initialize();
@@ -31,7 +35,6 @@ class LocationHelper {
     }
   }
 
-  /// 获取单次位置信息
   /// 返回包含位置信息和状态的 LocationResult 对象
   Future<LocationResult> getLocation() async {
     try {
@@ -46,7 +49,6 @@ class LocationHelper {
     }
   }
 
-  /// 开始持续定位
   /// 返回包含位置流和停止方法的 ContinuousLocationResult 对象
   ContinuousLocationResult startTracking() {
     _locationSubscription?.cancel();

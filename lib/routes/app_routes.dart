@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../pages/login_page.dart';
-import '../pages/home_page.dart';
-import '../pages/settings_page.dart';
+import 'package:tj_tms_mobile/presentation/pages/login/login_page.dart';
+// import '../pages/home_page.dart';
+// import '../pages/settings_page.dart';
 
 class AppRoutes {
   static const String login = '/login';
@@ -11,8 +11,8 @@ class AppRoutes {
   static Map<String, WidgetBuilder> getRoutes() {
     return {
       login: (context) => const LoginPage(),
-      home: (context) => const HomePage(),
-      settings: (context) => const SettingsPage(),
+      // home: (context) => const HomePage(),
+      // settings: (context) => const SettingsPage(),
     };
   }
 } 
