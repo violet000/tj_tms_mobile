@@ -29,6 +29,7 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
+  // 登录提交
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -76,7 +77,7 @@ class _LoginPageState extends State<LoginPage> {
                 height: topSectionHeight,
                 child: Container(
                   decoration: const BoxDecoration(
-                    color: Colors.blue,
+                    color: Color.fromARGB(255, 83, 172, 245),
                     borderRadius: BorderRadius.only(
                       bottomLeft: Radius.circular(30),
                       bottomRight: Radius.circular(30),
@@ -168,8 +169,29 @@ class _LoginPageState extends State<LoginPage> {
                         ],
                       ),
                     ),
-                  )
+                  ),
                 ]),
+              ),
+              // 登录按钮
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 20,
+                child: Center(
+                  child: ElevatedButton(
+                    onPressed: _login,
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: Size(screenWidth * 0.85, 45),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      '登录',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
