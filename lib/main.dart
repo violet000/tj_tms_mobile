@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'providers/auth_provider.dart';
+import 'presentation/state/providers/auth_provider.dart';
 import 'routes/app_routes.dart';
 import 'routes/route_generator.dart';
 import 'services/location_service.dart';

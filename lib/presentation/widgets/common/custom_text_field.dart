@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 class CustomTextField extends StatelessWidget {
   final TextEditingController controller;
   final String hintText;
-  final IconData? prefixIcon;
+  final IconData prefixIcon;
   final bool obscureText;
   final TextInputType keyboardType;
   final String? Function(String?)? validator;
-  final void Function(String)? onChanged;
+  final Function(String)? onChanged;
   final FocusNode? focusNode;
   final bool readOnly;
   final VoidCallback? onTap;
@@ -23,7 +23,7 @@ class CustomTextField extends StatelessWidget {
     Key? key,
     required this.controller,
     required this.hintText,
-    this.prefixIcon,
+    required this.prefixIcon,
     this.obscureText = false,
     this.keyboardType = TextInputType.text,
     this.validator,
@@ -52,13 +52,12 @@ class CustomTextField extends StatelessWidget {
         focusNode: focusNode,
         readOnly: readOnly,
         onTap: onTap,
+        autofocus: false,
         style: TextStyle(fontSize: fontSize),
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: TextStyle(color: Colors.grey, fontSize: fontSize - 2),
-          prefixIcon: prefixIcon != null
-              ? Icon(prefixIcon, size: iconSize, color: Colors.grey)
-              : null,
+          prefixIcon: Icon(prefixIcon, size: iconSize, color: Colors.grey),
           border: OutlineInputBorder(
             borderSide: BorderSide(color: borderColor ?? Colors.grey),
             borderRadius: BorderRadius.all(Radius.circular(borderRadius)),

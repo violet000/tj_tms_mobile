@@ -3,64 +3,54 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:tj_tms_mobile/presentation/widgets/common/custom_text_field.dart';
+import 'package:provider/provider.dart';
+import 'package:tj_tms_mobile/presentation/state/providers/face_login_provider.dart';
+import 'package:tj_tms_mobile/presentation/pages/login/face_login/face_input_widget.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/face_scan_widget.dart';
 
 class FaceLogin extends StatefulWidget {
-  const FaceLogin({Key? key}) : super(key: key);
+  final int personIndex; // 添加索引
+
+  const FaceLogin({
+    Key? key,
+    required this.personIndex,
+  }) : super(key: key);
 
   @override
   State<FaceLogin> createState() => _FaceLoginState();
 }
 
 class _FaceLoginState extends State<FaceLogin> with SingleTickerProviderStateMixin {
-  final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _picker = ImagePicker();
-  bool _isLoading = false;
-  bool _isScanning = false;
-  String? _imageBase64; // 存储base64图片数据
-  late AnimationController _scanController;
-  late Animation<double> _scanAnimation;
 
   @override
   void initState() {
     super.initState();
-    _initScanAnimation();
+    // 初始化时从Provider获取已保存的数据
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<FaceLoginProvider>(context, listen: false); // 获取Provider
+      final savedUsername = provider.getUsername(widget.personIndex);
+      if (savedUsername != null) {
+        _usernameController.text = savedUsername;
+      }
+    });
   }
 
-  void _initScanAnimation() {
-    _scanController = AnimationController(
-      duration: const Duration(seconds: 2),
-      vsync: this,
-    )..repeat(reverse: true);
-
-    _scanAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(_scanController);
-  }
-
-  // 拍照
   Future<void> _takePicture() async {
     try {
       final XFile? photo = await _picker.pickImage(
         source: ImageSource.camera,
-        // preferredCameraDevice: CameraDevice.front, // 使用前置摄像头
-        imageQuality: 50, // 压缩图片质量
+        imageQuality: 50,
       );
       
       if (photo != null) {
-        // 将图片转换为base64
         final bytes = await photo.readAsBytes();
         final base64String = base64Encode(bytes);
         
-        setState(() {
-          _imageBase64 = base64String;
-        });
-        print('_imageBase64: $_imageBase64');
-        // TODO: 处理拍摄的照片，可以发送到服务器进行人脸识别
-        print('照片已保存: ${photo.path}');
+        // 在异步操作前获取Provider
+        final provider = Provider.of<FaceLoginProvider>(context, listen: false);
+        provider.setFaceImage(widget.personIndex, base64String);
       }
     } catch (e) {
       print('拍照失败: $e');
@@ -70,69 +60,78 @@ class _FaceLoginState extends State<FaceLogin> with SingleTickerProviderStateMix
   @override
   void dispose() {
     _usernameController.dispose();
-    _scanController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 230,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // 输入框
-          CustomTextField(
-            controller: _usernameController,
-            hintText: '请输入柜员号',
-            prefixIcon: Icons.person,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return '请输入柜员号';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 20),
-          // 人脸扫描区域
-          Center(
-            child: FaceScanWidget(
-              onTap: _takePicture,
-              width: 200,
-              height: 120,
-              frameColor: Colors.blue,
-              iconColor: Colors.blue,
-              iconSize: 60,
-              hintText: '点击进行人脸拍照',
-              imageBase64: _imageBase64, // 传入base64图片数据
+    return Consumer<FaceLoginProvider>(
+      builder: (context, provider, child) {
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            FocusScope.of(context).unfocus();
+          },
+          child: Container(
+            height: 220,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 输入框
+                  FaceInputWidget(
+                    controller: _usernameController,
+                    onChanged: (value) {
+                      provider.setUsername(widget.personIndex, value);
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  // 人脸扫描区域
+                  Center(
+                    child: FaceScanWidget(
+                      onTap: _takePicture,
+                      width: 200,
+                      height: 120,
+                      frameColor: Colors.blue,
+                      iconColor: Colors.blue,
+                      iconSize: 60,
+                      hintText: '点击进行人脸拍照',
+                      imageBase64: provider.getFaceImage(widget.personIndex),
+                      onDelete: () {
+                        provider.setFaceImage(widget.personIndex, null);
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  // 账号登录按钮
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          print("处理账号登录跳转");
+                        },
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          minimumSize: const Size(80, 36),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: const Text(
+                          '账号登录',
+                          style: TextStyle(
+                            color: Colors.black54,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
-          const Spacer(),
-          // 账号登录按钮
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end, // 右对齐
-            children: [
-              TextButton(
-                onPressed: () {
-                  print("处理账号登录跳转");
-                },
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  minimumSize: const Size(80, 36),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: const Text(
-                  '账号登录',
-                  style: TextStyle(
-                    color: Colors.black54,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

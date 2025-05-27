@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:tj_tms_mobile/core/errors/error_handler.dart';
 import 'package:tj_tms_mobile/data/datasources/remote/api_service.dart';
 import 'package:tj_tms_mobile/presentation/pages/login/face_login/face_login.dart';
+import 'package:tj_tms_mobile/presentation/state/providers/face_login_provider.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -40,10 +42,9 @@ class _LoginPageState extends State<LoginPage> {
           'password': _passwordController.text,
         },
       );
-      
+
       // TODO: 处理登录成功逻辑
       print('登录成功: $response');
-      
     } catch (e) {
       ErrorHandler.handleAuthError(context, e);
     } finally {
@@ -59,48 +60,49 @@ class _LoginPageState extends State<LoginPage> {
     final screenWidth = MediaQuery.of(context).size.width;
     final topSectionHeight = screenHeight * 0.4; // 40% 的高度用于蓝色背景
 
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        body: Stack(
-          children: [
-            // 蓝色背景部分
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              height: topSectionHeight,
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: Colors.blue,
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(30),
-                    bottomRight: Radius.circular(30),
+    return ChangeNotifierProvider(
+      create: (_) => FaceLoginProvider(),
+      child: DefaultTabController(
+        length: 2,
+        child: Scaffold(
+          resizeToAvoidBottomInset: false,
+          body: Stack(
+            children: [
+              // 蓝色背景部分
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: topSectionHeight,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.blue,
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(30),
+                      bottomRight: Radius.circular(30),
+                    ),
                   ),
                 ),
               ),
-            ),
-            // 白色背景部分
-            Positioned(
-              top: topSectionHeight,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                color: Colors.white,
+              // 白色背景部分
+              Positioned(
+                top: topSectionHeight,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  color: Colors.white,
+                ),
               ),
-            ),
-            // 登录表单
-            Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
+              // 登录表单
+              Center(
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
                   const Padding(
-                    padding: EdgeInsets.only(bottom: 24),
+                    padding: EdgeInsets.only(bottom: 20),
                     child: Text(
-                      '天津银行外勤配送系统',
+                      "天津银行外勤配送系统",
                       style: TextStyle(
-                        fontSize: 22,
+                        fontSize: 24,
                         fontWeight: FontWeight.bold,
                         color: Color.fromARGB(255, 237, 238, 239),
                       ),
@@ -112,7 +114,7 @@ class _LoginPageState extends State<LoginPage> {
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(10),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.1),
@@ -149,7 +151,7 @@ class _LoginPageState extends State<LoginPage> {
                             ],
                           ),
                           SizedBox(height: 20),
-                          
+
                           // Tab内容
                           SizedBox(
                             height: 230,
@@ -157,20 +159,20 @@ class _LoginPageState extends State<LoginPage> {
                               physics: NeverScrollableScrollPhysics(),
                               children: [
                                 // 押运人员1的输入框
-                                FaceLogin(),
+                                FaceLogin(personIndex: 0),
                                 // 押运人员2的输入框
-                                FaceLogin(),
+                                FaceLogin(personIndex: 1),
                               ],
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ),
-                ],
+                  )
+                ]),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
