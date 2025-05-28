@@ -51,6 +51,11 @@
         <img class="center" aria-hidden="true" src="splash/img/light-1x.png" alt="">
     </picture>
     <script>
+        // 设置 canvasKitBaseUrl 为 CDN 地址, 解决web加载canvaskit-wasm慢的问题
+        window.flutterConfiguration = {
+            canvasKitBaseUrl: "https://cdn.jsdelivr.net/npm/canvaskit-wasm@0.33.0/bin/"
+        };
+
         window.addEventListener('load', function(ev) {
             // Download main.dart.js
             _flutter.loader.loadEntrypoint({
