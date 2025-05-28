@@ -113,6 +113,13 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "2.0.2"
+  cli_util:
+    dependency: transitive
+    description:
+      name: cli_util
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.3.5"
   clock:
     dependency: transitive
     description:
@@ -149,7 +156,7 @@ packages:
     source: hosted
     version: "0.3.3+4"
   crypto:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: crypto
       url: "https://pub.flutter-io.cn"
@@ -293,6 +300,13 @@ packages:
       relative: true
     source: path
     version: "3.2.0"
+  flutter_launcher_icons:
+    dependency: "direct dev"
+    description:
+      name: flutter_launcher_icons
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.12.0"
   flutter_lints:
     dependency: "direct dev"
     description:

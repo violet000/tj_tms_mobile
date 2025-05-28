@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'presentation/state/providers/auth_provider.dart';
 import 'routes/app_routes.dart';
 import 'routes/route_generator.dart';
 import 'services/location_service.dart';
+import 'presentation/state/providers/face_login_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => FaceLoginProvider()),
       ],
       child: MaterialApp(
         title: '天津银行外勤手持机',
@@ -36,6 +36,15 @@ class MyApp extends StatelessWidget {
         initialRoute: '/',
         routes: AppRoutes.getRoutes(),
         onGenerateRoute: RouteGenerator.generateRoute,
+        builder: (context, child) {
+          if (kIsWeb) {
+            return MediaQuery(
+              data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
+              child: child!,
+            );
+          }
+          return child!;
+        },
       ),
     );
   }

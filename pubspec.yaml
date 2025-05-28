@@ -27,6 +27,7 @@ dependencies:
   
   flutter_bmflocation:
     path: ../flutter_bmflocation/
+  crypto: ^3.0.2
 
 
 dev_dependencies:
@@ -36,12 +37,23 @@ dev_dependencies:
   flutter_native_splash: ^2.1.6
   build_runner: ^2.3.3
   build: ^2.3.1
+  flutter_launcher_icons: ^0.12.0
 
 flutter_native_splash:
   color: "#FFFFFF"
-  image: assets/splash/splash.png
+  image: assets/splash/splash.jpg
   android: true
   ios: true
+  android_12:
+    image: assets/splash/splash.jpg
+    icon_background_color: "#FFFFFF"
+    image_dark: assets/splash/splash.jpg
+    icon_background_color_dark: "#FFFFFF"
+  web: false
+  fullscreen: true # 全屏显示
+  android_gravity: center # 居中显示
+  ios_content_mode: center
+  remove_after: true # 启动后删除
 
 flutter:
   uses-material-design: true
@@ -77,3 +89,8 @@ flutter_assets:
   - lib/pages/
   - lib/providers/
   - lib/routes/
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/icon.png"

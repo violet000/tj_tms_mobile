@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
+import 'package:flutter_svg/flutter_svg.dart';
 
 // 人脸扫描组件
 class FaceScanWidget extends StatefulWidget {
@@ -108,8 +109,8 @@ class _FaceScanWidgetState extends State<FaceScanWidget> with SingleTickerProvid
         child: Stack(
           alignment: Alignment.center,
           children: [
-            // 扫描框和扫描线
-            if (widget.imageBase64 == null) ...[
+            // 扫描框
+            if (widget.imageBase64 == null)
               CustomPaint(
                 size: Size(widget.width, widget.height),
                 painter: ScanFramePainter(
@@ -117,38 +118,6 @@ class _FaceScanWidgetState extends State<FaceScanWidget> with SingleTickerProvid
                   lineWidth: 2,
                 ),
               ),
-              // 扫描线
-              AnimatedBuilder(
-                animation: _animation,
-                builder: (context, child) {
-                  return Positioned(
-                    top: widget.height * _animation.value,
-                    child: Container(
-                      width: widget.width,
-                      height: 2,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                          colors: [
-                            Colors.transparent,
-                            widget.frameColor.withOpacity(0.3),
-                            Colors.transparent,
-                          ],
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: widget.frameColor.withOpacity(0.2),
-                            blurRadius: 8,
-                            spreadRadius: 2,
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ],
             // 照片回显或人脸图标
             if (widget.imageBase64 != null)
               ClipRRect(
@@ -165,10 +134,22 @@ class _FaceScanWidgetState extends State<FaceScanWidget> with SingleTickerProvid
             else
               Positioned(
                 top: 20,
-                child: Icon(
-                  Icons.person,
-                  size: widget.iconSize,
-                  color: widget.iconColor.withOpacity(0.3),
+                child: SvgPicture.asset(
+                  'assets/icons/user_person.svg',
+                  width: widget.iconSize,
+                  height: widget.iconSize,
+                ),
+              ),
+            // 扫描提示文字
+            if (widget.imageBase64 == null)
+              Positioned(
+                bottom: 0,
+                child: Text(
+                  widget.hintText,
+                  style: widget.hintStyle ?? TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 12,
+                  ),
                 ),
               ),
             // 删除按钮
@@ -192,17 +173,38 @@ class _FaceScanWidgetState extends State<FaceScanWidget> with SingleTickerProvid
                   ),
                 ),
               ),
-            // 扫描提示文字
+            // 扫描线 - 放在最上层
             if (widget.imageBase64 == null)
-              Positioned(
-                bottom: 0,
-                child: Text(
-                  widget.hintText,
-                  style: widget.hintStyle ?? TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12,
-                  ),
-                ),
+              AnimatedBuilder(
+                animation: _animation,
+                builder: (context, child) {
+                  return Positioned(
+                    top: widget.height * _animation.value,
+                    child: Container(
+                      width: widget.width,
+                      height: 2,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          colors: [
+                            Colors.transparent,
+                            widget.frameColor.withOpacity(0.3),
+                            Colors.transparent,
+                          ],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: widget.frameColor.withOpacity(0.2),
+                            blurRadius: 8,
+                            spreadRadius: 2,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
           ],
         ),

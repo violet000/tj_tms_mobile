@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:provider/provider.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:tj_tms_mobile/presentation/state/providers/face_login_provider.dart';
 import 'package:tj_tms_mobile/presentation/pages/login/face_login/face_input_widget.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/face_scan_widget.dart';
@@ -21,7 +22,8 @@ class FaceLogin extends StatefulWidget {
   State<FaceLogin> createState() => _FaceLoginState();
 }
 
-class _FaceLoginState extends State<FaceLogin> with SingleTickerProviderStateMixin {
+class _FaceLoginState extends State<FaceLogin>
+    with SingleTickerProviderStateMixin {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _picker = ImagePicker();
@@ -31,10 +33,13 @@ class _FaceLoginState extends State<FaceLogin> with SingleTickerProviderStateMix
     super.initState();
     // 初始化时从Provider获取已保存的数据
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = Provider.of<FaceLoginProvider>(context, listen: false); // 获取Provider
+      final provider =
+          Provider.of<FaceLoginProvider>(context, listen: false); // 获取Provider
       final savedUsername = provider.getUsername(widget.personIndex);
+      final savedPassword = provider.getPassword(widget.personIndex);
       if (savedUsername != null) {
         _usernameController.text = savedUsername;
+        _passwordController.text = savedPassword ?? '';
       }
     });
   }
@@ -45,11 +50,11 @@ class _FaceLoginState extends State<FaceLogin> with SingleTickerProviderStateMix
         source: ImageSource.camera,
         imageQuality: 50,
       );
-      
+
       if (photo != null) {
         final bytes = await photo.readAsBytes();
         final base64String = base64Encode(bytes);
-        
+
         // 在异步操作前获取Provider
         final provider = Provider.of<FaceLoginProvider>(context, listen: false);
         provider.setFaceImage(widget.personIndex, base64String);
@@ -71,7 +76,7 @@ class _FaceLoginState extends State<FaceLogin> with SingleTickerProviderStateMix
     return Consumer<FaceLoginProvider>(
       builder: (context, provider, child) {
         final isFaceLogin = provider.isFaceLogin(widget.personIndex);
-        
+
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () {
@@ -104,7 +109,8 @@ class _FaceLoginState extends State<FaceLogin> with SingleTickerProviderStateMix
                             iconColor: Colors.blue,
                             iconSize: 60,
                             hintText: '点击进行人脸拍照',
-                            imageBase64: provider.getFaceImage(widget.personIndex),
+                            imageBase64:
+                                provider.getFaceImage(widget.personIndex),
                             onDelete: () {
                               provider.setFaceImage(widget.personIndex, null);
                             },
@@ -116,6 +122,9 @@ class _FaceLoginState extends State<FaceLogin> with SingleTickerProviderStateMix
                           hintText: '请输入密码',
                           prefixIcon: Icons.lock,
                           obscureText: true,
+                          onChanged: (value) {
+                            provider.setPassword(widget.personIndex, value);
+                          },
                         ),
                     ],
                   ),

@@ -2,24 +2,33 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:tj_tms_mobile/core/errors/exceptions.dart';
 
-class ApiService {
+class DioService {
   final String baseUrl;
   final Dio _dio;
 
-  ApiService({
+  DioService({
     required this.baseUrl,
   }) : _dio = Dio(BaseOptions(
           baseUrl: baseUrl,
-          connectTimeout: const Duration(seconds: 5),
-          receiveTimeout: const Duration(seconds: 3),
+          connectTimeout: const Duration(seconds: 20),
+          receiveTimeout: const Duration(seconds: 20),
+          sendTimeout: const Duration(seconds: 20),
+          headers: <String, String>{
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
         ));
 
-  Future<Map<String, dynamic>> get(String endpoint) async {
+  // 基础请求方法
+  Future<Map<String, dynamic>> get(String endpoint, {Map<String, dynamic>? queryParameters}) async {
     try {
-      final response = await _dio.get<Map<String, dynamic>>(endpoint);
+      final response = await _dio.get<Map<String, dynamic>>(
+        endpoint,
+        queryParameters: queryParameters,
+      );
       
       if (response.statusCode == 200) {
-        return response.data ?? {};
+        return response.data ?? <String, dynamic>{};
       } else if (response.statusCode == 401) {
         throw AuthException(
           message: '认证失败，请重新登录',
@@ -71,13 +80,19 @@ class ApiService {
 
   Future<Map<String, dynamic>> post(String endpoint, {Map<String, dynamic>? body}) async {
     try {
+      print('Request URL: ${baseUrl + endpoint}');
+      print('Request Body: $body');
+      
       final response = await _dio.post<Map<String, dynamic>>(
         endpoint,
         data: body,
       );
       
+      print('Response Status: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+      
       if (response.statusCode == 200) {
-        return response.data ?? {};
+        return response.data ?? <String, dynamic>{};
       } else if (response.statusCode == 401) {
         throw AuthException(
           message: '认证失败，请重新登录',
@@ -95,6 +110,10 @@ class ApiService {
         );
       }
     } on DioException catch (e) {
+      print('DioException: ${e.message}');
+      print('DioException Type: ${e.type}');
+      print('DioException Response: ${e.response?.data}');
+      
       if (e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout ||
           e.type == DioExceptionType.sendTimeout) {
@@ -116,6 +135,7 @@ class ApiService {
         originalError: e,
       );
     } catch (e) {
+      print('Unknown Error: $e');
       if (e is AppException) {
         rethrow;
       }
@@ -126,4 +146,4 @@ class ApiService {
       );
     }
   }
-} 
+}

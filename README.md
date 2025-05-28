@@ -168,3 +168,10 @@ flutter build apk --release
 **/android/key.properties
 **/android/app/key.jks
 ```
+
+### 注意事项：
+# 1、修改app的icon图标
+# 2、先确认flutter_icons下的图标路径是否正确，然后再执行flutter pub run flutter_launcher_icons:main命令去替换图标
+
+# 3、修改启动屏splash图片
+# 4、先确认flutter_native_splash下的启动屏的路径，然后使用flutter pub run flutter_native_splash:create去替换启动屏图片

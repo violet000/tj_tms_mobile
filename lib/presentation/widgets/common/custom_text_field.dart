@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 // 自定义文本输入框组件
-class CustomTextField extends StatelessWidget {
+class CustomTextField extends StatefulWidget {
   final TextEditingController controller;
   final String hintText;
   final IconData prefixIcon;
@@ -40,39 +40,64 @@ class CustomTextField extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  State<CustomTextField> createState() => _CustomTextFieldState();
+}
+
+class _CustomTextFieldState extends State<CustomTextField> {
+  bool _obscureText = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _obscureText = widget.obscureText;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: 40,
       child: TextFormField(
-        controller: controller,
-        obscureText: obscureText,
-        keyboardType: keyboardType,
-        validator: validator,
-        onChanged: onChanged,
-        focusNode: focusNode,
-        readOnly: readOnly,
-        onTap: onTap,
+        controller: widget.controller,
+        obscureText: _obscureText,
+        keyboardType: widget.keyboardType,
+        validator: widget.validator,
+        onChanged: widget.onChanged,
+        focusNode: widget.focusNode,
+        readOnly: widget.readOnly,
+        onTap: widget.onTap,
         autofocus: false,
-        style: TextStyle(fontSize: fontSize),
+        style: TextStyle(fontSize: widget.fontSize),
         decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: TextStyle(color: Colors.grey, fontSize: fontSize - 2),
-          prefixIcon: Icon(prefixIcon, size: iconSize, color: Colors.grey),
+          hintText: widget.hintText,
+          hintStyle: TextStyle(color: Colors.grey, fontSize: widget.fontSize - 2),
+          prefixIcon: Icon(widget.prefixIcon, size: widget.iconSize, color: Color.fromARGB(255, 230, 228, 228)),
+          suffixIcon: widget.obscureText ? IconButton(
+            icon: Icon(
+              _obscureText ? Icons.visibility_off : Icons.visibility,
+              color: Colors.grey,
+              size: widget.iconSize,
+            ),
+            onPressed: () {
+              setState(() {
+                _obscureText = !_obscureText;
+              });
+            },
+          ) : null,
           border: OutlineInputBorder(
-            borderSide: BorderSide(color: borderColor ?? Colors.grey),
-            borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
+            borderSide: BorderSide(color: widget.borderColor ?? Colors.grey),
+            borderRadius: BorderRadius.all(Radius.circular(widget.borderRadius)),
           ),
           enabledBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: borderColor ?? Colors.grey),
-            borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
+            borderSide: BorderSide(color: widget.borderColor ?? Colors.grey),
+            borderRadius: BorderRadius.all(Radius.circular(widget.borderRadius)),
           ),
           focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: focusedBorderColor ?? Colors.blue),
-            borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
+            borderSide: BorderSide(color: widget.focusedBorderColor ?? Colors.blue),
+            borderRadius: BorderRadius.all(Radius.circular(widget.borderRadius)),
           ),
           filled: true,
           fillColor: Colors.white,
-          contentPadding: contentPadding ?? const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+          contentPadding: widget.contentPadding ?? const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
         ),
       ),
     );

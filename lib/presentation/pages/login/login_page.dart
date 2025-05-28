@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:tj_tms_mobile/data/datasources/api/api.dart';
 import 'package:tj_tms_mobile/core/errors/error_handler.dart';
-import 'package:tj_tms_mobile/data/datasources/remote/api_service.dart';
 import 'package:tj_tms_mobile/presentation/pages/login/face_login/face_login.dart';
 import 'package:tj_tms_mobile/presentation/state/providers/face_login_provider.dart';
 
@@ -13,14 +14,18 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  late final FaceLoginProvider _faceLoginProvider;
+  late final LoginService _loginService;
 
-  final ApiService _apiService = ApiService(
-    baseUrl: 'https://api.example.com',
-  );
+  @override
+  void initState() {
+    super.initState();
+    _faceLoginProvider = FaceLoginProvider();
+    _loginService = LoginService();
+  }
 
   @override
   void dispose() {
@@ -31,22 +36,45 @@ class _LoginPageState extends State<LoginPage> {
 
   // 登录提交
   Future<void> _login() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() => _isLoading = true);
-
     try {
-      final response = await _apiService.post(
-        '/login',
-        body: <String, String>{
-          'username': _usernameController.text,
-          'password': _passwordController.text,
-        },
-      );
+      final faceImage1 = _faceLoginProvider.getFaceImage(0);
+      final username1 = _faceLoginProvider.getUsername(0);
+      final password1 = _faceLoginProvider.getPassword(0);
+      
+      // 验证数据
+      if (username1 == null || username1.isEmpty) {
+        throw Exception('请输入用户名');
+      }
+      
+      if (_faceLoginProvider.isFaceLogin(0)) {
+        if (faceImage1 == null || faceImage1.isEmpty) {
+          throw Exception('请进行人脸拍照');
+        }
+      } else {
+        if (password1 == null || password1.isEmpty) {
+          throw Exception('请输入密码');
+        }
+      }
+      print("username1: ${username1}");
+      print("password1: ${password1}");
 
-      // TODO: 处理登录成功逻辑
-      print('登录成功: $response');
+      final Map<String, dynamic> loginResult = await _loginService.login(username1, password1, faceImage1);
+      
+      print("faceImage1: ${faceImage1}");
+
+      
+      // TODO: 调用登录API
+      // final response = await _apiService.post(
+      //   '/login',
+      //   body: <String, String>{
+      //     'username': username1,
+      //     'password': password1,
+      //     'faceImage': faceImage1 ?? '',
+      //   },
+      // );
+      
     } catch (e) {
+      print('登录错误: $e'); // 添加错误日志
       ErrorHandler.handleAuthError(context, e);
     } finally {
       if (mounted) {
@@ -61,8 +89,8 @@ class _LoginPageState extends State<LoginPage> {
     final screenWidth = MediaQuery.of(context).size.width;
     final topSectionHeight = screenHeight * 0.4; // 40% 的高度用于蓝色背景
 
-    return ChangeNotifierProvider(
-      create: (_) => FaceLoginProvider(),
+    return ChangeNotifierProvider.value(
+      value: _faceLoginProvider,
       child: DefaultTabController(
         length: 2,
         child: Scaffold(
@@ -75,14 +103,35 @@ class _LoginPageState extends State<LoginPage> {
                 left: 0,
                 right: 0,
                 height: topSectionHeight,
-                child: Container(
-                  decoration: const BoxDecoration(
-                    color: Color.fromARGB(255, 83, 172, 245),
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(30),
-                      bottomRight: Radius.circular(30),
+                child: Stack(
+                  children: [
+                    Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          colors: [
+                            Color(0xFF29A8FF),
+                            Color(0xFF0489FE),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(30),
+                          bottomRight: Radius.circular(30),
+                        ),
+                      ),
                     ),
-                  ),
+                    Positioned(
+                      top: 20,
+                      right: 20,
+                      child: SvgPicture.asset(
+                        'assets/icons/n_font.svg',
+                        width: 80,
+                        height: 80,
+                        color: Colors.white.withOpacity(0.2),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               // 白色背景部分
@@ -96,91 +145,119 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               // 登录表单
-              Center(
-                child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  const Padding(
-                    padding: EdgeInsets.only(bottom: 20),
-                    child: Text(
-                      "天津银行外勤配送系统",
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Color.fromARGB(255, 237, 238, 239),
-                      ),
-                    ),
-                  ),
-                  Container(
-                    width: screenWidth * 0.85,
-                    margin: const EdgeInsets.symmetric(horizontal: 24),
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: const [
-                          // Tab切换栏
-                          TabBar(
-                            indicator: UnderlineTabIndicator(
-                              borderSide: BorderSide(
-                                width: 5,
-                                color: Colors.blue,
+              Positioned(
+                top: topSectionHeight * 0.25,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 20, left: 26),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text(
+                              "你好",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Color.fromARGB(255, 237, 238, 239),
                               ),
                             ),
-                            labelColor: Colors.black,
-                            unselectedLabelColor: Colors.grey,
-                            labelStyle: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
+                            SizedBox(height: 10),
+                            Text(
+                              "欢迎登录天津银行外勤配送系统",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Color.fromARGB(255, 237, 238, 239),
+                              ),
                             ),
-                            unselectedLabelStyle: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.normal,
+                          ],
+                        ),
+                      ),
+                      Container(
+                        width: screenWidth * 0.85,
+                        margin: const EdgeInsets.symmetric(horizontal: 14),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 5),
                             ),
-                            tabs: [
-                              Tab(text: '押运员1'),
-                              Tab(text: '押运员2'),
+                          ],
+                        ),
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Tab切换栏
+                              Transform.translate(
+                                offset: const Offset(0, -10),
+                                child: const TabBar(
+                                  padding: EdgeInsets.only(top: 0),
+                                  indicator: UnderlineTabIndicator(
+                                    borderSide: BorderSide(
+                                      width: 3,
+                                      color: Colors.blue,
+                                    ),
+                                  ),
+                                  labelColor: Colors.black,
+                                  unselectedLabelColor: Colors.grey,
+                                  labelStyle: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  unselectedLabelStyle: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.normal,
+                                  ),
+                                  tabs: [
+                                    Tab(text: '押运员1'),
+                                    Tab(text: '押运员2'),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+
+                              // Tab内容
+                              const SizedBox(
+                                height: 230,
+                                child: TabBarView(
+                                  physics: NeverScrollableScrollPhysics(),
+                                  children: [
+                                    // 押运人员1的输入框
+                                    FaceLogin(personIndex: 0),
+                                    // 押运人员2的输入框
+                                    FaceLogin(personIndex: 1),
+                                  ],
+                                ),
+                              ),
                             ],
                           ),
-                          SizedBox(height: 20),
-
-                          // Tab内容
-                          SizedBox(
-                            height: 230,
-                            child: TabBarView(
-                              physics: NeverScrollableScrollPhysics(),
-                              children: [
-                                // 押运人员1的输入框
-                                FaceLogin(personIndex: 0),
-                                // 押运人员2的输入框
-                                FaceLogin(personIndex: 1),
-                              ],
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                ]),
+                ),
               ),
               // 登录按钮
               Positioned(
                 left: 0,
                 right: 0,
-                bottom: 20,
+                bottom: 30,
                 child: Center(
                   child: ElevatedButton(
                     onPressed: _login,
                     style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFF29A8FF),
                       minimumSize: Size(screenWidth * 0.85, 45),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -188,7 +265,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     child: const Text(
                       '登录',
-                      style: TextStyle(fontSize: 16),
+                      style: TextStyle(color: Color.fromARGB(255, 241, 240, 240), fontSize: 16),
                     ),
                   ),
                 ),
