@@ -5,8 +5,6 @@
 /// @Modified time 2021-06-02
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
-import 'sm4_util.dart';
-
 /// 加密方式枚举类
 const Map<String, String> ENCRYPT_ENUM = {
   'MD5_SALT': 'MD5_SALT',
@@ -33,7 +31,7 @@ String passwordEncrypt(String password, [String type = '']) {
     var digest = sha256.convert(bytes);
     cipherText = digest.toString();
   } else { // 默认加密方式 -- 系统用户使用此种加密方式 -- SM4加盐加密
-    cipherText = SM4Util().encryptData_ECB(password);
+    // cipherText = SM4Util().encryptData_ECB(password);
   }
   
   return cipherText;
