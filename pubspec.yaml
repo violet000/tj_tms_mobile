@@ -63,6 +63,7 @@ flutter:
   assets:
     - assets/splash/
     - assets/icons/
+    - assets/location.json
 
 # 配置路径别名
 module:
