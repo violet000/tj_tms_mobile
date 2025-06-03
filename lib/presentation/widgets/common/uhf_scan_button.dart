@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tj_tms_mobile/widgets/uhf_plugin_widget.dart';
+import 'package:tj_tms_mobile/presentation/widgets/common/uhf_plugin_widget.dart';
 
 class UHFScanButton extends StatefulWidget {
   final String? startText;
