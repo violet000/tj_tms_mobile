@@ -5,6 +5,9 @@ import 'package:tj_tms_mobile/data/datasources/api/api.dart';
 import 'package:tj_tms_mobile/core/errors/error_handler.dart';
 import 'package:tj_tms_mobile/presentation/pages/login/face_login/face_login.dart';
 import 'package:tj_tms_mobile/presentation/state/providers/face_login_provider.dart';
+import 'package:tj_tms_mobile/presentation/state/providers/verify_token_provider.dart';
+import 'package:crypto/crypto.dart';
+import 'dart:convert';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -18,6 +21,7 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   late final FaceLoginProvider _faceLoginProvider;
+  late final VerifyTokenProvider _verifyTokenProvider;
   late final LoginService _loginService;
 
   @override
@@ -25,6 +29,7 @@ class _LoginPageState extends State<LoginPage> {
     super.initState();
     _faceLoginProvider = FaceLoginProvider();
     _loginService = LoginService();
+    _verifyTokenProvider = VerifyTokenProvider(access_token: '');
   }
 
   @override
@@ -55,24 +60,20 @@ class _LoginPageState extends State<LoginPage> {
           throw Exception('请输入密码');
         }
       }
-      print("username1: ${username1}");
-      print("password1: ${password1}");
 
-      final Map<String, dynamic> loginResult = await _loginService.login(username1, password1, faceImage1);
-      
-      print("faceImage1: ${faceImage1}");
+      if (username1 == null || password1 == null) {
+        throw Exception('用户名或密码不能为空');
+      }
 
+      final hashedPassword = md5.convert(utf8.encode(password1 + 'messi')).toString();
+      final Map<String, dynamic> loginResult = await _loginService.accountLogin(username1, hashedPassword);
       
-      // TODO: 调用登录API
-      // final response = await _apiService.post(
-      //   '/login',
-      //   body: <String, String>{
-      //     'username': username1,
-      //     'password': password1,
-      //     'faceImage': faceImage1 ?? '',
-      //   },
-      // );
-      
+      if (loginResult['retCode'] == '000000') {
+        _verifyTokenProvider.setToken(loginResult['access_token'].toString());
+        Navigator.of(context).pushReplacementNamed('/home');
+      } else {
+        throw Exception(loginResult['message']);
+      }
     } catch (e) {
       print('登录错误: $e'); // 添加错误日志
       ErrorHandler.handleAuthError(context, e);

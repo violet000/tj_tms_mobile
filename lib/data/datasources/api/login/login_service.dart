@@ -1,11 +1,20 @@
 import 'package:tj_tms_mobile/data/datasources/interceptor/dio_service.dart';
 import 'package:tj_tms_mobile/core/utils/password_encrypt.dart';
+import 'package:tj_tms_mobile/core/config/env.dart';
 
-/// 登录API接口服务
+/// 登录(认证)API接口服务 - 18082服务接口部分
 class LoginService {
+
+  LoginService() : _dioService = DioService(baseUrl: '${Env.config.apiBaseUrl}:18082');
+  
   final DioService _dioService;
 
-  LoginService() : _dioService = DioService(baseUrl: 'http://10.34.12.164:18082'); // TODO: 后续需要做测试/开发/生产环境切换
+  LoginService._(this._dioService);
+
+  static Future<LoginService> create() async {
+    final config = await Env.config;
+    return LoginService._(DioService(baseUrl: '${config.apiBaseUrl}:18082'));
+  }
 
   /// 用户登陆
   /// @param username 用户名
@@ -18,6 +27,17 @@ class LoginService {
         'username': passwordEncrypt(username),
         'password': password != null ? passwordEncrypt(password, ENCRYPT_ENUM['MD5_SALT']!) : '',
         if (faceImage != null) 'faceImage': faceImage,
+      },
+    );
+  }
+  
+  /// 老的登录方式
+  Future<Map<String, dynamic>> accountLogin(String username, String password) async {
+    return _dioService.post(
+      '/auth/callback/login',
+      body: <String, dynamic>{
+        'username': username,
+        'password': password,
       },
     );
   }
