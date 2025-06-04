@@ -67,16 +67,11 @@ class _LoginPageState extends State<LoginPage> {
 
       final hashedPassword = md5.convert(utf8.encode(password1 + 'messi')).toString();
       final Map<String, dynamic> loginResult = await _loginService.accountLogin(username1, hashedPassword);
-      
-      if (loginResult['retCode'] == '000000') {
-        _verifyTokenProvider.setToken(loginResult['access_token'].toString());
-        Navigator.of(context).pushReplacementNamed('/home');
-      } else {
-        throw Exception(loginResult['message']);
-      }
+      _verifyTokenProvider.setToken(loginResult['access_token'].toString());
+      Navigator.of(context).pushReplacementNamed('/home');
     } catch (e) {
-      print('登录错误: $e'); // 添加错误日志
-      ErrorHandler.handleAuthError(context, e);
+      // print('登录错误: $e'); // 添加错误日志
+      ErrorHandler.handleError(context, e);
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);

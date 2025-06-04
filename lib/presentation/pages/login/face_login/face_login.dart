@@ -91,8 +91,11 @@ class _FaceLoginState extends State<FaceLogin>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       // 输入框
-                      FaceInputWidget(
+                      CustomTextField(
                         controller: _usernameController,
+                        hintText: '请输入柜员号',
+                        prefixIcon: Icons.person,
+                        obscureText: false,
                         onChanged: (value) {
                           provider.setUsername(widget.personIndex, value);
                         },

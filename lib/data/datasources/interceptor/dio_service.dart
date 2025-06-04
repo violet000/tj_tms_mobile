@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:core';
 import 'package:dio/dio.dart';
 import 'package:tj_tms_mobile/core/errors/exceptions.dart';
 
@@ -28,6 +29,16 @@ class DioService {
       );
       
       if (response.statusCode == 200) {
+        if (response.data?.containsKey('retCode') == true) {
+          if (response.data?['retCode'] == '000000') {
+            return response.data ?? <String, dynamic>{};
+          } else {
+            throw BusinessException(
+              message: (response.data?['retMsg'] ?? '请求失败').toString(),
+              code: (response.data?['retCode'] ?? 'REQUEST_${response.statusCode}').toString(),
+            );
+          }
+        }
         return response.data ?? <String, dynamic>{};
       } else if (response.statusCode == 401) {
         throw AuthException(
@@ -80,18 +91,22 @@ class DioService {
 
   Future<Map<String, dynamic>> post(String endpoint, {Map<String, dynamic>? body}) async {
     try {
-      print('Request URL: ${baseUrl + endpoint}');
-      print('Request Body: $body');
-      
       final response = await _dio.post<Map<String, dynamic>>(
         endpoint,
         data: body,
       );
       
-      print('Response Status: ${response.statusCode}');
-      print('Response Data: ${response.data}');
-      
       if (response.statusCode == 200) {
+        if (response.data?.containsKey('retCode') == true) {
+          if (response.data?['retCode'] == '000000') {
+            return response.data ?? <String, dynamic>{};
+          } else {
+            throw BusinessException(
+              message: (response.data?['retMsg'] ?? '请求失败').toString(),
+              code: (response.data?['retCode'] ?? 'REQUEST_${response.statusCode}').toString(),
+            );
+          }
+        }
         return response.data ?? <String, dynamic>{};
       } else if (response.statusCode == 401) {
         throw AuthException(
@@ -110,10 +125,6 @@ class DioService {
         );
       }
     } on DioException catch (e) {
-      print('DioException: ${e.message}');
-      print('DioException Type: ${e.type}');
-      print('DioException Response: ${e.response?.data}');
-      
       if (e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout ||
           e.type == DioExceptionType.sendTimeout) {
@@ -135,7 +146,6 @@ class DioService {
         originalError: e,
       );
     } catch (e) {
-      print('Unknown Error: $e');
       if (e is AppException) {
         rethrow;
       }
