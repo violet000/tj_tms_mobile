@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 
 class VerifyTokenProvider extends ChangeNotifier {
   String? access_token;
+  Map<String, dynamic>? _userData;
   
   VerifyTokenProvider({required this.access_token});
 
@@ -18,6 +19,16 @@ class VerifyTokenProvider extends ChangeNotifier {
   // 清除token
   void clearToken() {
     access_token = '';
+    _userData = null;
     notifyListeners();
   }
+
+  // 设置用户数据
+  void setUserData(Map<String, dynamic> data) {
+    _userData = data;
+    notifyListeners();
+  }
+
+  // 获取用户数据
+  Map<String, dynamic>? getUserData() => _userData;
 }

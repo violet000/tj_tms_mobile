@@ -3,17 +3,17 @@ import 'package:tj_tms_mobile/core/utils/password_encrypt.dart';
 import 'package:tj_tms_mobile/core/config/env.dart';
 
 /// 登录(认证)API接口服务 - 18082服务接口部分
-class LoginService {
+class Service18082 {
 
-  LoginService() : _dioService = DioService(baseUrl: '${Env.config.apiBaseUrl}:18082');
+  Service18082() : _dioService = DioService(baseUrl: '${Env.config.apiBaseUrl}:18082');
   
   final DioService _dioService;
 
-  LoginService._(this._dioService);
+  Service18082._(this._dioService);
 
-  static Future<LoginService> create() async {
+  static Future<Service18082> create() async {
     final config = await Env.config;
-    return LoginService._(DioService(baseUrl: '${config.apiBaseUrl}:18082'));
+    return Service18082._(DioService(baseUrl: '${config.apiBaseUrl}:18082'));
   }
 
   /// 用户登陆
@@ -42,9 +42,25 @@ class LoginService {
     );
   }
 
-  /// 查询当前登陆的用户详细信息
-  Future<Map<String, dynamic>> detail() async {
-    return _dioService.get('user-center/v2/user/detail');
+  /// 查询当前用户下的押运线路数据
+  Future <Map<String, dynamic>> getEscortRouteToday(String username) async {
+    return _dioService.get('/storage/escort-route/today', queryParameters: <String, String>{'username': username});
+  }
+
+  /// 查询当前金库下所有需要扫描的款箱列表
+  Future <Map<String, dynamic>> getCashBoxList(String pointCode) async {
+    return _dioService.get('/storage/cash-box/list', queryParameters: <String, String>{'pointCode': pointCode});
+  }
+
+  /// 更新当前扫描款箱的状态
+  Future<Map<String, dynamic>> updateCashBoxStatus(String boxCode, int scanStatus) async {
+    return _dioService.post(
+      '/storage/cash-box/scan-status',
+      body: <String, dynamic>{
+        'boxCode': boxCode,
+        'scanStatus': scanStatus,
+      },
+    );
   }
 
   /// 根据登录用户查询金库列表

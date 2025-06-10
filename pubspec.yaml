@@ -53,14 +53,15 @@ flutter_native_splash:
     image_dark: assets/splash/splash.jpg
     icon_background_color_dark: "#FFFFFF"
   web: false
-  fullscreen: true # 全屏显示
-  android_gravity: center # 居中显示
-  ios_content_mode: center
-  remove_after: true # 启动后删除
+  fullscreen: true
+  android_gravity: fill 
+  ios_content_mode: scaleAspectFill
+  remove_after: true
 
 flutter:
   uses-material-design: true
   assets:
+    - assets/images/
     - assets/splash/
     - assets/icons/
     - assets/location.json

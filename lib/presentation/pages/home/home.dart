@@ -3,14 +3,16 @@ import 'package:flutter/material.dart';
 // 菜单项模型
 class MenuItem {
   final String name;
-  final IconData icon;
+  final String? imagePath;
+  final IconData? icon;
   final List<MenuItem>? children;
   final String? route;
   final Color? color;
 
   MenuItem({
     required this.name,
-    required this.icon,
+    this.imagePath,
+    this.icon,
     this.children,
     this.route,
     this.color,
@@ -31,52 +33,33 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   late Animation<double> _fadeAnimation;
 
   final List<MenuItem> menus = [
+    // MenuItem(
+    //   name: '首页',
+    //   icon: Icons.home_rounded,
+    //   route: '/home',
+    //   color: const Color(0xFF29A8FF),
+    // ),
     MenuItem(
-      name: '首页',
-      icon: Icons.home_rounded,
-      route: '/home',
-      color: const Color(0xFF29A8FF),
-    ),
-    MenuItem(
-      name: '网点交接',
+      name: '交接',
       icon: Icons.work_rounded,
       color: const Color(0xFF0489FE),
       children: [
         MenuItem(
-          name: '款箱扫描',
-          icon: Icons.task_rounded,
+          name: '网点',
+          imagePath: 'assets/images/bank.png',
           route: '/outlets/box-scan',
           color: const Color(0xFF29A8FF),
         ),
         MenuItem(
-          name: '款箱交接',
-          icon: Icons.assignment_rounded,
+          name: '金库',
+          imagePath: 'assets/images/secure.png',
           route: '/outlets/box-handover',
           color: const Color(0xFF0489FE),
         ),
       ],
     ),
     MenuItem(
-      name: '金库交接',
-      icon: Icons.message_rounded,
-      color: const Color(0xFF0489FE),
-      children: [
-        MenuItem(
-          name: '款箱扫描',
-          icon: Icons.task_rounded,
-          route: '/box-scan',
-          color: const Color(0xFF29A8FF),
-        ),
-        MenuItem(
-          name: '款箱交接',
-          icon: Icons.assignment_rounded,
-          route: '/box-handover',
-          color: const Color(0xFF0489FE),
-        ),
-      ],
-    ),
-    MenuItem(
-      name: '插件测试',
+      name: '我的',
       icon: Icons.person_rounded,
       route: '/plugin-test',
       color: const Color(0xFF0489FE),
@@ -121,7 +104,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          color: Color(0xFFF5F5F5),
+          color: Color.fromARGB(255, 245, 246, 250)
         ),
         child: Column(
           children: [
@@ -156,7 +139,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          color: Color(0xFFF5F5F5),
+          color: Color.fromARGB(255, 245, 246, 250),
         ),
         child: Column(
           children: [
@@ -166,11 +149,18 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      menu.icon,
-                      size: 64,
-                      color: menu.color,
-                    ),
+                    if (menu.imagePath != null)
+                      Image.asset(
+                        menu.imagePath!,
+                        width: 94,
+                        height: 94,
+                      )
+                    else
+                      Icon(
+                        menu.icon,
+                        size: 64,
+                        color: menu.color,
+                      ),
                     const SizedBox(height: 16),
                     Text(
                       menu.name,
@@ -224,34 +214,41 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
               Navigator.pushNamed(context, menu.route!);
             }
           },
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(3),
           child: Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              color: Colors.white,
+              borderRadius: BorderRadius.circular(3),
+              color: const Color.fromARGB(255, 245, 246, 250),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 5,
-                  offset: const Offset(0, 4),
+                  color: Color.fromARGB(255, 194, 193, 193).withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 1),
                 ),
               ],
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  menu.icon,
-                  size: 50,
-                  color: menu.color,
-                ),
+                if (menu.imagePath != null)
+                  Image.asset(
+                    menu.imagePath!,
+                    width: 94,
+                    height: 94,
+                  )
+                else
+                  Icon(
+                    menu.icon,
+                    size: 50,
+                    color: menu.color,
+                  ),
                 const SizedBox(height: 8),
                 Text(
                   menu.name,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
-                    color: menu.color,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w300,
+                    color: Colors.black,
                   ),
                 ),
               ],
@@ -270,7 +267,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         color: const Color(0xFF0489FE),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Color.fromARGB(255, 221, 218, 218).withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -306,7 +303,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Color.fromARGB(255, 226, 224, 224).withOpacity(0.1),
               blurRadius: 10,
               offset: const Offset(0, -2),
             ),

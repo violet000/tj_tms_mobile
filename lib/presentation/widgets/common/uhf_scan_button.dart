@@ -17,8 +17,8 @@ class UHFScanButton extends StatefulWidget {
 
   const UHFScanButton({
     super.key,
-    this.startText = '开始扫描',
-    this.stopText = '停止扫描',
+    this.startText = 'UHF超频扫描',
+    this.stopText = 'UHF超频停止',
     this.buttonColor,
     this.textColor,
     this.buttonHeight,
@@ -77,8 +77,7 @@ class _UHFScanButtonState extends State<UHFScanButton> {
                   // 防抖处理：同一标签在1秒内只处理一次
                   final now = DateTime.now();
                   if (_lastProcessedEpc != epc || 
-                      _lastProcessedTime == null || 
-                      now.difference(_lastProcessedTime!).inMilliseconds > 1000) {
+                      _lastProcessedTime == null) {
                     _lastProcessedEpc = epc;
                     _lastProcessedTime = now;
                     Future.microtask(() {

@@ -6,6 +6,7 @@ import 'routes/app_routes.dart';
 import 'routes/route_generator.dart';
 import 'services/location_service.dart';
 import 'presentation/state/providers/face_login_provider.dart';
+import 'presentation/state/providers/verify_token_provider.dart';
 import 'package:tj_tms_mobile/core/config/env.dart';
 
 void main() async {
@@ -38,6 +39,7 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => FaceLoginProvider()),
+        ChangeNotifierProvider(create: (_) => VerifyTokenProvider(access_token: '')),
       ],
       child: MaterialApp(
         title: Env.config.appName,

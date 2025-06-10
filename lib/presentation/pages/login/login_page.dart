@@ -22,14 +22,14 @@ class _LoginPageState extends State<LoginPage> {
   bool _isLoading = false;
   late final FaceLoginProvider _faceLoginProvider;
   late final VerifyTokenProvider _verifyTokenProvider;
-  late final LoginService _loginService;
+  late final Service18082 _loginService;
 
   @override
   void initState() {
     super.initState();
     _faceLoginProvider = FaceLoginProvider();
-    _loginService = LoginService();
-    _verifyTokenProvider = VerifyTokenProvider(access_token: '');
+    _loginService = Service18082();
+    _verifyTokenProvider = Provider.of<VerifyTokenProvider>(context, listen: false);
   }
 
   @override
@@ -65,12 +65,21 @@ class _LoginPageState extends State<LoginPage> {
         throw Exception('用户名或密码不能为空');
       }
 
-      final hashedPassword = md5.convert(utf8.encode(password1 + 'messi')).toString();
+      final hashedPassword = md5.convert(utf8.encode(password1)).toString();
+      // final hashedPassword = md5.convert(utf8.encode(password1 + 'messi')).toString();
       final Map<String, dynamic> loginResult = await _loginService.accountLogin(username1, hashedPassword);
+      // 存储登录响应数据
       _verifyTokenProvider.setToken(loginResult['access_token'].toString());
+      _verifyTokenProvider.setUserData(<String, dynamic>{
+        'username': username1,
+        'access_token': loginResult['access_token'],
+        'refresh_token': loginResult['refresh_token'],
+        'expires_in': loginResult['expires_in'],
+        'token_type': loginResult['token_type'],
+        'scope': loginResult['scope'],
+      });
       Navigator.of(context).pushReplacementNamed('/home');
     } catch (e) {
-      // print('登录错误: $e'); // 添加错误日志
       ErrorHandler.handleError(context, e);
     } finally {
       if (mounted) {

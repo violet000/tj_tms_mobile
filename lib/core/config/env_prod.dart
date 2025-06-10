@@ -4,7 +4,7 @@ import 'env_config.dart';
 class ProdConfig {
   static Future<EnvConfig> get config async {
     return EnvConfig(
-      apiBaseUrl: 'http://10.34.12.164',
+      apiBaseUrl: 'http://192.168.0.101',
       appName: '天津银行配送系统(生产环境)',
       enableLogging: true,
       environment: Environment.dev,
