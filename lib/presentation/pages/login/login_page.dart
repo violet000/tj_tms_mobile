@@ -66,6 +66,9 @@ class _LoginPageState extends State<LoginPage> {
       }
 
       final hashedPassword = md5.convert(utf8.encode(password1)).toString();
+      setState(() {
+        _isLoading = true;
+      });
       // final hashedPassword = md5.convert(utf8.encode(password1 + 'messi')).toString();
       final Map<String, dynamic> loginResult = await _loginService.accountLogin(username1, hashedPassword);
       // 存储登录响应数据
@@ -260,18 +263,28 @@ class _LoginPageState extends State<LoginPage> {
                 bottom: 30,
                 child: Center(
                   child: ElevatedButton(
-                    onPressed: _login,
+                    onPressed: _isLoading ? null : _login,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Color(0xFF29A8FF),
                       minimumSize: Size(screenWidth * 0.85, 45),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
+                      disabledBackgroundColor: Color(0xFF29A8FF),
                     ),
-                    child: const Text(
-                      '登录',
-                      style: TextStyle(color: Color.fromARGB(255, 241, 240, 240), fontSize: 16),
-                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : const Text(
+                            '登录',
+                            style: TextStyle(color: Color.fromARGB(255, 241, 240, 240), fontSize: 16),
+                          ),
                   ),
                 ),
               ),
