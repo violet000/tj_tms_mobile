@@ -207,6 +207,17 @@ class _BoxScanPageState extends State<BoxScanPage> {
         title: const Text('网点交接'),
         backgroundColor: const Color(0xFF29A8FF),
         foregroundColor: Colors.white,
+        automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/home',
+              (route) => false,
+            );
+          },
+        ),
       ),
       body: Container(
         color: const Color(0xFFF5F5F5),
