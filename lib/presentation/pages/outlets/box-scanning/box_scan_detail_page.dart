@@ -174,7 +174,7 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
                     color: Color(0xFF333333),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 6),
                 Row(
                   children: [
                     Expanded(
@@ -223,78 +223,78 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color.fromARGB(255, 226, 4, 55).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              '未扫描',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Color(0xFF666666),
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${items.where((item) => item['scanStatus'].toString() != '1').length}个',
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Color.fromARGB(255, 226, 4, 55),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF52C41A).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              '已扫描',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Color(0xFF666666),
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${items.where((item) => item['scanStatus'].toString() == '1').length}个',
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF52C41A),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                // const SizedBox(height: 16),
+                // Row(
+                //   children: [
+                //     Expanded(
+                //       child: Container(
+                //         padding: const EdgeInsets.only(left: 12, top: 6, bottom: 6, right: 12),
+                //         decoration: BoxDecoration(
+                //           color: const Color.fromARGB(255, 226, 4, 55).withOpacity(0.1),
+                //           borderRadius: BorderRadius.circular(8),
+                //         ),
+                //         child: Column(
+                //           crossAxisAlignment: CrossAxisAlignment.start,
+                //           children: [
+                //             const Text(
+                //               '未扫描',
+                //               style: TextStyle(
+                //                 fontSize: 14,
+                //                 color: Color(0xFF666666),
+                //               ),
+                //             ),
+                //             const SizedBox(height: 4),
+                //             Text(
+                //               '${items.where((item) => item['scanStatus'].toString() != '1').length}个',
+                //               style: const TextStyle(
+                //                 fontSize: 20,
+                //                 fontWeight: FontWeight.bold,
+                //                 color: Color.fromARGB(255, 226, 4, 55),
+                //               ),
+                //             ),
+                //           ],
+                //         ),
+                //       ),
+                //     ),
+                //     const SizedBox(width: 16),
+                //     Expanded(
+                //       child: Container(
+                //         padding: const EdgeInsets.only(left: 12, top: 6, bottom: 6, right: 12),
+                //         decoration: BoxDecoration(
+                //           color: const Color(0xFF52C41A).withOpacity(0.1),
+                //           borderRadius: BorderRadius.circular(8),
+                //         ),
+                //         child: Column(
+                //           crossAxisAlignment: CrossAxisAlignment.start,
+                //           children: [
+                //             const Text(
+                //               '已扫描',
+                //               style: TextStyle(
+                //                 fontSize: 14,
+                //                 color: Color(0xFF666666),
+                //               ),
+                //             ),
+                //             const SizedBox(height: 4),
+                //             Text(
+                //               '${items.where((item) => item['scanStatus'].toString() == '1').length}个',
+                //               style: const TextStyle(
+                //                 fontSize: 20,
+                //                 fontWeight: FontWeight.bold,
+                //                 color: Color(0xFF52C41A),
+                //               ),
+                //             ),
+                //           ],
+                //         ),
+                //       ),
+                //     ),
+                //   ],
+                // ),
               ],
             ),
           ),
           Container(
             alignment: Alignment.topLeft,
-            padding: const EdgeInsets.only(top: 8, bottom: 8, left: 8),
+            padding: const EdgeInsets.only(top: 5, bottom: 5, left: 8),
             child: Flex(
               direction: Axis.horizontal,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -381,9 +381,8 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     // borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: const Color(0xFFEEEEEE),
-                      width: 1,
+                    border: index + 1 == items.length ? null : const Border(
+                      bottom: BorderSide(color: const Color(0xFFEEEEEE), width: 1),
                     ),
                   ),
                   child: Padding(
