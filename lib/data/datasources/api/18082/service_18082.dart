@@ -63,6 +63,28 @@ class Service18082 {
     );
   }
 
+  /// 交接款箱
+  Future<Map<String, dynamic>> handoverCashBox(String pointCode, List<dynamic> cashBoxList) async {
+    return _dioService.post(
+      '/storage/cash-box/check?pointCode=$pointCode',
+      body: <String, dynamic>{
+        'cashBoxList': cashBoxList,
+      },
+    );
+  }
+
+  /// 更新金库状态
+  Future<Map<String, dynamic>> updatePointStatus(String username, String password, String pointCode) async {
+    return _dioService.post(
+      '/storage/point/update-status',
+      body: <String, dynamic>{
+        'username': username,
+        'password': password,
+        'pointCode': pointCode,
+      },
+    );
+  }
+
   /// 根据登录用户查询金库列表
   Future<Map<String, dynamic>> getUserClrCenterList(Map<String, dynamic> params) async {
     return _dioService.get('tauro/v2/outsourcing/qryClrCenterNoByPerson', queryParameters: params);

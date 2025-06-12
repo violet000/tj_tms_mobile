@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/uhf_scan_button.dart';
 import 'package:tj_tms_mobile/data/datasources/api/18082/service_18082.dart';
+import 'package:tj_tms_mobile/presentation/pages/outlets/box-scanning/box_scan_verify_page.dart';
 
 class BoxScanDetailPage extends StatefulWidget {
   final Map<String, dynamic> point;
@@ -462,7 +463,7 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: () {
+                    onPressed: () async {
                       // 用于实现交接功能
                       if (items.where((item) => item['scanStatus'].toString() == '0').length > 0) {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -472,6 +473,19 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
                             backgroundColor: Color.fromARGB(255, 219, 3, 3),
                           ),
                         );
+                      } else {
+                        await _service.handoverCashBox(widget.point['pointCode'].toString(), items.map<String>((item) => item['boxCode'].toString()).toList());
+                        if (mounted) {
+                          Navigator.push<bool>(
+                              context,
+                              MaterialPageRoute<bool>(
+                                builder: (context) => BoxScanVerifyPage(
+                                  point: widget.point,
+                                  boxCodes: items.map<String>((item) => item['boxCode'].toString()).toList(),
+                              ),
+                            ),
+                          );
+                        }
                       }
                     },
                     icon: const Icon(Icons.check_circle),

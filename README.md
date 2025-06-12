@@ -7,6 +7,9 @@
 - 插件集成：集成C71手持机厂商的DeviceAPI_ver20250209_release.aar包
 - 应用框架：Flutter 3.4.0 + Dart + Android SDK
 
+## 插件环境
+- 插件需要使用flutter_bmflocation插件，放入的目录层级和当前项目一个层级，从Git上进行拉取，
+
 ## 环境要求
 
 ### 1. Java环境
