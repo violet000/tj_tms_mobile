@@ -29,7 +29,8 @@ class _LoginPageState extends State<LoginPage> {
     super.initState();
     _faceLoginProvider = FaceLoginProvider();
     _loginService = Service18082();
-    _verifyTokenProvider = Provider.of<VerifyTokenProvider>(context, listen: false);
+    _verifyTokenProvider =
+        Provider.of<VerifyTokenProvider>(context, listen: false);
   }
 
   @override
@@ -39,48 +40,66 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  // 登录提交
-  Future<void> _login() async {
-    try {
-      final faceImage1 = _faceLoginProvider.getFaceImage(0);
-      final username1 = _faceLoginProvider.getUsername(0);
-      final password1 = _faceLoginProvider.getPassword(0);
-      
-      // 验证数据
-      if (username1 == null || username1.isEmpty) {
-        throw Exception('请输入用户名');
-      }
-      
-      if (_faceLoginProvider.isFaceLogin(0)) {
-        if (faceImage1 == null || faceImage1.isEmpty) {
-          throw Exception('请进行人脸拍照');
-        }
-      } else {
-        if (password1 == null || password1.isEmpty) {
-          throw Exception('请输入密码');
-        }
-      }
+  // 验证表单
+  bool _validateFormData(String? username, String? password, String? faceImage) {
+    if (username == null || username.isEmpty) {
+      throw Exception('请输入用户名');
+    }
 
-      if (username1 == null || password1 == null) {
-        throw Exception('用户名或密码不能为空');
-      }
+    if ((password == null || password.isEmpty) && (faceImage == null || faceImage.isEmpty)) {
+      throw Exception('请输入密码或进行人脸拍照');
+    }
+    
+    return true;
+  }
 
-      final hashedPassword = md5.convert(utf8.encode(password1)).toString();
-      setState(() {
-        _isLoading = true;
-      });
-      // final hashedPassword = md5.convert(utf8.encode(password1 + 'messi')).toString();
-      final Map<String, dynamic> loginResult = await _loginService.accountLogin(username1, hashedPassword);
-      // 存储登录响应数据
-      _verifyTokenProvider.setToken(loginResult['access_token'].toString());
+  // 保存登录数据
+  void _saveLoginData(String username, Map<String, dynamic> loginResult) {
+    _verifyTokenProvider.setToken(loginResult['access_token'].toString());
       _verifyTokenProvider.setUserData(<String, dynamic>{
-        'username': username1,
+        'username': username,
         'access_token': loginResult['access_token'],
         'refresh_token': loginResult['refresh_token'],
         'expires_in': loginResult['expires_in'],
         'token_type': loginResult['token_type'],
         'scope': loginResult['scope'],
       });
+  }
+
+  // 登录提交
+  Future<void> _login() async {
+    try {
+      final faceImage1 = _faceLoginProvider.getFaceImage(0);
+      final username1 = _faceLoginProvider.getUsername(0);
+      final password1 = _faceLoginProvider.getPassword(0);
+
+      final faceImage2 = _faceLoginProvider.getFaceImage(1);
+      final username2 = _faceLoginProvider.getUsername(1);
+      final password2 = _faceLoginProvider.getPassword(1);
+
+      // 验证数据
+      _validateFormData(username1, password1, faceImage1);
+      _validateFormData(username2, password2, faceImage2);
+
+      setState(() {
+        _isLoading = true;
+      });
+
+      final Map<String, dynamic> loginResult1 = await _loginService.accountLogin(
+        username1!,
+        password1 != null ? md5.convert(utf8.encode(password1)).toString() : null,
+        faceImage1,
+      );
+      print('loginResult1: $loginResult1');
+      final Map<String, dynamic> loginResult2 = await _loginService.accountLogin(
+        username2!,
+        password2 != null ? md5.convert(utf8.encode(password2)).toString() : null,
+        faceImage2,
+      );
+
+      _saveLoginData(username1!, loginResult1);
+      _saveLoginData(username2!, loginResult2);
+
       Navigator.of(context).pushReplacementNamed('/home');
     } catch (e) {
       ErrorHandler.handleError(context, e);
@@ -278,12 +297,15 @@ class _LoginPageState extends State<LoginPage> {
                             height: 24,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
                         : const Text(
                             '登录',
-                            style: TextStyle(color: Color.fromARGB(255, 241, 240, 240), fontSize: 16),
+                            style: TextStyle(
+                                color: Color.fromARGB(255, 241, 240, 240),
+                                fontSize: 16),
                           ),
                   ),
                 ),

@@ -32,12 +32,13 @@ class Service18082 {
   }
   
   /// 老的登录方式
-  Future<Map<String, dynamic>> accountLogin(String username, String password) async {
+  Future<Map<String, dynamic>> accountLogin(String username, String? password, String? image) async {
     return _dioService.post(
       '/auth/callback/login',
       body: <String, dynamic>{
         'username': username,
         'password': password,
+        'image': image,
       },
     );
   }
