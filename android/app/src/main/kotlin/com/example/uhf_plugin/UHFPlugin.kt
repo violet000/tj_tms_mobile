@@ -48,7 +48,7 @@ class UHFPlugin(private val context: Context, private val engine: FlutterEngine)
                 Log.d(TAG, "UHF reader initialized successfully")
                 try {
                     Log.d(TAG, "Setting UHF reader power to 5")
-                    val powerSuccess = mReader?.setPower(5) ?: false
+                    val powerSuccess = mReader?.setPower(30) ?: false
                     Log.d(TAG, "Power setting result: $powerSuccess")
                     if (!powerSuccess) {
                         Log.e(TAG, "Failed to set power")
@@ -228,7 +228,7 @@ class UHFPlugin(private val context: Context, private val engine: FlutterEngine)
                 }
                 "setPower" -> {
                     try {
-                        val power = call.argument<Int>("power") ?: 0
+                        val power = call.argument<Int>("power") ?: 30
                         val success = mReader?.setPower(power) ?: false
                         result.success(success)
                     } catch (e: Exception) {

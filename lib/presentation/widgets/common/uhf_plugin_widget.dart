@@ -22,7 +22,8 @@ class UHFPluginWidget extends StatefulWidget {
 
 class _UHFPluginWidgetState extends State<UHFPluginWidget> {
   final UHFController _controller = UHFController();
-  final MethodChannel _channel = const MethodChannel('com.example.uhf_plugin/uhf');
+  final MethodChannel _channel =
+      const MethodChannel('com.example.uhf_plugin/uhf');
   bool _isInitializing = true;
 
   @override
@@ -72,9 +73,12 @@ class _UHFPluginWidgetState extends State<UHFPluginWidget> {
 }
 
 class UHFController {
-  final MethodChannel _channel = const MethodChannel('com.example.uhf_plugin/uhf');
-  final EventChannel _eventChannel = const EventChannel('com.example.uhf_plugin/uhf_events');
-  final StreamController<Map<String, dynamic>> _tagController = StreamController<Map<String, dynamic>>.broadcast();
+  final MethodChannel _channel =
+      const MethodChannel('com.example.uhf_plugin/uhf');
+  final EventChannel _eventChannel =
+      const EventChannel('com.example.uhf_plugin/uhf_events');
+  final StreamController<Map<String, dynamic>> _tagController =
+      StreamController<Map<String, dynamic>>.broadcast();
   bool _isInitialized = false;
   bool _isScanning = false;
   StreamSubscription? _eventSubscription;
@@ -111,29 +115,21 @@ class UHFController {
         if (event is Map) {
           final Map<String, dynamic> tagData = Map<String, dynamic>.from(event);
           print('Processing tag data: $tagData');
-          
+
           if (tagData.containsKey('epc')) {
             final epc = tagData['epc'] as String?;
             if (epc != null && epc.isNotEmpty) {
-              final now = DateTime.now();
-              if (_lastProcessedEpc != epc || 
-                  _lastProcessedTime == null || 
-                  now.difference(_lastProcessedTime!).inMilliseconds > 1000) {
-                print('Processing new tag: $epc');
-                _lastProcessedEpc = epc;
-                _lastProcessedTime = now;
-                
-                if (!_scannedTags.contains(epc)) {
-                  _scannedTags.insert(0, epc);
-                  if (_scannedTags.length > 100) {
-                    _scannedTags.removeLast();
-                  }
-                  print('Added new tag to list: $epc');
+              final shortEpc = epc.length > 8 ? epc.substring(0, 8) : epc;
+              if (!_scannedTags.contains(shortEpc)) {
+                print(
+                    '----------------------------------------------------------------------epc: $shortEpc');
+                _scannedTags.insert(0, shortEpc);
+                if (_scannedTags.length > 100) {
+                  _scannedTags.removeLast();
                 }
-                _tagController.add(tagData);
-              } else {
-                print('Skipping duplicate tag: $epc');
+                print('Added new tag to list: $shortEpc');
               }
+              _tagController.add(tagData);
             }
           }
         }
@@ -150,7 +146,8 @@ class UHFController {
       throw Exception('UHF device not initialized');
     }
     try {
-      final bool? result = await _channel.invokeMethod<bool>('setPower', {'power': power});
+      final bool? result =
+          await _channel.invokeMethod<bool>('setPower', {'power': power});
       return result ?? false;
     } catch (e) {
       throw Exception('Failed to set power: $e');

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/uhf_scan_button.dart';
 import 'package:tj_tms_mobile/data/datasources/api/18082/service_18082.dart';
 import 'package:tj_tms_mobile/presentation/pages/outlets/box-scanning/box_scan_verify_page.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 
 class BoxScanDetailPage extends StatefulWidget {
   final Map<String, dynamic> point;
@@ -100,6 +101,12 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
         ),
       );
     }
+  }
+
+  // 取消匹配
+  void _onUnmatch(Map<String, dynamic> item) {
+    _uhfScannedTags.remove(item['boxCode'].toString());
+    _updateCashBoxStatus(item['boxCode'].toString(), 0);
   }
 
   void _handleUHFError(String error) {
@@ -377,60 +384,77 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
               itemCount: items.length,
               itemBuilder: (context, index) {
                 final item = items[index];
-                return Container(
-                  // margin: const EdgeInsets.only(bottom: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    // borderRadius: BorderRadius.circular(12),
-                    border: index + 1 == items.length ? null : const Border(
-                      bottom: BorderSide(color: const Color(0xFFEEEEEE), width: 1),
-                    ),
+                return Slidable(
+                  key: ValueKey<String>(item['boxCode'].toString()),
+                  endActionPane: ActionPane(
+                    motion: const DrawerMotion(),
+                    children: [
+                      SlidableAction(
+                        onPressed: (context) {
+                          _onUnmatch(item);
+                        },
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        icon: Icons.cancel,
+                        label: '取消匹配',
+                      ),
+                    ],
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(5),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF29A8FF).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    // margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      // borderRadius: BorderRadius.circular(12),
+                      border: index + 1 == items.length ? null : const Border(
+                        bottom: BorderSide(color: const Color(0xFFEEEEEE), width: 1),
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(5),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF29A8FF).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.inventory_2,
+                              color: Color(0xFF29A8FF),
+                              size: 20,
+                            ),
                           ),
-                          child: const Icon(
-                            Icons.inventory_2,
-                            color: Color(0xFF29A8FF),
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item['boxCode'].toString(),
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF333333),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item['boxCode'].toString(),
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF333333),
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                        Container(
-                          width: 24,
-                          height: 24,
-                          child: item['scanStatus'].toString() == '1'
-                              ? const Icon(
-                                  Icons.check_circle,
-                                  color: Color(0xFF29A8FF),
-                                  size: 24,
-                                )
-                              : null,
-                        ),
-                      ],
+                          Container(
+                            width: 24,
+                            height: 24,
+                            child: item['scanStatus'].toString() == '1'
+                                ? const Icon(
+                                    Icons.check_circle,
+                                    color: Color(0xFF29A8FF),
+                                    size: 24,
+                                  )
+                                : null,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );
