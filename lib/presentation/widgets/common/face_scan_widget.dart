@@ -40,7 +40,7 @@ class _FaceScanWidgetState extends State<FaceScanWidget> with SingleTickerProvid
   void _showImagePreview() {
     if (widget.imageBase64 == null) return;
     
-    showDialog(
+    showDialog<dynamic>(
       context: context,
       builder: (context) => Dialog(
         backgroundColor: Colors.transparent,

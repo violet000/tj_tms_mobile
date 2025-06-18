@@ -98,7 +98,7 @@ class _BarcodeScannerWidgetState extends State<BarcodeScannerWidget> {
     if (!mounted || _isScanning) return;
     
     try {
-      final result = await platform.invokeMethod('startScan');
+      // final result = await platform.invokeMethod('startScan');
       if (mounted) {
         setState(() {
           _isScanning = true;
@@ -125,7 +125,7 @@ class _BarcodeScannerWidgetState extends State<BarcodeScannerWidget> {
   Future<void> _toggleScan() async {
     try {
       if (_isScanning) {
-        final result = await platform.invokeMethod('stopScan');
+        // final result = await platform.invokeMethod('stopScan');
         if (mounted) {
           setState(() {
             _isScanning = false;

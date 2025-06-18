@@ -2,11 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'package:provider/provider.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:tj_tms_mobile/presentation/state/providers/face_login_provider.dart';
-import 'package:tj_tms_mobile/presentation/pages/login/face_login/face_input_widget.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/face_scan_widget.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/custom_text_field.dart';
 
