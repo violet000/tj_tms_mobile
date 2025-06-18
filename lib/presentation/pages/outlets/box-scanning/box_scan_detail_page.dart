@@ -34,20 +34,19 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
     _getCashBoxList();
   }
 
+
+
   Future<void> _getCashBoxList() async {
     try {
       setState(() {
         isLoading = true;
         error = null;
       });
-      
-      print('widget.point:${widget.point}');
       final dynamic cashBoxList = await _service.getCashBoxList(widget.point['pointCode'].toString());
       setState(() {
         items = (cashBoxList['retList'] as List<dynamic>).cast<Map<String, dynamic>>();
         isLoading = false;
       });
-      print('items:$items');
     } catch (e) {
       setState(() {
         error = e.toString();

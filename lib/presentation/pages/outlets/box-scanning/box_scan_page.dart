@@ -27,7 +27,6 @@ class _BoxScanPageState extends State<BoxScanPage> {
 
   Future<void> _getEscortRouteToday() async {
     final String? username = _verifyTokenProvider.getUserData()?['username'] as String?;
-    print('username:$username');
     if (username == null) return;
     final dynamic escortRouteToday = await _service.getEscortRouteToday(username);
     setState(() {
@@ -182,7 +181,6 @@ class _BoxScanPageState extends State<BoxScanPage> {
 
   @override
   Widget build(BuildContext context) {
-    print('lines:$lines');
     if (lines.isEmpty) {
       return Scaffold(
         appBar: AppBar(
