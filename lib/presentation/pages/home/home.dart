@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'dart:ui';
 
 // 菜单项模型
 class MenuItem {
   final String name;
   final String? imagePath;
+  final String? iconPath;
   final IconData? icon;
   final List<MenuItem>? children;
   final String? route;
@@ -12,6 +15,7 @@ class MenuItem {
   MenuItem({
     required this.name,
     this.imagePath,
+    this.iconPath,
     this.icon,
     this.children,
     this.route,
@@ -26,35 +30,32 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
+class _HomePageState extends State<HomePage>
+    with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
   final List<Widget> _pages = [];
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
   final List<MenuItem> menus = [
-    // MenuItem(
-    //   name: '首页',
-    //   icon: Icons.home_rounded,
-    //   route: '/home',
-    //   color: const Color(0xFF29A8FF),
-    // ),
     MenuItem(
       name: '交接',
       icon: Icons.work_rounded,
-      color: const Color(0xFF0489FE),
+      color: const Color.fromARGB(255, 255, 255, 255),
       children: [
         MenuItem(
-          name: '网点',
-          imagePath: 'assets/images/bank.png',
+          name: '网点交接',
+          imagePath: 'assets/icons/handover_circle.svg',
+          iconPath: 'assets/icons/net_handover_icon.svg',
           route: '/outlets/box-scan',
-          color: const Color(0xFF29A8FF),
+          color: const Color.fromARGB(255, 115, 190, 240).withOpacity(0.1),
         ),
         MenuItem(
-          name: '金库',
-          imagePath: 'assets/images/secure.png',
+          name: '金库交接',
+          imagePath: 'assets/icons/treasury_reat.svg',
+          iconPath: 'assets/icons/treasury_handover_icon.svg',
           route: '/outlets/box-handover',
-          color: const Color(0xFF0489FE),
+          color: const Color.fromARGB(255, 134, 221, 245).withOpacity(0.1),
         ),
       ],
     ),
@@ -73,7 +74,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(_animationController);
+    _fadeAnimation =
+        Tween<double>(begin: 0.0, end: 1.0).animate(_animationController);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializePages();
       _animationController.forward();
@@ -92,33 +94,30 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       for (var menu in menus) {
         if (menu.children != null) {
           _pages.add(_buildSubMenuPage(menu));
-        } else {
-          _pages.add(_buildDefaultPage(menu));
         }
       }
     });
   }
-  
+
   // 构建子菜单页面
   Widget _buildSubMenuPage(MenuItem menu) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          color: Color.fromARGB(255, 245, 246, 250)
-        ),
-        child: Column(
-          children: [
-            _buildHeader(menu),
-            Expanded(
-              child: FadeTransition(
+        body: Container(
+            decoration:
+                const BoxDecoration(color: Color.fromARGB(255, 245, 246, 250)),
+            child: Column(children: [
+              _buildHeader(menu),
+              Expanded(
+                  // 子菜单
+                  child: FadeTransition(
                 opacity: _fadeAnimation,
                 child: GridView.builder(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(8.0),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     childAspectRatio: 1.0,
-                    crossAxisSpacing: 16.0,
-                    mainAxisSpacing: 16.0,
+                    crossAxisSpacing: 8.0,
+                    mainAxisSpacing: 8.0,
                   ),
                   itemCount: menu.children?.length ?? 0,
                   itemBuilder: (context, index) {
@@ -126,77 +125,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                     return _buildMenuCard(child);
                   },
                 ),
-              )
-            )
-          ]
-        )
-      )
-    );
-  }
-
-  // 构建默认页面
-  Widget _buildDefaultPage(MenuItem menu) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          color: Color.fromARGB(255, 245, 246, 250),
-        ),
-        child: Column(
-          children: [
-            _buildHeader(menu),
-            Expanded(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (menu.imagePath != null)
-                      Image.asset(
-                        menu.imagePath!,
-                        width: 94,
-                        height: 94,
-                      )
-                    else
-                      Icon(
-                        menu.icon,
-                        size: 64,
-                        color: menu.color,
-                      ),
-                    const SizedBox(height: 16),
-                    Text(
-                      menu.name,
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: menu.color,
-                      ),
-                    ),
-                    if (menu.route != null) ...[
-                      const SizedBox(height: 24),
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, menu.route!);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: menu.color,
-                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                        ),
-                        child: const Text(
-                          '进入',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+              ))
+            ])));
   }
 
   // 构建菜单卡片
@@ -204,9 +134,9 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     return Hero(
       tag: menu.name,
       child: Card(
-        elevation: 4,
+        elevation: 2, // 阴影
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(3),
+          borderRadius: BorderRadius.circular(8),
         ),
         child: InkWell(
           onTap: () {
@@ -214,41 +144,74 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
               Navigator.pushNamed(context, menu.route!);
             }
           },
-          borderRadius: BorderRadius.circular(3),
+          borderRadius: BorderRadius.circular(8),
           child: Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(3),
-              color: const Color.fromARGB(255, 245, 246, 250),
+              borderRadius: BorderRadius.circular(8),
+              color: menu.color,
               boxShadow: [
                 BoxShadow(
-                  color: Color.fromARGB(255, 194, 193, 193).withOpacity(0.1),
+                  color:
+                      const Color.fromARGB(255, 255, 255, 255).withOpacity(0.1),
                   blurRadius: 8,
                   offset: const Offset(0, 1),
                 ),
               ],
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+            child: Stack(
               children: [
-                if (menu.imagePath != null)
-                  Image.asset(
-                    menu.imagePath!,
-                    width: 94,
-                    height: 94,
-                  )
-                else
-                  Icon(
-                    menu.icon,
-                    size: 50,
-                    color: menu.color,
+                // 背景SVG - 放大并定位到右下区域
+                Positioned(
+                  right: -30,
+                  bottom: -30,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0), // 模糊效果
+                      child: SvgPicture.asset(
+                        menu.imagePath!,
+                        width: 120,
+                        height: 120,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
                   ),
-                const SizedBox(height: 8),
-                Text(
-                  menu.name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w300,
-                    color: Colors.black,
+                ),
+                // 右下角居中图标
+                if (menu.iconPath != null)
+                  Positioned(
+                    right: 20,
+                    bottom: 20,
+                    child: SvgPicture.asset(
+                      menu.iconPath!,
+                      width: 40,
+                      height: 40,
+                      fit: BoxFit.contain,
+                      color: Colors.white,
+                    ),
+                  ),
+                // 右上角放置一个箭头角标 - 放在最后确保在最上层
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: SvgPicture.asset(
+                    'assets/icons/arrow_right_icon.svg',
+                    width: 20,
+                    height: 20,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+                // 文字内容
+                Positioned(
+                  top: 12,
+                  left: 12,
+                  child: Text(
+                    menu.name,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
                   ),
                 ),
               ],
@@ -264,10 +227,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       decoration: BoxDecoration(
-        color: const Color(0xFF0489FE),
+        color: const Color.fromARGB(255, 245, 246, 250),
         boxShadow: [
           BoxShadow(
-            color: Color.fromARGB(255, 221, 218, 218).withOpacity(0.05),
+            color: const Color.fromARGB(255, 221, 218, 218).withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -281,7 +244,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 18,
-              color: Colors.white,
+              fontWeight: FontWeight.w600,
+              color: Color.fromARGB(255, 3, 3, 3),
             ),
           ),
         ],
@@ -292,18 +256,18 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages.isEmpty 
-        ? const Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF29A8FF)),
-            ),
-          ) 
-        : _pages[_selectedIndex],
+      body: _pages.isEmpty
+          ? const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF29A8FF)),
+              ),
+            )
+          : _pages[_selectedIndex],
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: Color.fromARGB(255, 226, 224, 224).withOpacity(0.1),
+              color: const Color.fromARGB(255, 226, 224, 224).withOpacity(0.1),
               blurRadius: 10,
               offset: const Offset(0, -2),
             ),
@@ -325,10 +289,12 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                 _selectedIndex = index;
               });
             },
-            items: menus.map((menu) => BottomNavigationBarItem(
-              icon: Icon(menu.icon),
-              label: menu.name,
-            )).toList(),
+            items: menus
+                .map((menu) => BottomNavigationBarItem(
+                      icon: Icon(menu.icon),
+                      label: menu.name,
+                    ))
+                .toList(),
           ),
         ),
       ),

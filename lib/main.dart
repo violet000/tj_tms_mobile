@@ -19,9 +19,10 @@ void main() async {
   if (!kIsWeb) {
     final locationService = LocationService();
     await locationService.initialize();
+    // 禁用掉底部的虚拟按键
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
+      statusBarIconBrightness: Brightness.light,
       systemNavigationBarColor: Colors.transparent,
       systemNavigationBarIconBrightness: Brightness.dark,
     ));
