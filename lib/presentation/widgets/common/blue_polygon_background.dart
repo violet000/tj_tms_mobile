@@ -21,7 +21,7 @@ class BluePolygonBackground extends StatelessWidget {
       height: height,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
-        color: Colors.black,
+        color: Colors.transparent,
       ),
       child: Stack(
         children: [
