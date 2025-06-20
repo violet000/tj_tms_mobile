@@ -139,6 +139,8 @@ class _HomePageState extends State<HomePage>
           borderRadius: BorderRadius.circular(8),
         ),
         child: InkWell(
+          splashColor: Colors.transparent, // 点击时没有水波纹效果
+          highlightColor: Colors.transparent, // 点击时没有高亮效果
           onTap: () {
             if (menu.route != null) {
               Navigator.pushNamed(context, menu.route!);

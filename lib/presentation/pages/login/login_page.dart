@@ -69,34 +69,34 @@ class _LoginPageState extends State<LoginPage> {
   // 登录提交
   Future<void> _login() async {
     try {
-      // final faceImage1 = _faceLoginProvider.getFaceImage(0);
-      // final username1 = _faceLoginProvider.getUsername(0);
-      // final password1 = _faceLoginProvider.getPassword(0);
+      final faceImage1 = _faceLoginProvider.getFaceImage(0);
+      final username1 = _faceLoginProvider.getUsername(0);
+      final password1 = _faceLoginProvider.getPassword(0);
 
       // final faceImage2 = _faceLoginProvider.getFaceImage(1);
       // final username2 = _faceLoginProvider.getUsername(1);
       // final password2 = _faceLoginProvider.getPassword(1);
       
       // 验证数据
-      // _validateFormData(username1, password1, faceImage1);
+      _validateFormData(username1, password1, faceImage1);
       // _validateFormData(username2, password2, faceImage2);
 
-      // setState(() {
-      //   _isLoading = true;
-      // });
+      setState(() {
+        _isLoading = true;
+      });
 
-      // final Map<String, dynamic> loginResult1 = await _loginService.accountLogin(
-      //   username1!,
-      //   (password1 == null || password1.isEmpty) ? null : md5.convert(utf8.encode(password1)).toString(),
-      //   faceImage1,
-      // );
+      final Map<String, dynamic> loginResult1 = await _loginService.accountLogin(
+        username1!,
+        (password1 == null || password1.isEmpty) ? null : md5.convert(utf8.encode(password1)).toString(),
+        faceImage1,
+      );
       // final Map<String, dynamic> loginResult2 = await _loginService.accountLogin(
       //   username2!,
       //   (password2 == null || password2.isEmpty) ? null : md5.convert(utf8.encode(password2)).toString(),
       //   faceImage2,
       // );
 
-      // _saveLoginData(username1!, loginResult1);
+      _saveLoginData(username1!, loginResult1);
       // _saveLoginData(username2!, loginResult2);
 
       Navigator.of(context).pushReplacementNamed('/home');

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/uhf_plugin_widget.dart';
 
 class UHFScanButton extends StatefulWidget {
@@ -17,8 +18,8 @@ class UHFScanButton extends StatefulWidget {
 
   const UHFScanButton({
     super.key,
-    this.startText = 'UHF超频扫描',
-    this.stopText = 'UHF超频停止',
+    this.startText = 'UHF扫描',
+    this.stopText = 'UHF停止',
     this.buttonColor,
     this.textColor,
     this.buttonHeight,
@@ -76,8 +77,7 @@ class _UHFScanButtonState extends State<UHFScanButton> {
                 if (epc != null && epc.isNotEmpty) {
                   // 防抖处理：同一标签在1秒内只处理一次
                   final now = DateTime.now();
-                  if (_lastProcessedEpc != epc || 
-                      _lastProcessedTime == null) {
+                  if (_lastProcessedEpc != epc || _lastProcessedTime == null) {
                     _lastProcessedEpc = epc;
                     _lastProcessedTime = now;
                     Future.microtask(() {
@@ -88,36 +88,66 @@ class _UHFScanButtonState extends State<UHFScanButton> {
               }
             }
 
-            Widget buttonContent = Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(_isScanning ? widget.stopText! : widget.startText!),
-                if (_isScanning) ...[
-                  const SizedBox(width: 8),
-                  widget.loadingIndicator ?? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            Widget buttonContent = Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                color: Colors.transparent,
+              ),
+              child: Row(
+                children: [
+                  SvgPicture.asset(
+                    'assets/icons/scan_cashbox.svg',
+                    width: 18,
+                    height: 18,
+                    fit: BoxFit.contain,
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    _isScanning ? widget.stopText! : widget.startText!,
+                    style: const TextStyle(
+                      color: Color.fromARGB(255, 2, 121, 212),
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 2,
                     ),
                   ),
                 ],
-              ],
+              ),
             );
+
+            // Widget buttonContent = Row(
+            //   mainAxisSize: MainAxisSize.min,
+            //   mainAxisAlignment: MainAxisAlignment.center,
+            //   children: [
+            //     Text(_isScanning ? widget.stopText! : widget.startText!),
+            //     if (_isScanning) ...[
+            //       const SizedBox(width: 8),
+            //       widget.loadingIndicator ?? const SizedBox(
+            //         width: 16,
+            //         height: 16,
+            //         child: CircularProgressIndicator(
+            //           strokeWidth: 2,
+            //           valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            //         ),
+            //       ),
+            //     ],
+            //   ],
+            // );
 
             if (snapshot.hasError) {
               return ElevatedButton(
                 onPressed: () => _toggleScan(controller),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: widget.buttonColor ?? Theme.of(context).primaryColor,
+                  backgroundColor:
+                      widget.buttonColor ?? Theme.of(context).primaryColor,
                   foregroundColor: widget.textColor ?? Colors.white,
                   minimumSize: Size(
                     widget.buttonWidth ?? 100,
                     widget.buttonHeight ?? 40,
                   ),
-                  padding: widget.padding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: widget.padding ??
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   textStyle: TextStyle(
                     fontSize: widget.fontSize ?? 16,
                   ),
@@ -126,20 +156,22 @@ class _UHFScanButtonState extends State<UHFScanButton> {
               );
             }
 
-            return ElevatedButton(
-              onPressed: () => _toggleScan(controller),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: widget.buttonColor ?? Theme.of(context).primaryColor,
-                foregroundColor: widget.textColor ?? Colors.white,
-                minimumSize: Size(
-                  widget.buttonWidth ?? 100,
-                  widget.buttonHeight ?? 40,
-                ),
-                padding: widget.padding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                textStyle: TextStyle(
-                  fontSize: widget.fontSize ?? 16,
-                ),
-              ),
+            return InkWell(
+              onTap: () => _toggleScan(controller),
+              // style: ElevatedButton.styleFrom(
+              //   backgroundColor:
+              //       widget.buttonColor ?? Theme.of(context).primaryColor,
+              //   foregroundColor: widget.textColor ?? Colors.white,
+              //   minimumSize: Size(
+              //     widget.buttonWidth ?? 100,
+              //     widget.buttonHeight ?? 40,
+              //   ),
+              //   padding: widget.padding ??
+              //       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              //   textStyle: TextStyle(
+              //     fontSize: widget.fontSize ?? 16,
+              //   ),
+              // ),
               child: buttonContent,
             );
           },

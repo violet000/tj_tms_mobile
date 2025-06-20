@@ -3,6 +3,8 @@ import 'package:tj_tms_mobile/presentation/widgets/common/uhf_scan_button.dart';
 import 'package:tj_tms_mobile/data/datasources/api/18082/service_18082.dart';
 import 'package:tj_tms_mobile/presentation/pages/outlets/box-scanning/box_scan_verify_page.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:tj_tms_mobile/presentation/widgets/common/blue_polygon_background.dart';
 
 class BoxScanDetailPage extends StatefulWidget {
   final Map<String, dynamic> point;
@@ -34,7 +36,259 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
     _getCashBoxList();
   }
 
+  // 自定义appBar
+  PreferredSizeWidget appCustomBar(BuildContext context) {
+    return AppBar(
+      title: Text(
+        '${widget.point['pointName'].toString()}款箱扫描',
+        textAlign: TextAlign.left,
+        style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF333333)),
+      ),
+      backgroundColor: const Color(0xFFF5F5F5),
+      foregroundColor: Colors.white,
+      automaticallyImplyLeading: false,
+      leading: IconButton(
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        icon: const Icon(Icons.arrow_back, color: Colors.black),
+        onPressed: () {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/home',
+            (route) => false,
+          );
+        },
+      ),
+    );
+  }
 
+  // 款箱列表
+  Widget cashBoxList() {
+    return ListView.builder(
+      padding: const EdgeInsets.only(bottom: 10),
+      itemCount: items.length,
+      itemBuilder: (context, index) {
+        final item = items[index];
+        return Slidable(
+          key: ValueKey<String>(item['boxCode'].toString()),
+          endActionPane: ActionPane(
+            motion: const DrawerMotion(),
+            children: [
+              SlidableAction(
+                onPressed: (context) {
+                  _onUnmatch(item);
+                },
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                icon: Icons.cancel,
+                label: '取消匹配',
+              ),
+            ],
+          ),
+          child: Container(
+            // margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              // borderRadius: BorderRadius.circular(12),
+              border: index + 1 == items.length
+                  ? null
+                  : const Border(
+                      bottom:
+                          BorderSide(color: const Color(0xFFEEEEEE), width: 1),
+                    ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(5),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF29A8FF).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.inventory_2,
+                      color: Color(0xFF29A8FF),
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item['boxCode'].toString(),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF333333),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    width: 24,
+                    height: 24,
+                    child: item['scanStatus'].toString() == '1'
+                        ? const Icon(
+                            Icons.check_circle,
+                            color: Color(0xFF29A8FF),
+                            size: 24,
+                          )
+                        : null,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // 底部按钮控件
+  Widget footerButton(List<Map<String, dynamic>> items) {
+    return Container(
+      padding: const EdgeInsets.only(left: 6, right: 6, bottom: 6, top: 6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: UHFScanButton(
+              buttonWidth: double.infinity,
+              buttonHeight: 48,
+              onTagScanned: _handleUHFTagScanned,
+              onError: _handleUHFError,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: () async {
+                // 用于实现交接功能
+                if (items
+                        .where((item) => item['scanStatus'].toString() == '0')
+                        .length >
+                    0) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('存在未扫描的款箱，请先完成扫描'),
+                      duration: Duration(seconds: 2),
+                      backgroundColor: Color.fromARGB(255, 219, 3, 3),
+                    ),
+                  );
+                } else {
+                  await _service.handoverCashBox(
+                      widget.point['pointCode'].toString(),
+                      items
+                          .map<String>((item) => item['boxCode'].toString())
+                          .toList());
+                  if (mounted) {
+                    Navigator.push<bool>(
+                      context,
+                      MaterialPageRoute<bool>(
+                        builder: (context) => BoxScanVerifyPage(
+                          point: widget.point,
+                          boxCodes: items
+                              .map<String>((item) => item['boxCode'].toString())
+                              .toList(),
+                        ),
+                      ),
+                    );
+                  }
+                }
+              },
+              icon: const Icon(Icons.check_circle),
+              label: const Text('确认交接'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF52C41A),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 手工匹配按钮以及按钮弹窗
+  Widget manualMatch() {
+    return TextButton.icon(
+      onPressed: () {
+        final TextEditingController textController = TextEditingController();
+        showDialog<void>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('手工匹配'),
+            content: TextField(
+              controller: textController,
+              decoration: const InputDecoration(
+                hintText: '请输入款箱编号',
+                border: OutlineInputBorder(),
+              ),
+              onSubmitted: (value) {
+                if (value.isNotEmpty) {
+                  _handleUHFTagScanned(value);
+                  Navigator.pop(context);
+                }
+              },
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('取消'),
+              ),
+              TextButton(
+                onPressed: () {
+                  if (textController.text.isNotEmpty) {
+                    _handleUHFTagScanned(textController.text);
+                    Navigator.pop(context);
+                  }
+                },
+                child: const Text('确定'),
+              ),
+            ],
+          ),
+        );
+      },
+      icon: const Icon(
+        Icons.edit,
+        size: 16,
+        color: Color(0xFF666666),
+      ),
+      label: const Text(
+        '手工匹配',
+        style: TextStyle(
+          fontSize: 14,
+          color: Color.fromARGB(255, 3, 145, 202),
+        ),
+      ),
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        // backgroundColor: Colors.grey[100],
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(4),
+        ),
+      ),
+    );
+  }
 
   Future<void> _getCashBoxList() async {
     try {
@@ -42,9 +296,11 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
         isLoading = true;
         error = null;
       });
-      final dynamic cashBoxList = await _service.getCashBoxList(widget.point['pointCode'].toString());
+      final dynamic cashBoxList =
+          await _service.getCashBoxList(widget.point['pointCode'].toString());
       setState(() {
-        items = (cashBoxList['retList'] as List<dynamic>).cast<Map<String, dynamic>>();
+        items = (cashBoxList['retList'] as List<dynamic>)
+            .cast<Map<String, dynamic>>();
         isLoading = false;
       });
     } catch (e) {
@@ -59,10 +315,12 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
   Future<void> _updateCashBoxStatus(String boxCode, int scanStatus) async {
     try {
       await _service.updateCashBoxStatus(boxCode, scanStatus);
-      final dynamic cashBoxList = await _service.getCashBoxList(widget.point['pointCode'].toString());
+      final dynamic cashBoxList =
+          await _service.getCashBoxList(widget.point['pointCode'].toString());
       if (mounted) {
         setState(() {
-          items = (cashBoxList['retList'] as List<dynamic>).cast<Map<String, dynamic>>();
+          items = (cashBoxList['retList'] as List<dynamic>)
+              .cast<Map<String, dynamic>>();
           _uhfScannedTags.insert(0, boxCode);
           if (_uhfScannedTags.length > 100) {
             _uhfScannedTags.removeLast();
@@ -116,6 +374,150 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
     }
   }
 
+  // 自定义内容体的头部
+  Widget customBodyHeader() {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      color: Colors.transparent,
+      child: BluePolygonBackground(
+          width: 900,
+          height: 150,
+          child: Column(
+            children: [
+              // 顶部信息区和下方内容区完整布局
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 顶部信息行
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: const [
+                            Text(
+                              "物品总数",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              "6个",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          children: const [
+                            Text(
+                              "线路名称",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              "线路1",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  // 下方白色内容区
+                  Container(
+                    margin: const EdgeInsets.only(left: 16, right: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 8,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // 左侧按钮
+                        Expanded(
+                          child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(8),
+                            onTap: () {
+                              // 手工匹配款箱点击事件
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 10),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                color: Colors.transparent,
+                              ),
+                              child: Row(
+                                children: [
+                                  SvgPicture.asset(
+                                    'assets/icons/manual_input_cashbox.svg',
+                                    width: 18,
+                                    height: 18,
+                                    fit: BoxFit.contain,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  const Text(
+                                    "手工录入",
+                                    style: TextStyle(
+                                      color: Color.fromARGB(255, 2, 121, 218),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 2,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        )),
+                        // 右侧按钮
+                        Expanded(
+                            child: Material(
+                                color: Colors.transparent,
+                                child: UHFScanButton(
+                                  buttonWidth: double.infinity,
+                                  buttonHeight: 48,
+                                  onTagScanned: _handleUHFTagScanned,
+                                  onError: _handleUHFError,
+                                ))),
+                      ],
+                    ),
+                  ),
+                ],
+              )
+            ],
+          )),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
@@ -150,382 +552,13 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.point['pointName'].toString()),
-        backgroundColor: const Color(0xFF29A8FF),
-        foregroundColor: Colors.white,
-      ),
-      body: Column(
-        children: [
-          // 押运线路信息
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  '押运线路信息',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF333333),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            '线路编号',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF666666),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            widget.point['pointCode'].toString(),
-                            style: const TextStyle(
-                              fontSize: 16,
-                              color: Color(0xFF333333),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            '物品总数',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF666666),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${items.length}个',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              color: Color(0xFF333333),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                // const SizedBox(height: 16),
-                // Row(
-                //   children: [
-                //     Expanded(
-                //       child: Container(
-                //         padding: const EdgeInsets.only(left: 12, top: 6, bottom: 6, right: 12),
-                //         decoration: BoxDecoration(
-                //           color: const Color.fromARGB(255, 226, 4, 55).withOpacity(0.1),
-                //           borderRadius: BorderRadius.circular(8),
-                //         ),
-                //         child: Column(
-                //           crossAxisAlignment: CrossAxisAlignment.start,
-                //           children: [
-                //             const Text(
-                //               '未扫描',
-                //               style: TextStyle(
-                //                 fontSize: 14,
-                //                 color: Color(0xFF666666),
-                //               ),
-                //             ),
-                //             const SizedBox(height: 4),
-                //             Text(
-                //               '${items.where((item) => item['scanStatus'].toString() != '1').length}个',
-                //               style: const TextStyle(
-                //                 fontSize: 20,
-                //                 fontWeight: FontWeight.bold,
-                //                 color: Color.fromARGB(255, 226, 4, 55),
-                //               ),
-                //             ),
-                //           ],
-                //         ),
-                //       ),
-                //     ),
-                //     const SizedBox(width: 16),
-                //     Expanded(
-                //       child: Container(
-                //         padding: const EdgeInsets.only(left: 12, top: 6, bottom: 6, right: 12),
-                //         decoration: BoxDecoration(
-                //           color: const Color(0xFF52C41A).withOpacity(0.1),
-                //           borderRadius: BorderRadius.circular(8),
-                //         ),
-                //         child: Column(
-                //           crossAxisAlignment: CrossAxisAlignment.start,
-                //           children: [
-                //             const Text(
-                //               '已扫描',
-                //               style: TextStyle(
-                //                 fontSize: 14,
-                //                 color: Color(0xFF666666),
-                //               ),
-                //             ),
-                //             const SizedBox(height: 4),
-                //             Text(
-                //               '${items.where((item) => item['scanStatus'].toString() == '1').length}个',
-                //               style: const TextStyle(
-                //                 fontSize: 20,
-                //                 fontWeight: FontWeight.bold,
-                //                 color: Color(0xFF52C41A),
-                //               ),
-                //             ),
-                //           ],
-                //         ),
-                //       ),
-                //     ),
-                //   ],
-                // ),
-              ],
-            ),
-          ),
-          Container(
-            alignment: Alignment.topLeft,
-            padding: const EdgeInsets.only(top: 5, bottom: 5, left: 8),
-            child: Flex(
-              direction: Axis.horizontal,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  '箱子列表',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Color.fromARGB(255, 51, 50, 50),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                TextButton.icon(
-                  onPressed: () {
-                    final TextEditingController textController = TextEditingController();
-                    showDialog<void>(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('手工匹配'),
-                        content: TextField(
-                          controller: textController,
-                          decoration: const InputDecoration(
-                            hintText: '请输入款箱编号',
-                            border: OutlineInputBorder(),
-                          ),
-                          onSubmitted: (value) {
-                            if (value.isNotEmpty) {
-                              _handleUHFTagScanned(value);
-                              Navigator.pop(context);
-                            }
-                          },
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('取消'),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              if (textController.text.isNotEmpty) {
-                                _handleUHFTagScanned(textController.text);
-                                Navigator.pop(context);
-                              }
-                            },
-                            child: const Text('确定'),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                  icon: const Icon(
-                    Icons.edit,
-                    size: 16,
-                    color: Color(0xFF666666),
-                  ),
-                  label: const Text(
-                    '手工匹配',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Color.fromARGB(255, 3, 145, 202),
-                    ),
-                  ),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    // backgroundColor: Colors.grey[100],
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // 箱子列表
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.only(bottom: 10),
-              itemCount: items.length,
-              itemBuilder: (context, index) {
-                final item = items[index];
-                return Slidable(
-                  key: ValueKey<String>(item['boxCode'].toString()),
-                  endActionPane: ActionPane(
-                    motion: const DrawerMotion(),
-                    children: [
-                      SlidableAction(
-                        onPressed: (context) {
-                          _onUnmatch(item);
-                        },
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                        icon: Icons.cancel,
-                        label: '取消匹配',
-                      ),
-                    ],
-                  ),
-                  child: Container(
-                    // margin: const EdgeInsets.only(bottom: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      // borderRadius: BorderRadius.circular(12),
-                      border: index + 1 == items.length ? null : const Border(
-                        bottom: BorderSide(color: const Color(0xFFEEEEEE), width: 1),
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(5),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF29A8FF).withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(
-                              Icons.inventory_2,
-                              color: Color(0xFF29A8FF),
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  item['boxCode'].toString(),
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                    color: Color(0xFF333333),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            width: 24,
-                            height: 24,
-                            child: item['scanStatus'].toString() == '1'
-                                ? const Icon(
-                                    Icons.check_circle,
-                                    color: Color(0xFF29A8FF),
-                                    size: 24,
-                                  )
-                                : null,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          // 底部按钮
-          Container(
-            padding: const EdgeInsets.only(left: 6, right: 6, bottom: 6, top: 6),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, -2),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: UHFScanButton(
-                    buttonWidth: double.infinity,
-                    buttonHeight: 48,
-                    onTagScanned: _handleUHFTagScanned,
-                    onError: _handleUHFError,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () async {
-                      // 用于实现交接功能
-                      if (items.where((item) => item['scanStatus'].toString() == '0').length > 0) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('存在未扫描的款箱，请先完成扫描'),
-                            duration: Duration(seconds: 2),
-                            backgroundColor: Color.fromARGB(255, 219, 3, 3),
-                          ),
-                        );
-                      } else {
-                        await _service.handoverCashBox(widget.point['pointCode'].toString(), items.map<String>((item) => item['boxCode'].toString()).toList());
-                        if (mounted) {
-                          Navigator.push<bool>(
-                              context,
-                              MaterialPageRoute<bool>(
-                                builder: (context) => BoxScanVerifyPage(
-                                  point: widget.point,
-                                  boxCodes: items.map<String>((item) => item['boxCode'].toString()).toList(),
-                              ),
-                            ),
-                          );
-                        }
-                      }
-                    },
-                    icon: const Icon(Icons.check_circle),
-                    label: const Text('确认交接'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF52C41A),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+        appBar: appCustomBar(context),
+        body: Column(
+          children: [
+            // 内容体的头部 -> 押运线路信息
+            customBodyHeader()
+          ],
+        ));
   }
 
   @override
@@ -536,4 +569,4 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
     }
     super.dispose();
   }
-} 
+}
