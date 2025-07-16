@@ -11,6 +11,7 @@ class MenuItem {
   final List<MenuItem>? children;
   final String? route;
   final Color? color;
+  final int? mode;
 
   MenuItem({
     required this.name,
@@ -20,6 +21,7 @@ class MenuItem {
     this.children,
     this.route,
     this.color,
+    this.mode,
   });
 }
 
@@ -49,6 +51,7 @@ class _HomePageState extends State<HomePage>
           iconPath: 'assets/icons/net_handover_icon.svg',
           route: '/outlets/box-scan',
           color: const Color.fromARGB(255, 115, 190, 240).withOpacity(0.1),
+          mode: 0,
         ),
         MenuItem(
           name: '金库交接',
@@ -56,6 +59,7 @@ class _HomePageState extends State<HomePage>
           iconPath: 'assets/icons/treasury_handover_icon.svg',
           route: '/outlets/box-handover',
           color: const Color.fromARGB(255, 134, 221, 245).withOpacity(0.1),
+          mode: 1,
         ),
       ],
     ),
@@ -143,7 +147,14 @@ class _HomePageState extends State<HomePage>
           highlightColor: Colors.transparent, // 点击时没有高亮效果
           onTap: () {
             if (menu.route != null) {
-              Navigator.pushNamed(context, menu.route!);
+              // 根据路由判断是哪个页面，并传递 mode 参数
+              if (menu.route == '/outlets/box-scan') {
+                Navigator.pushNamed(context, menu.route!, arguments: {'mode': menu.mode});
+              } else if (menu.route == '/outlets/box-handover') {
+                Navigator.pushNamed(context, menu.route!, arguments: {'mode': menu.mode});
+              } else {
+                Navigator.pushNamed(context, menu.route!);
+              }
             }
           },
           borderRadius: BorderRadius.circular(8),

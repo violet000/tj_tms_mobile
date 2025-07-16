@@ -42,6 +42,18 @@ class Service18082 {
       },
     );
   }
+  ///查询押运员编号查询线路及线路涉及机构信息
+  Future <Map<String, dynamic>> getLineByEscortNo(String escortNo,{int? mode}) async {
+    final Map<String, dynamic> body = <String, dynamic>{
+      'escortNo': escortNo,
+    };
+    if (mode != null) {
+      body['mode'] = mode;
+    }
+    return _dioService.post('/user-center/v2/user/qryLineByEscortNo',body: body);
+  }
+
+
 
   /// 查询当前用户下的押运线路数据
   Future <Map<String, dynamic>> getEscortRouteToday(String username) async {
@@ -54,13 +66,10 @@ class Service18082 {
   }
 
   /// 更新当前扫描款箱的状态
-  Future<Map<String, dynamic>> updateCashBoxStatus(String boxCode, int scanStatus) async {
+  Future<dynamic> updateCashBoxStatus(List<dynamic> cashBoxList) async {
     return _dioService.post(
-      '/storage/cash-box/scan-status',
-      body: <String, dynamic>{
-        'boxCode': boxCode,
-        'scanStatus': scanStatus,
-      },
+      '/manage-center/ps/outletHandover/phone',
+      body: cashBoxList,
     );
   }
 

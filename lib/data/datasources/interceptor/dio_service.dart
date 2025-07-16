@@ -89,7 +89,7 @@ class DioService {
     }
   }
 
-  Future<Map<String, dynamic>> post(String endpoint, {Map<String, dynamic>? body}) async {
+  Future<Map<String, dynamic>> post(String endpoint, {dynamic body}) async {
     try {
       final response = await _dio.post<Map<String, dynamic>>(
         endpoint,

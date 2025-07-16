@@ -87,7 +87,7 @@ class _LoginPageState extends State<LoginPage> {
 
       final Map<String, dynamic> loginResult1 = await _loginService.accountLogin(
         username1!,
-        (password1 == null || password1.isEmpty) ? null : md5.convert(utf8.encode(password1)).toString(),
+        (password1 == null || password1.isEmpty) ? null : md5.convert(utf8.encode(password1 + 'messi')).toString(),
         faceImage1,
       );
       // final Map<String, dynamic> loginResult2 = await _loginService.accountLogin(

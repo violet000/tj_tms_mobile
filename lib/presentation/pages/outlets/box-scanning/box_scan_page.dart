@@ -16,10 +16,12 @@ class BoxScanPage extends StatefulWidget {
 
 class _BoxScanPageState extends State<BoxScanPage> {
   List<Map<String, dynamic>> lines = [];
+  List<String> lineNoArray = [];
   Map<String, dynamic>? selectedRoute;
   late final Service18082 _service;
   late final VerifyTokenProvider _verifyTokenProvider;
-
+  Future<List<Map<String, dynamic>>>? _linesFuture;
+  int? _mode;
   // 自定义appBar
   PreferredSizeWidget appCustomBar(BuildContext context) {
     return AppBar(
@@ -42,7 +44,7 @@ class _BoxScanPageState extends State<BoxScanPage> {
           Navigator.pushNamedAndRemoveUntil(
             context,
             '/home',
-            (route) => false,
+                (route) => false,
           );
         },
       ),
@@ -55,170 +57,271 @@ class _BoxScanPageState extends State<BoxScanPage> {
     _service = Service18082();
     _verifyTokenProvider =
         Provider.of<VerifyTokenProvider>(context, listen: false);
-    _getEscortRouteToday();
+    // 获取路由参数
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is Map<String, dynamic> && args.containsKey('mode')) {
+        _mode = args['mode'] as int?;
+      }
+      _getEscortRouteToday();
+    });
+
   }
 
   Future<void> _getEscortRouteToday() async {
-    final String? username =
-        _verifyTokenProvider.getUserData()?['username'] as String?;
-    if (username == null) return;
-    final dynamic escortRouteToday =
-        await _service.getEscortRouteToday(username);
-    setState(() {
-      lines = (escortRouteToday['retList'] as List<dynamic>)
-          .cast<Map<String, dynamic>>();
-      AppLogger.info('$lines');
-      if (lines.isNotEmpty) {
-        selectedRoute = lines[0];
+    try {
+      final String? username = _verifyTokenProvider.getUserData()?['username'] as String?;
+      if (username == null) {
+        AppLogger.warning('用户名为空，无法获取线路数据');
+        return;
       }
-    });
+      // 调用API
+      final dynamic escortRouteToday = await _service.getLineByEscortNo(username,mode: _mode);
+
+      // ---- 这是修改的核心部分 ----
+      // 1. 安全检查：首先确认返回的数据是一个Map类型
+      if (escortRouteToday is! Map<String, dynamic>) {
+        AppLogger.error('API返回的顶层数据不是一个Map: $escortRouteToday');
+        // 可以在这里显示一个错误提示给用户
+        return;
+      }
+      // 2. 从Map中安全地获取 'retList'
+      // as List? 允许这个值可能不存在（返回null）
+      final List<dynamic>? rawList = escortRouteToday['retList'] as List<dynamic>?;
+      // 3. 检查列表是否存在且不为null
+      if (rawList == null) {
+        AppLogger.warning('API返回的数据中没有 "retList" 字段');
+        setState(() {
+          lines = []; // 清空列表，以防之前有数据
+          selectedRoute = null;
+        });
+        return;
+      }
+      // 存储所有 lineNo 的列表（去重处理，避免重复）
+      for (final item in rawList) {
+        // 确保 item 是 Map 类型，且包含 lineNo 字段
+        if (item is Map<String, dynamic> && item.containsKey('lineNo')) {
+          String lineNo = item['lineNo'].toString();
+          // 去重：只添加不在列表中的 lineNo
+          if (!lineNoArray.contains(lineNo)) {
+            lineNoArray.add(lineNo);
+          }
+        }
+      }
+
+      // 4. 将 List<dynamic> 安全地转换为 List<Map<String, dynamic>>
+      // 使用 List.from 和 .map 结合是比 .cast() 更现代和灵活的做法
+      final List<Map<String, dynamic>> parsedLines = List<Map<String, dynamic>>.from(
+          rawList.whereType<Map<String, dynamic>>() // 只保留列表中确定是Map的元素
+      );
+      // 5. 更新状态
+      setState(() {
+        lines = parsedLines; // 将解析好的、类型安全的数据赋值给状态
+        print("line:$lines");
+        if (lines.isNotEmpty) {
+          selectedRoute = lines[0]; // 默认选中第一条
+        } else {
+          selectedRoute = null; // 如果没有数据则清空选中项
+        }
+      });
+    } catch (e, s) {
+      // 统一处理可能发生的任何错误
+      AppLogger.error('获取或解析线路数据时发生错误',  e, s);
+      // 可以在这里弹出一个对话框告诉用户加载失败
+      if (mounted) {
+        setState(() {
+          lines = [];
+          selectedRoute = null;
+        });
+      }
+    }
   }
 
   // 获取分组后的网点列表
   Map<String, List<Map<String, dynamic>>> _getGroupedPoints() {
     if (selectedRoute == null) return {};
 
-    final List<Map<String, dynamic>> points =
-        (selectedRoute!['points'] as List).cast<Map<String, dynamic>>();
-    final Map<String, List<Map<String, dynamic>>> groupedPoints = {
-      '出库网点': [],
-      '入库网点': [],
-    };
+    // 安全获取 planDTOS 列表
+    final List<dynamic>? planDTOS = selectedRoute!['planDTOS'] as List<dynamic>?;
+    if (planDTOS == null || planDTOS.isEmpty) {
+      AppLogger.warning('selectedRoute 中的 planDTOS 为空');
+      return {'出库网点': [], '入库网点': []};
+    }
 
-    for (var point in points) {
-      final int operationType = point['operationType'] as int;
-      if (operationType == 0) {
-        groupedPoints['出库网点']!.add(point);
-      } else if (operationType == 1) {
-        groupedPoints['入库网点']!.add(point);
+    // 用 Map 存储网点，key 为 orgNo（唯一标识），避免重复
+    final Map<String, Map<String, dynamic>> deliverPointsMap = {};
+    final Map<String, Map<String, dynamic>> receivePointsMap = {};
+
+    for (var plan in planDTOS) {
+      if (plan is! Map<String, dynamic>) continue;
+
+      // 处理出库网点（deliverOrgNo）
+      final List<dynamic>? deliverOrgNos = plan['deliverOrgNo'] as List<dynamic>?;
+      if (deliverOrgNos != null) {
+        for (var org in deliverOrgNos) {
+          if (org is! Map<String, dynamic>) continue;
+          // 获取唯一标识 orgNo，确保不为空
+          final String? orgNo = org['orgNo']?.toString();
+          if (orgNo == null || orgNo.isEmpty) continue;
+
+          // 优先保留状态为 false 的数据（假设 false 是待处理的有效数据）
+          // 如果已存在该 orgNo，仅在新数据状态为 false 时更新
+          if (!deliverPointsMap.containsKey(orgNo) || org['status'] == false) {
+            deliverPointsMap[orgNo] = <String,dynamic>{
+              ...org,
+              'operationType': 0, // 标记为出库
+              // 补充网点显示所需的字段（如果原数据没有，避免UI报错）
+              'pointName': org['orgName'] ?? '未知网点', // 适配UI中使用的pointName
+              'address': org['address'] ?? '未知地址',   // 适配UI中使用的address
+              'implBoxDetail': org['implBoxDetail'] ?? <Map<String, dynamic>>[], // 新增款箱数据
+            };
+          }
+        }
+      }
+
+      // 处理入库网点（receiveOrgNo）
+      final List<dynamic>? receiveOrgNos = plan['receiveOrgNo'] as List<dynamic>?;
+      if (receiveOrgNos != null) {
+        for (var org in receiveOrgNos) {
+          if (org is! Map<String, dynamic>) continue;
+          // 获取唯一标识 orgNo，确保不为空
+          final String? orgNo = org['orgNo']?.toString();
+          if (orgNo == null || orgNo.isEmpty) continue;
+
+          // 同样按 orgNo 去重，优先保留有效状态
+          if (!receivePointsMap.containsKey(orgNo) || org['status'] == false) {
+            receivePointsMap[orgNo] = <String,dynamic>{
+              ...org,
+              'operationType': 1, // 标记为入库
+              // 补充网点显示所需的字段
+              'pointName': org['orgName'] ?? '未知网点',
+              'address': org['address'] ?? '未知地址',
+              'implBoxDetail': org['implBoxDetail'] ?? <Map<String, dynamic>>[], // 新增款箱数据
+            };
+          }
+        }
       }
     }
 
-    return groupedPoints;
-  }
-
-  // 构建标题(出入库网点)
-  Widget _buildGroupHeader(String title, int count) {
-    return Container(
-      // padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: const Color(0xFFF5F5F5),
-      child: Flex(
-        direction: Axis.horizontal,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding:
-                const EdgeInsets.only(top: 4, bottom: 4, left: 8, right: 8),
-            decoration: BoxDecoration(
-                color: const Color(0xffB8C8E0),
-                borderRadius: BorderRadius.circular(8)),
-            child: Row(
-              children: [
-                Text(
-                  '$title:',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Color.fromARGB(255, 255, 255, 255),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '$count个',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: Color.fromARGB(255, 255, 255, 255),
-                  ),
-                )
-              ],
-            ),
-          )
-        ],
-      ),
-    );
+    // 将去重后的 Map 转为 List
+    return {
+      '出库网点': deliverPointsMap.values.toList(),
+      '入库网点': receivePointsMap.values.toList(),
+    };
   }
 
   // 构建网点项
   Widget _buildPointItem(Map<String, dynamic> point) {
     return Container(
-        padding: const EdgeInsets.all(8),
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            Navigator.push<void>(
-              context,
-              MaterialPageRoute<void>(
-                builder: (context) => BoxScanDetailPage(point: point),
+      padding: const EdgeInsets.all(8),
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          // 提取款箱数据
+          List<Map<String, dynamic>> boxItems = [];
+          final List<dynamic>? implBoxDetail = point['implBoxDetail'] as List<dynamic>?;
+          if (implBoxDetail != null) {
+            for (var impl in implBoxDetail) {
+              if (impl is Map<String, dynamic>) {
+                final List<dynamic>? boxDetail = impl['boxDetail'] as List<dynamic>?;
+                if (boxDetail != null) {
+                  for (var box in boxDetail) {
+                    if (box is Map<String, dynamic>) {
+                      boxItems.add(<String, dynamic>{
+                        'boxCode': box['boxNo'],
+                        'scanStatus': int.parse(box['boxHandStatus'].toString()),
+                      });
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          Navigator.push<void>(
+            context,
+            MaterialPageRoute<void>(
+              builder: (context) => BoxScanDetailPage(
+                point: point,
+                boxItems: boxItems,
+                lines: lines, // 传递 lines 数据
               ),
-            );
-          },
-          child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8), color: Colors.white),
-              child:
-                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                const SizedBox(width: 12),
-                Container(
-                  width: 25,
-                  height: 25,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF29A8FF).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
+            ),
+          );
+        },
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            color: Colors.white,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(width: 12),
+              Container(
+                width: 15,
+                height: 15,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF29A8FF).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: SvgPicture.asset(
+                  'assets/icons/location_net_point.svg',
+                  fit: BoxFit.contain,
+                ),
+              ),
+              const SizedBox(width: 15),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      point['pointName'].toString(),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Color.fromARGB(255, 69, 68, 68),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      point['address'].toString(),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color.fromARGB(255, 121, 120, 120),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: point['status'] == 0
+                        ? const Color.fromARGB(255, 244, 19, 19)
+                        : const Color.fromARGB(255, 5, 231, 5),
+                    width: 1,
                   ),
-                  child: SvgPicture.asset(
-                    'assets/icons/location_net_point.svg',
-                    fit: BoxFit.contain,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  point['status'] == false ? '未交接' : '已交接',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: point['status'] == false
+                        ? const Color.fromARGB(255, 244, 19, 19)
+                        : const Color.fromARGB(255, 5, 231, 5),
                   ),
                 ),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        point['pointName'].toString(),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Color.fromARGB(255, 69, 68, 68),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        point['address'].toString(),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color.fromARGB(255, 121, 120, 120),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: point['status'] == 0 ? const Color.fromARGB(255, 244, 19, 19) : const Color.fromARGB(255, 5, 231, 5),
-                      width: 1
-                    ),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    point['status'] == 0
-                        ? '未交接'
-                        : (point['status'] == 1 ? '已交接' : '交接中'),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: point['status'] == 0 ? const Color.fromARGB(255, 244, 19, 19) : const Color.fromARGB(255, 5, 231, 5),
-                    ),
-                  ),
-                )
-              ])),
-        ));
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   // 自定义header
@@ -251,7 +354,7 @@ class _BoxScanPageState extends State<BoxScanPage> {
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(8),
+                    // borderRadius: BorderRadius.circular(8),
                   ),
                   child: DropdownButton<Map<String, dynamic>>(
                     value: selectedRoute,
@@ -259,15 +362,47 @@ class _BoxScanPageState extends State<BoxScanPage> {
                     dropdownColor: Colors.white,
                     underline: const SizedBox(),
                     icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
-                    items: lines.map((route) {
+                    items: lines.map((Map<String, dynamic>route) {
                       return DropdownMenuItem<Map<String, dynamic>>(
                         value: route,
-                        child: Text(
-                          route['routeName'].toString(),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  route['lineName'].toString(),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.white,
+                                  ),
+                                  textAlign: TextAlign.left,
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  route['carNo'].toString(),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.white,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  route['escortName'].toString(),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.white,
+                                  ),
+                                  textAlign: TextAlign.right,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       );
@@ -299,10 +434,52 @@ class _BoxScanPageState extends State<BoxScanPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildGroupHeader(entry.key, entry.value.length),
-              ...entry.value.map((point) => _buildPointItem(point)),
+              ...entry.value.map<Widget>((point) => _buildPointItem(point)),
             ],
           );
         }).toList(),
+      ),
+    );
+  }
+
+  // 构建标题(出入库网点)
+  Widget _buildGroupHeader(String title, int count) {
+    return Container(
+      // padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: const Color(0xFFF5F5F5),
+      child: Flex(
+        direction: Axis.horizontal,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding:
+            const EdgeInsets.only(top: 4, bottom: 4, left: 8, right: 8),
+            decoration: BoxDecoration(
+                color: const Color(0xffB8C8E0),
+                borderRadius: BorderRadius.circular(8)),
+            child: Row(
+              children: [
+                Text(
+                  '$title:',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Color.fromARGB(255, 255, 255, 255),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '$count个',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Color.fromARGB(255, 255, 255, 255),
+                  ),
+                )
+              ],
+            ),
+          )
+        ],
       ),
     );
   }
