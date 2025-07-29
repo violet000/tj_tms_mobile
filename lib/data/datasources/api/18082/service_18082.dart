@@ -99,4 +99,14 @@ class Service18082 {
   Future<Map<String, dynamic>> getUserClrCenterList(Map<String, dynamic> params) async {
     return _dioService.get('tauro/v2/outsourcing/qryClrCenterNoByPerson', queryParameters: params);
   }
+
+  /// 查询押运员基本信息
+
+  Future<Map<String, dynamic>> getEscortByNo(String no) async {
+    print('getEscortByNo 接收到的参数 cashBoxList 的值: $no');
+    Map<String, dynamic> requestBody = <String, dynamic>{'no': no};
+    return _dioService.post('/manage-center/v2/selectEscortByNo',
+      body: requestBody,
+    );
+  }
 }
