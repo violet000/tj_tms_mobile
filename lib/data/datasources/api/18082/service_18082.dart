@@ -1,21 +1,24 @@
 import 'package:tj_tms_mobile/data/datasources/interceptor/dio_service.dart';
-import 'package:tj_tms_mobile/core/utils/password_encrypt.dart';
 import 'package:tj_tms_mobile/core/config/env.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tj_tms_mobile/core/utils/password_encrypt.dart';
 
-/// 登录(认证)API接口服务 - 18082服务接口部分
+/// 18082服务接口部分
 class Service18082 {
+  static const String vpsKey = 'network_vps_ip';
 
-  Service18082() : _dioService = DioService(baseUrl: '${Env.config.apiBaseUrl}:18082');
-  
   final DioService _dioService;
 
   Service18082._(this._dioService);
 
   static Future<Service18082> create() async {
-    final config = await Env.config;
-    return Service18082._(DioService(baseUrl: '${config.apiBaseUrl}:18082'));
+    final prefs = await SharedPreferences.getInstance();
+    final vpsIp = prefs.getString(vpsKey) ?? '${Env.config.apiBaseUrl}:18082';
+    final baseUrl = vpsIp.startsWith('http') ? vpsIp : 'http://$vpsIp';
+    return Service18082._(
+      DioServiceManager().getService(baseUrl),
+    );
   }
-
   /// 用户登陆
   /// @param username 用户名
   /// @param password 密码
@@ -30,7 +33,7 @@ class Service18082 {
       },
     );
   }
-  
+
   /// 老的登录方式
   Future<Map<String, dynamic>> accountLogin(String username, String? password, String? image) async {
     return _dioService.post(
@@ -52,8 +55,6 @@ class Service18082 {
     }
     return _dioService.post('/user-center/v2/user/qryLineByEscortNo',body: body);
   }
-
-
 
   /// 查询当前用户下的押运线路数据
   Future <Map<String, dynamic>> getEscortRouteToday(String username) async {
@@ -109,4 +110,5 @@ class Service18082 {
       body: requestBody,
     );
   }
+
 }

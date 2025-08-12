@@ -3,63 +3,10 @@ import 'dart:ui';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:tj_tms_mobile/models/menu_model.dart';
+import 'package:tj_tms_mobile/models/user_model.dart';
 import 'package:tj_tms_mobile/presentation/pages/plugins/plugin_test_page.dart';
-
-import '../../../data/datasources/api/18082/service_18082.dart'; // 确保导入插件测试页
-
-// 菜单项模型
-class MenuItem {
-  final String name;
-  final String? imagePath;
-  final String? iconPath;
-  final IconData? icon;
-  final List<MenuItem>? children;
-  final String? route;
-  final Color? color;
-  final int? mode;
-
-  MenuItem({
-    required this.name,
-    this.imagePath,
-    this.iconPath,
-    this.icon,
-    this.children,
-    this.route,
-    this.color,
-    this.mode,
-  });
-}
-
-class User {
-  final String userNo;       // 用户编号
-  final String userName;     // 用户姓名
-  final String numId;        // 身份证号
-  final String cocn;         // 人脸base64
-  final String avatar;       // 头像
-  final String phone;        // 手机号
-  final String role;         // 角色
-
-  User({
-    required this.userNo,
-    required this.userName,
-    required this.numId,
-    required this.cocn,
-    required this.avatar,
-    required this.phone,
-    required this.role,
-  });
-  factory User.fromJson(Map<String, dynamic> json) {
-    return User(
-      userNo: json['userNo'] as String,
-      userName: json['userName'] as String,
-      numId: json['numId'] as String,
-      cocn: json['cocn'] as String,
-      avatar: json['avatar'] as String,
-      phone: json['phone'] as String,
-      role: json['role'] as String,
-    );
-  }
-}
+import 'package:tj_tms_mobile/data/datasources/api/18082/service_18082.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -98,13 +45,13 @@ class _HomePageState extends State<HomePage>
     ),
   ];
 
-  final List<MenuItem> menus = [
-    MenuItem(
+  final List<MenuModel> menus = [
+    MenuModel(
       name: '交接',
       icon: Icons.work_rounded,
       color: const Color.fromARGB(255, 255, 255, 255),
       children: [
-        MenuItem(
+        MenuModel(
           name: '网点交接',
           imagePath: 'assets/icons/handover_circle.svg',
           iconPath: 'assets/icons/net_handover_icon.svg',
@@ -112,7 +59,7 @@ class _HomePageState extends State<HomePage>
           color: const Color.fromARGB(255, 115, 190, 240).withOpacity(0.1),
           mode: 0,
         ),
-        MenuItem(
+        MenuModel(
           name: '金库交接',
           imagePath: 'assets/icons/treasury_reat.svg',
           iconPath: 'assets/icons/treasury_handover_icon.svg',
@@ -122,7 +69,7 @@ class _HomePageState extends State<HomePage>
         ),
       ],
     ),
-    MenuItem(
+    MenuModel(
       name: '我的',
       icon: Icons.person_rounded,
       route: '/user-list',
@@ -283,37 +230,37 @@ class _HomePageState extends State<HomePage>
   }
 
   // 构建子菜单页面
-  Widget _buildSubMenuPage(MenuItem menu) {
+  Widget _buildSubMenuPage(MenuModel menu) {
     return Scaffold(
         body: Container(
             decoration:
-            const BoxDecoration(color: Color.fromARGB(255, 245, 246, 250)),
+                const BoxDecoration(color: Color.fromARGB(255, 245, 246, 250)),
             child: Column(children: [
               _buildHeader(menu),
               Expanded(
-                // 子菜单
+                  // 子菜单
                   child: FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: GridView.builder(
-                      padding: const EdgeInsets.all(8.0),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 1.0,
-                        crossAxisSpacing: 8.0,
-                        mainAxisSpacing: 8.0,
-                      ),
-                      itemCount: menu.children?.length ?? 0,
-                      itemBuilder: (context, index) {
-                        final child = menu.children![index];
-                        return _buildMenuCard(child);
-                      },
-                    ),
-                  ))
+                opacity: _fadeAnimation,
+                child: GridView.builder(
+                  padding: const EdgeInsets.all(8.0),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 1.0,
+                    crossAxisSpacing: 8.0,
+                    mainAxisSpacing: 8.0,
+                  ),
+                  itemCount: menu.children?.length ?? 0,
+                  itemBuilder: (context, index) {
+                    final child = menu.children![index];
+                    return _buildMenuCard(child);
+                  },
+                ),
+              ))
             ])));
   }
 
   // 构建菜单卡片
-  Widget _buildMenuCard(MenuItem menu) {
+  Widget _buildMenuCard(MenuModel menu) {
     return Hero(
       tag: menu.name,
       child: Card(
@@ -328,9 +275,11 @@ class _HomePageState extends State<HomePage>
             if (menu.route != null) {
               // 根据路由判断是哪个页面，并传递 mode 参数
               if (menu.route == '/outlets/box-scan') {
-                Navigator.pushNamed(context, menu.route!, arguments: {'mode': menu.mode});
+                Navigator.pushNamed(context, menu.route!,
+                    arguments: {'mode': menu.mode});
               } else if (menu.route == '/outlets/box-handover') {
-                Navigator.pushNamed(context, menu.route!, arguments: {'mode': menu.mode});
+                Navigator.pushNamed(context, menu.route!,
+                    arguments: {'mode': menu.mode});
               } else {
                 Navigator.pushNamed(context, menu.route!);
               }
@@ -344,7 +293,7 @@ class _HomePageState extends State<HomePage>
               boxShadow: [
                 BoxShadow(
                   color:
-                  const Color.fromARGB(255, 255, 255, 255).withOpacity(0.1),
+                      const Color.fromARGB(255, 255, 255, 255).withOpacity(0.1),
                   blurRadius: 8,
                   offset: const Offset(0, 1),
                 ),
@@ -359,7 +308,8 @@ class _HomePageState extends State<HomePage>
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0), // 模糊效果
+                      filter:
+                          ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0), // 模糊效果
                       child: SvgPicture.asset(
                         menu.imagePath!,
                         width: 120,
@@ -415,7 +365,7 @@ class _HomePageState extends State<HomePage>
   }
 
   // 构建Header
-  Widget _buildHeader(MenuItem menu) {
+  Widget _buildHeader(MenuModel menu) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       decoration: BoxDecoration(
@@ -480,10 +430,10 @@ class _HomePageState extends State<HomePage>
     return Scaffold(
       body: _pages.isEmpty
           ? const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF29A8FF)),
-        ),
-      )
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF29A8FF)),
+              ),
+            )
           : _pages[_selectedIndex],
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
@@ -513,9 +463,9 @@ class _HomePageState extends State<HomePage>
             },
             items: menus
                 .map((menu) => BottomNavigationBarItem(
-              icon: Icon(menu.icon),
-              label: menu.name,
-            ))
+                      icon: Icon(menu.icon),
+                      label: menu.name,
+                    ))
                 .toList(),
           ),
         ),
@@ -537,19 +487,27 @@ class UserDetailPage extends StatefulWidget {
 class _UserDetailPageState extends State<UserDetailPage> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   late final Service18082 _service;
   User? _user;
   bool _isLoading = true;
   @override
   void initState() {
     super.initState();
-    _service = Service18082(); // 初始化 _service
+    _initializeService();
+  }
+
+  Future<void> _initializeService() async {
+    _service = await Service18082.create();
     _fetchUserData(widget.userNo);
   }
+
+  // 解码base64
   Uint8List base64Decode(String source) {
     return base64.decode(source);
   }
+
   // 模拟从后端获取用户数据
   Future<void> _fetchUserData(String escortNo) async {
     try {
@@ -564,7 +522,8 @@ class _UserDetailPageState extends State<UserDetailPage> {
       // 保持 isLoading 为 true
       if (!mounted) return;
       setState(() => _isLoading = true);
-      final Map<String, dynamic> response = await _service.getEscortByNo(escortNo);
+      final Map<String, dynamic> response =
+          await _service.getEscortByNo(escortNo);
       print("response $response");
       if (!mounted) return;
 
@@ -572,13 +531,13 @@ class _UserDetailPageState extends State<UserDetailPage> {
         setState(() {
           // 在 setState 中同时更新 _user 和 _isLoading
           final userData = <String, dynamic>{
-            'userNo': response['userNo']??'',
-            'userName': response['userName']??'',
-            'numId': response['numId']??'',
-            'cocn': response['cocn']??'',
-            'avatar': response['avatar']??'',
-            'phone': response['phone']??'',
-            'role': response['role']??'',
+            'userNo': response['userNo'] ?? '',
+            'userName': response['userName'] ?? '',
+            'numId': response['numId'] ?? '',
+            'cocn': response['cocn'] ?? '',
+            'avatar': response['avatar'] ?? '',
+            'phone': response['phone'] ?? '',
+            'role': response['role'] ?? '',
           };
           _user = User.fromJson(userData);
           _isLoading = false;
@@ -596,6 +555,7 @@ class _UserDetailPageState extends State<UserDetailPage> {
       );
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -608,73 +568,73 @@ class _UserDetailPageState extends State<UserDetailPage> {
           ),
         ],
       ),
-        // 3. 修改这里的判断逻辑
-        body: (_isLoading || _user == null)
-        ? const Center(child: CircularProgressIndicator())
-        : SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          const SizedBox(height: 20),
-          // 4. 使用 _user! (空安全断言)，因为我们已经检查过它不为 null
-          _user!.cocn.isNotEmpty
-              ? CircleAvatar(
-            radius: 60,
-            backgroundImage: MemoryImage(
-              base64Decode(_user!.cocn),
-            ),
-          )
-              : CircleAvatar(
-            radius: 60,
-            backgroundColor: Colors.grey[200],
-            child: SvgPicture.asset(
-              _user!.avatar,
-              width: 100,
-              height: 100,
-            ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            _user!.userName,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            _user!.role,
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey[600],
-            ),
-          ),
-          const SizedBox(height: 30),
-          _buildInfoItem('用户编号', _user!.userNo),
-          _buildInfoItem('身份证号', _user!.numId),
-          _buildInfoItem('手机号码', _user!.phone),
-          const SizedBox(height: 40),
-          ElevatedButton(
-            onPressed: _showChangePasswordDialog,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF29A8FF),
-              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
+      // 3. 修改这里的判断逻辑
+      body: (_isLoading || _user == null)
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 20),
+                  // 4. 使用 _user! (空安全断言)，因为我们已经检查过它不为 null
+                  _user!.cocn.isNotEmpty
+                      ? CircleAvatar(
+                          radius: 60,
+                          backgroundImage: MemoryImage(
+                            base64Decode(_user!.cocn),
+                          ),
+                        )
+                      : CircleAvatar(
+                          radius: 60,
+                          backgroundColor: Colors.grey[200],
+                          child: SvgPicture.asset(
+                            _user!.avatar,
+                            width: 100,
+                            height: 100,
+                          ),
+                        ),
+                  const SizedBox(height: 20),
+                  Text(
+                    _user!.userName,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    _user!.role,
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  _buildInfoItem('用户编号', _user!.userNo),
+                  _buildInfoItem('身份证号', _user!.numId),
+                  _buildInfoItem('手机号码', _user!.phone),
+                  const SizedBox(height: 40),
+                  ElevatedButton(
+                    onPressed: _showChangePasswordDialog,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF29A8FF),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 30, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                    child: const Text(
+                      '修改密码',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  ),
+                ],
               ),
             ),
-            child: const Text(
-              '修改密码',
-              style: TextStyle(fontSize: 16),
-            ),
-          ),
-        ],
-      ),
-    ),
     );
   }
-
 
   Widget _buildInfoItem(String title, String value) {
     return Container(
