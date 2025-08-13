@@ -57,9 +57,18 @@ class MyApp extends StatelessWidget {
           
           if (kIsWeb) {
             result = MediaQuery(
-              data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
-              child: child!,
-            );
+                data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
+                child: Theme(
+                  data: Theme.of(context).copyWith(
+                    // Web端额外禁用点击反馈
+                    splashColor: Colors.transparent,
+                    highlightColor: Colors.transparent,
+                    focusColor: Colors.transparent,
+                    hoverColor: Colors.transparent,
+                  ),
+                  child: child!,
+                ),
+              );
           }
           
           // 初始化 EasyLoading

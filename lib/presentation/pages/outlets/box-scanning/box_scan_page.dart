@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:tj_tms_mobile/presentation/state/providers/verify_token_provider.dart';
 import 'package:tj_tms_mobile/data/datasources/api/18082/service_18082.dart';
 import 'package:provider/provider.dart';
@@ -6,6 +7,7 @@ import 'package:tj_tms_mobile/presentation/widgets/common/logger.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/blue_polygon_background.dart';
 import 'package:tj_tms_mobile/presentation/pages/outlets/box-scanning/box_scan_detail_page.dart';
+import 'package:tj_tms_mobile/presentation/widgets/common/page_scaffold.dart';
 
 class BoxScanPage extends StatefulWidget {
   const BoxScanPage({super.key});
@@ -22,34 +24,6 @@ class _BoxScanPageState extends State<BoxScanPage> {
   late final VerifyTokenProvider _verifyTokenProvider;
   Future<List<Map<String, dynamic>>>? _linesFuture;
   int? _mode;
-  // 自定义appBar
-  PreferredSizeWidget appCustomBar(BuildContext context) {
-    return AppBar(
-      title: const Text(
-        '网点交接',
-        textAlign: TextAlign.left,
-        style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF333333)),
-      ),
-      backgroundColor: const Color(0xFFF5F5F5),
-      foregroundColor: Colors.white,
-      automaticallyImplyLeading: false,
-      leading: IconButton(
-        splashColor: Colors.transparent,
-        highlightColor: Colors.transparent,
-        icon: const Icon(Icons.arrow_back, color: Colors.black),
-        onPressed: () {
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            '/home',
-            (route) => false,
-          );
-        },
-      ),
-    );
-  }
 
   @override
   void initState() {
@@ -67,13 +41,15 @@ class _BoxScanPageState extends State<BoxScanPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _verifyTokenProvider = Provider.of<VerifyTokenProvider>(context, listen: false);
+    _verifyTokenProvider =
+        Provider.of<VerifyTokenProvider>(context, listen: false);
   }
 
   Future<void> _initializeService() async {
     _service = await Service18082.create();
   }
 
+  // 获取线路数据
   Future<void> _getEscortRouteToday() async {
     try {
       if (_service == null) {
@@ -85,6 +61,10 @@ class _BoxScanPageState extends State<BoxScanPage> {
         AppLogger.warning('用户名为空，无法获取线路数据');
         return;
       }
+      EasyLoading.show(
+        status: '加载中...',
+        maskType: EasyLoadingMaskType.black,
+      );
       final dynamic escortRouteToday =
           await _service!.getLineByEscortNo(username, mode: _mode);
 
@@ -128,6 +108,8 @@ class _BoxScanPageState extends State<BoxScanPage> {
           selectedRoute = null;
         });
       }
+    } finally {
+      EasyLoading.dismiss();
     }
   }
 
@@ -352,10 +334,10 @@ class _BoxScanPageState extends State<BoxScanPage> {
                   height: 40,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 4),
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 4), // 左右间距4
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.05),
                     // borderRadius: BorderRadius.circular(8),
@@ -367,36 +349,42 @@ class _BoxScanPageState extends State<BoxScanPage> {
                     underline: const SizedBox(),
                     icon:
                         const Icon(Icons.arrow_drop_down, color: Colors.white),
-                    items: lines.map((Map<String, dynamic> route) {
-                      return DropdownMenuItem<Map<String, dynamic>>(
-                        value: route,
-                        child: Container(
+                    selectedItemBuilder: (BuildContext context) {
+                      return lines.map<Widget>((Map<String, dynamic> route) {
+                        return Container(
                           padding: const EdgeInsets.symmetric(vertical: 8.0),
                           child: Row(
                             children: [
                               Expanded(
+                                flex: 1,
                                 child: Text(
                                   route['lineName'].toString(),
                                   style: const TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
-                                    color: Color.fromARGB(255, 53, 52, 52),
+                                    color: Colors.white,
                                   ),
                                   textAlign: TextAlign.left,
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
                                 ),
                               ),
                               Expanded(
+                                flex: 1,
                                 child: Text(
                                   route['carNo'].toString(),
                                   style: const TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
-                                    color: Color.fromARGB(255, 53, 52, 52),
+                                    color: Colors.white,
                                   ),
                                   textAlign: TextAlign.center,
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
                                 ),
                               ),
                               Expanded(
+                                flex: 2,
                                 child: Text(
                                   route['escortName'].toString(),
                                   style: const TextStyle(
@@ -405,6 +393,62 @@ class _BoxScanPageState extends State<BoxScanPage> {
                                     color: Colors.white,
                                   ),
                                   textAlign: TextAlign.right,
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList();
+                    },
+                    items: lines.map((Map<String, dynamic> route) {
+                      return DropdownMenuItem<Map<String, dynamic>>(
+                        value: route,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                flex: 1,
+                                child: Text(
+                                  route['lineName'].toString(),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.black87,
+                                  ),
+                                  textAlign: TextAlign.left,
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ),
+                              Expanded(
+                                flex: 1,
+                                child: Text(
+                                  route['carNo'].toString(),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.black87,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ),
+                              Expanded(
+                                flex: 2,
+                                child: Text(
+                                  route['escortName'].toString(),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.black87,
+                                  ),
+                                  textAlign: TextAlign.right,
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
                                 ),
                               ),
                             ],
@@ -491,32 +535,22 @@ class _BoxScanPageState extends State<BoxScanPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (lines.isEmpty) {
-      return Scaffold(
-        appBar: appCustomBar(context),
-        body: const Center(
-          child: Text(
-            '暂无数据',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey,
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Scaffold(
-      appBar: appCustomBar(context),
-      body: Container(
-        color: const Color(0xFFF5F5F5),
-        child: Column(
-          children: [
-            headerRouteLine(lines),
-            // 客户列表信息
-            customerListWidget(),
-          ],
-        ),
+    return PageScaffold(
+      title: '网点交接',
+      showBackButton: true,
+      onBackPressed: () {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/home',
+          (route) => false,
+        );
+      },
+      child: Column(
+        children: [
+          headerRouteLine(lines),
+          // 客户列表信息
+          customerListWidget(),
+        ],
       ),
     );
   }
