@@ -13,7 +13,7 @@ class Service18082 {
 
   static Future<Service18082> create() async {
     final prefs = await SharedPreferences.getInstance();
-    final vpsIp = prefs.getString(vpsKey) ?? '${Env.config.apiBaseUrl}:18082';
+    final vpsIp = prefs.getString(vpsKey) ?? '${Env.config.apiBaseUrl}:8082';
     final baseUrl = vpsIp.startsWith('http') ? vpsIp : 'http://$vpsIp';
     return Service18082._(
       DioServiceManager().getService(baseUrl),
@@ -102,7 +102,6 @@ class Service18082 {
   }
 
   /// 查询押运员基本信息
-
   Future<Map<String, dynamic>> getEscortByNo(String no) async {
     print('getEscortByNo 接收到的参数 cashBoxList 的值: $no');
     Map<String, dynamic> requestBody = <String, dynamic>{'no': no};

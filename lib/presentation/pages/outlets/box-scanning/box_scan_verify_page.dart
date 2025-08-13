@@ -25,12 +25,17 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage> with SingleTicker
   final TextEditingController _passwordController = TextEditingController();
   Uint8List? _faceImage;
   bool _isLoading = false;
-  final Service18082 _service = Service18082();
+  Service18082? _service;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _initializeService();
+  }
+
+  Future<void> _initializeService() async {
+    _service = await Service18082.create();
   }
 
   @override
@@ -89,14 +94,19 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage> with SingleTicker
     });
 
     try {
+      // 确保服务已初始化
+      if (_service == null) {
+        await _initializeService();
+      }
+      
       if (_tabController.index == 0) {
         // 账号密码验证
         final hashedPassword = md5.convert(utf8.encode(_passwordController.text)).toString();
-        await _service.updatePointStatus(_usernameController.text, hashedPassword, widget.point['pointCode'].toString());
+        await _service!.updatePointStatus(_usernameController.text, hashedPassword, widget.point['pointCode'].toString());
       } else {
         // 人脸验证
         final String base64Image = base64Encode(_faceImage!);
-        await _service.login(_usernameController.text, null, base64Image);
+        await _service!.login(_usernameController.text, null, base64Image);
       }
       
       if (mounted) {

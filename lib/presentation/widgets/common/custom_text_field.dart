@@ -82,6 +82,9 @@ class _CustomTextFieldState extends State<CustomTextField> {
                 _obscureText = !_obscureText;
               });
             },
+            style: IconButton.styleFrom(
+              splashFactory: NoSplash.splashFactory,
+            ),
           ) : null,
           border: OutlineInputBorder(
             borderSide: BorderSide(color: widget.borderColor ?? Colors.grey),

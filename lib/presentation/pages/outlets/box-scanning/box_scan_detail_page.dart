@@ -26,7 +26,7 @@ class BoxScanDetailPage extends StatefulWidget {
 class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
   List<Map<String, dynamic>> items = [];
   bool isScanning = false;
-  late final Service18082 _service;
+  Service18082? _service;
   bool isLoading = false; // 不再需要加载状态，因为数据已经在父页面获取
   String? error;
 
@@ -51,10 +51,14 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
   @override
   void initState() {
     super.initState();
-    _service = Service18082();
+    _initializeService();
     print("widget:${widget.point}");
     print("widget.boxItems: ${widget.boxItems}");
     items = widget.boxItems; // 使用传递的款箱数据
+  }
+
+  Future<void> _initializeService() async {
+    _service = await Service18082.create();
   }
 
   // 自定义appBar - 简化标题

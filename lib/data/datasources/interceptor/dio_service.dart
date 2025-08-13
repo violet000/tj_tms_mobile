@@ -31,9 +31,10 @@ class DioService {
       InterceptorsWrapper(
         onRequest: (options, handler) {
           // 添加Authorization到请求头
-          if (_accessToken != null && _accessToken!.isNotEmpty) {
-            options.headers['Authorization'] = 'Bearer $_accessToken';
-          }
+          options.headers['Authorization'] = 'Basic emhhbmdzYW46MTIzNDU2';
+          // if (_accessToken != null && _accessToken!.isNotEmpty) {
+          //   options.headers['Authorization'] = 'Bearer $_accessToken';
+          // }
           
           // 记录请求日志
           AppLogger.network(

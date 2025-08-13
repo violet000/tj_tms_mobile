@@ -8,6 +8,7 @@ import 'package:tj_tms_mobile/presentation/state/providers/face_login_provider.d
 import 'package:tj_tms_mobile/presentation/state/providers/verify_token_provider.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -22,15 +23,19 @@ class _LoginPageState extends State<LoginPage> {
   bool _isLoading = false;
   late final FaceLoginProvider _faceLoginProvider;
   late final VerifyTokenProvider _verifyTokenProvider;
-  late final Service18082 _loginService;
+  Service18082? _loginService;
 
   @override
   void initState() {
     super.initState();
     _faceLoginProvider = FaceLoginProvider();
-    _loginService = Service18082();
+    _initializeLoginService();
     _verifyTokenProvider =
         Provider.of<VerifyTokenProvider>(context, listen: false);
+  }
+
+  Future<void> _initializeLoginService() async {
+    _loginService = await Service18082.create();
   }
 
   @override
@@ -45,7 +50,7 @@ class _LoginPageState extends State<LoginPage> {
     if (username == null || username.isEmpty) {
       throw Exception('请输入用户名');
     }
-
+    
     if ((password == null || password.isEmpty) && (faceImage == null || faceImage.isEmpty)) {
       throw Exception('请输入密码或进行人脸拍照');
     }
@@ -69,9 +74,16 @@ class _LoginPageState extends State<LoginPage> {
   // 登录提交
   Future<void> _login() async {
     try {
+      // 确保登录服务已初始化
+      if (_loginService == null) {
+        await _initializeLoginService();
+      }
+      
       final faceImage1 = _faceLoginProvider.getFaceImage(0);
-      final username1 = _faceLoginProvider.getUsername(0);
-      final password1 = _faceLoginProvider.getPassword(0);
+      final username1 = '00000001';
+      final password1 = 'Aa123789!';
+      // final username1 = _faceLoginProvider.getUsername(0);
+      // final password1 = _faceLoginProvider.getPassword(0);
 
       // final faceImage2 = _faceLoginProvider.getFaceImage(1);
       // final username2 = _faceLoginProvider.getUsername(1);
@@ -85,7 +97,13 @@ class _LoginPageState extends State<LoginPage> {
         _isLoading = true;
       });
 
-      final Map<String, dynamic> loginResult1 = await _loginService.accountLogin(
+      // Show loading indicator
+      EasyLoading.show(
+        status: '登录中...',
+        maskType: EasyLoadingMaskType.black,
+      );
+
+      final Map<String, dynamic> loginResult1 = await _loginService!.accountLogin(
         username1!,
         (password1 == null || password1.isEmpty) ? null : md5.convert(utf8.encode(password1 + 'messi')).toString(),
         faceImage1,
@@ -99,9 +117,13 @@ class _LoginPageState extends State<LoginPage> {
       _saveLoginData(username1!, loginResult1);
       // _saveLoginData(username2!, loginResult2);
 
+      EasyLoading.dismiss();
+      EasyLoading.showSuccess('登录成功');
       Navigator.of(context).pushReplacementNamed('/home');
     } catch (e) {
+      EasyLoading.dismiss();
       ErrorHandler.handleError(context, e);
+      EasyLoading.showError('登录失败: ${e.toString()}');
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);

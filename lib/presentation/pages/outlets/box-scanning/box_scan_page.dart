@@ -18,7 +18,7 @@ class _BoxScanPageState extends State<BoxScanPage> {
   List<Map<String, dynamic>> lines = [];
   List<String> lineNoArray = [];
   Map<String, dynamic>? selectedRoute;
-  late final Service18082 _service;
+  Service18082? _service;
   late final VerifyTokenProvider _verifyTokenProvider;
   Future<List<Map<String, dynamic>>>? _linesFuture;
   int? _mode;
@@ -44,7 +44,7 @@ class _BoxScanPageState extends State<BoxScanPage> {
           Navigator.pushNamedAndRemoveUntil(
             context,
             '/home',
-                (route) => false,
+            (route) => false,
           );
         },
       ),
@@ -54,10 +54,7 @@ class _BoxScanPageState extends State<BoxScanPage> {
   @override
   void initState() {
     super.initState();
-    _service = Service18082();
-    _verifyTokenProvider =
-        Provider.of<VerifyTokenProvider>(context, listen: false);
-    // 获取路由参数
+    _initializeService();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final args = ModalRoute.of(context)?.settings.arguments;
       if (args is Map<String, dynamic> && args.containsKey('mode')) {
@@ -65,59 +62,56 @@ class _BoxScanPageState extends State<BoxScanPage> {
       }
       _getEscortRouteToday();
     });
+  }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _verifyTokenProvider = Provider.of<VerifyTokenProvider>(context, listen: false);
+  }
+
+  Future<void> _initializeService() async {
+    _service = await Service18082.create();
   }
 
   Future<void> _getEscortRouteToday() async {
     try {
-      final String? username = _verifyTokenProvider.getUserData()?['username'] as String?;
+      if (_service == null) {
+        await _initializeService();
+      }
+      final String? username =
+          _verifyTokenProvider.getUserData()?['username'] as String?;
       if (username == null) {
         AppLogger.warning('用户名为空，无法获取线路数据');
         return;
       }
-      // 调用API
-      final dynamic escortRouteToday = await _service.getLineByEscortNo(username,mode: _mode);
+      final dynamic escortRouteToday =
+          await _service!.getLineByEscortNo(username, mode: _mode);
 
-      // ---- 这是修改的核心部分 ----
-      // 1. 安全检查：首先确认返回的数据是一个Map类型
-      if (escortRouteToday is! Map<String, dynamic>) {
-        AppLogger.error('API返回的顶层数据不是一个Map: $escortRouteToday');
-        // 可以在这里显示一个错误提示给用户
-        return;
-      }
-      // 2. 从Map中安全地获取 'retList'
-      // as List? 允许这个值可能不存在（返回null）
-      final List<dynamic>? rawList = escortRouteToday['retList'] as List<dynamic>?;
-      // 3. 检查列表是否存在且不为null
+      final List<dynamic>? rawList =
+          escortRouteToday['retList'] as List<dynamic>?;
       if (rawList == null) {
-        AppLogger.warning('API返回的数据中没有 "retList" 字段');
         setState(() {
-          lines = []; // 清空列表，以防之前有数据
+          lines = [];
           selectedRoute = null;
         });
         return;
       }
-      // 存储所有 lineNo 的列表（去重处理，避免重复）
       for (final item in rawList) {
-        // 确保 item 是 Map 类型，且包含 lineNo 字段
         if (item is Map<String, dynamic> && item.containsKey('lineNo')) {
           String lineNo = item['lineNo'].toString();
-          // 去重：只添加不在列表中的 lineNo
           if (!lineNoArray.contains(lineNo)) {
             lineNoArray.add(lineNo);
           }
         }
       }
 
-      // 4. 将 List<dynamic> 安全地转换为 List<Map<String, dynamic>>
-      // 使用 List.from 和 .map 结合是比 .cast() 更现代和灵活的做法
-      final List<Map<String, dynamic>> parsedLines = List<Map<String, dynamic>>.from(
-          rawList.whereType<Map<String, dynamic>>() // 只保留列表中确定是Map的元素
-      );
-      // 5. 更新状态
+      final List<Map<String, dynamic>> parsedLines =
+          List<Map<String, dynamic>>.from(
+              rawList.whereType<Map<String, dynamic>>() // 只保留列表中确定是Map的元素
+              );
       setState(() {
-        lines = parsedLines; // 将解析好的、类型安全的数据赋值给状态
-        print("line:$lines");
+        lines = parsedLines;
         if (lines.isNotEmpty) {
           selectedRoute = lines[0]; // 默认选中第一条
         } else {
@@ -126,7 +120,7 @@ class _BoxScanPageState extends State<BoxScanPage> {
       });
     } catch (e, s) {
       // 统一处理可能发生的任何错误
-      AppLogger.error('获取或解析线路数据时发生错误',  e, s);
+      AppLogger.error('获取或解析线路数据时发生错误', e, s);
       // 可以在这里弹出一个对话框告诉用户加载失败
       if (mounted) {
         setState(() {
@@ -142,7 +136,8 @@ class _BoxScanPageState extends State<BoxScanPage> {
     if (selectedRoute == null) return {};
 
     // 安全获取 planDTOS 列表
-    final List<dynamic>? planDTOS = selectedRoute!['planDTOS'] as List<dynamic>?;
+    final List<dynamic>? planDTOS =
+        selectedRoute!['planDTOS'] as List<dynamic>?;
     if (planDTOS == null || planDTOS.isEmpty) {
       AppLogger.warning('selectedRoute 中的 planDTOS 为空');
       return {'出库网点': [], '入库网点': []};
@@ -156,7 +151,8 @@ class _BoxScanPageState extends State<BoxScanPage> {
       if (plan is! Map<String, dynamic>) continue;
 
       // 处理出库网点（deliverOrgNo）
-      final List<dynamic>? deliverOrgNos = plan['deliverOrgNo'] as List<dynamic>?;
+      final List<dynamic>? deliverOrgNos =
+          plan['deliverOrgNo'] as List<dynamic>?;
       if (deliverOrgNos != null) {
         for (var org in deliverOrgNos) {
           if (org is! Map<String, dynamic>) continue;
@@ -167,20 +163,22 @@ class _BoxScanPageState extends State<BoxScanPage> {
           // 优先保留状态为 false 的数据（假设 false 是待处理的有效数据）
           // 如果已存在该 orgNo，仅在新数据状态为 false 时更新
           if (!deliverPointsMap.containsKey(orgNo) || org['status'] == false) {
-            deliverPointsMap[orgNo] = <String,dynamic>{
+            deliverPointsMap[orgNo] = <String, dynamic>{
               ...org,
               'operationType': 0, // 标记为出库
               // 补充网点显示所需的字段（如果原数据没有，避免UI报错）
               'pointName': org['orgName'] ?? '未知网点', // 适配UI中使用的pointName
-              'address': org['address'] ?? '未知地址',   // 适配UI中使用的address
-              'implBoxDetail': org['implBoxDetail'] ?? <Map<String, dynamic>>[], // 新增款箱数据
+              'address': org['address'] ?? '未知地址', // 适配UI中使用的address
+              'implBoxDetail':
+                  org['implBoxDetail'] ?? <Map<String, dynamic>>[], // 新增款箱数据
             };
           }
         }
       }
 
       // 处理入库网点（receiveOrgNo）
-      final List<dynamic>? receiveOrgNos = plan['receiveOrgNo'] as List<dynamic>?;
+      final List<dynamic>? receiveOrgNos =
+          plan['receiveOrgNo'] as List<dynamic>?;
       if (receiveOrgNos != null) {
         for (var org in receiveOrgNos) {
           if (org is! Map<String, dynamic>) continue;
@@ -190,13 +188,14 @@ class _BoxScanPageState extends State<BoxScanPage> {
 
           // 同样按 orgNo 去重，优先保留有效状态
           if (!receivePointsMap.containsKey(orgNo) || org['status'] == false) {
-            receivePointsMap[orgNo] = <String,dynamic>{
+            receivePointsMap[orgNo] = <String, dynamic>{
               ...org,
               'operationType': 1, // 标记为入库
               // 补充网点显示所需的字段
               'pointName': org['orgName'] ?? '未知网点',
               'address': org['address'] ?? '未知地址',
-              'implBoxDetail': org['implBoxDetail'] ?? <Map<String, dynamic>>[], // 新增款箱数据
+              'implBoxDetail':
+                  org['implBoxDetail'] ?? <Map<String, dynamic>>[], // 新增款箱数据
             };
           }
         }
@@ -219,17 +218,20 @@ class _BoxScanPageState extends State<BoxScanPage> {
         onTap: () {
           // 提取款箱数据
           List<Map<String, dynamic>> boxItems = [];
-          final List<dynamic>? implBoxDetail = point['implBoxDetail'] as List<dynamic>?;
+          final List<dynamic>? implBoxDetail =
+              point['implBoxDetail'] as List<dynamic>?;
           if (implBoxDetail != null) {
             for (var impl in implBoxDetail) {
               if (impl is Map<String, dynamic>) {
-                final List<dynamic>? boxDetail = impl['boxDetail'] as List<dynamic>?;
+                final List<dynamic>? boxDetail =
+                    impl['boxDetail'] as List<dynamic>?;
                 if (boxDetail != null) {
                   for (var box in boxDetail) {
                     if (box is Map<String, dynamic>) {
                       boxItems.add(<String, dynamic>{
                         'boxCode': box['boxNo'],
-                        'scanStatus': int.parse(box['boxHandStatus'].toString()),
+                        'scanStatus':
+                            int.parse(box['boxHandStatus'].toString()),
                       });
                     }
                   }
@@ -297,10 +299,11 @@ class _BoxScanPageState extends State<BoxScanPage> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: point['status'] == 0
+                    color: point['status'] == false
                         ? const Color.fromARGB(255, 244, 19, 19)
                         : const Color.fromARGB(255, 5, 231, 5),
                     width: 1,
@@ -336,7 +339,8 @@ class _BoxScanPageState extends State<BoxScanPage> {
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
                   color: Colors.transparent,
                   borderRadius: BorderRadius.circular(8),
@@ -361,8 +365,9 @@ class _BoxScanPageState extends State<BoxScanPage> {
                     isExpanded: true,
                     dropdownColor: Colors.white,
                     underline: const SizedBox(),
-                    icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
-                    items: lines.map((Map<String, dynamic>route) {
+                    icon:
+                        const Icon(Icons.arrow_drop_down, color: Colors.white),
+                    items: lines.map((Map<String, dynamic> route) {
                       return DropdownMenuItem<Map<String, dynamic>>(
                         value: route,
                         child: Container(
@@ -375,7 +380,7 @@ class _BoxScanPageState extends State<BoxScanPage> {
                                   style: const TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
-                                    color: Colors.white,
+                                    color: Color.fromARGB(255, 53, 52, 52),
                                   ),
                                   textAlign: TextAlign.left,
                                 ),
@@ -386,7 +391,7 @@ class _BoxScanPageState extends State<BoxScanPage> {
                                   style: const TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
-                                    color: Colors.white,
+                                    color: Color.fromARGB(255, 53, 52, 52),
                                   ),
                                   textAlign: TextAlign.center,
                                 ),
@@ -453,7 +458,7 @@ class _BoxScanPageState extends State<BoxScanPage> {
         children: [
           Container(
             padding:
-            const EdgeInsets.only(top: 4, bottom: 4, left: 8, right: 8),
+                const EdgeInsets.only(top: 4, bottom: 4, left: 8, right: 8),
             decoration: BoxDecoration(
                 color: const Color(0xffB8C8E0),
                 borderRadius: BorderRadius.circular(8)),
