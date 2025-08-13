@@ -59,16 +59,39 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // 保存登录数据
-  void _saveLoginData(String username, Map<String, dynamic> loginResult) {
+  void _saveLoginData(String username1, String username2, Map<String, dynamic> loginResult) {
+    // 设置最后一个用户的token作为当前token
     _verifyTokenProvider.setToken(loginResult['access_token'].toString());
-      _verifyTokenProvider.setUserData(<String, dynamic>{
-        'username': username,
-        'access_token': loginResult['access_token'],
-        'refresh_token': loginResult['refresh_token'],
-        'expires_in': loginResult['expires_in'],
-        'token_type': loginResult['token_type'],
-        'scope': loginResult['scope'],
-      });
+    
+    // 保存第一个用户数据到列表
+    _verifyTokenProvider.addUserData(<String, dynamic>{
+      'username': username1,
+      'access_token': loginResult['access_token'],
+      'refresh_token': loginResult['refresh_token'],
+      'expires_in': loginResult['expires_in'],
+      'token_type': loginResult['token_type'],
+      'scope': loginResult['scope'],
+    });
+    
+    // 保存第二个用户数据到列表
+    _verifyTokenProvider.addUserData(<String, dynamic>{
+      'username': username2,
+      'access_token': loginResult['access_token'],
+      'refresh_token': loginResult['refresh_token'],
+      'expires_in': loginResult['expires_in'],
+      'token_type': loginResult['token_type'],
+      'scope': loginResult['scope'],
+    });
+    
+    // 设置当前用户数据为最后一个登录的用户
+    _verifyTokenProvider.setUserData(<String, dynamic>{
+      'username': username1,
+      'access_token': loginResult['access_token'],
+      'refresh_token': loginResult['refresh_token'],
+      'expires_in': loginResult['expires_in'],
+      'token_type': loginResult['token_type'],
+      'scope': loginResult['scope'],
+    });
   }
 
   // 登录提交
@@ -85,37 +108,42 @@ class _LoginPageState extends State<LoginPage> {
       // final username1 = _faceLoginProvider.getUsername(0);
       // final password1 = _faceLoginProvider.getPassword(0);
 
-      // final faceImage2 = _faceLoginProvider.getFaceImage(1);
+      final username2 = '88888888';
+      final password2 = 'Aa123789!';
+
+      final faceImage2 = _faceLoginProvider.getFaceImage(1);
       // final username2 = _faceLoginProvider.getUsername(1);
       // final password2 = _faceLoginProvider.getPassword(1);
       
       // 验证数据
       _validateFormData(username1, password1, faceImage1);
-      // _validateFormData(username2, password2, faceImage2);
+      _validateFormData(username2, password2, faceImage2);
 
       setState(() {
         _isLoading = true;
       });
 
-      // Show loading indicator
       EasyLoading.show(
         status: '登录中...',
         maskType: EasyLoadingMaskType.black,
       );
 
-      final Map<String, dynamic> loginResult1 = await _loginService!.accountLogin(
-        username1!,
-        (password1 == null || password1.isEmpty) ? null : md5.convert(utf8.encode(password1 + 'messi')).toString(),
-        faceImage1,
-      );
-      // final Map<String, dynamic> loginResult2 = await _loginService.accountLogin(
-      //   username2!,
-      //   (password2 == null || password2.isEmpty) ? null : md5.convert(utf8.encode(password2)).toString(),
-      //   faceImage2,
-      // );
+      final Map<String, dynamic> loginResult = await _loginService!.accountLogin([
+        <String, dynamic>{
+          'username': username1!,
+          'password': (password1 == null || password1.isEmpty) ? null : md5.convert(utf8.encode(password1 + 'messi')).toString(),
+          'face': faceImage1,
+          'isImport': true
+        },
+        <String, dynamic>{
+          'username': username2!,
+          'password': (password2 == null || password2.isEmpty) ? null : md5.convert(utf8.encode(password2 + 'messi')).toString(),
+          'face': faceImage2,
+          'isImport': false
+        }
+      ]);
 
-      _saveLoginData(username1!, loginResult1);
-      // _saveLoginData(username2!, loginResult2);
+      _saveLoginData(username1!, username2!, loginResult);
 
       EasyLoading.dismiss();
       EasyLoading.showSuccess('登录成功');

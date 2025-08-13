@@ -19,6 +19,7 @@ class DioService {
           headers: <String, String>{
             'Content-Type': 'application/json',
             'Accept': 'application/json',
+            'Authorization': 'Basic emhhbmdzYW46MTIzNDU2',
           },
         )) {
     _setupInterceptors();
