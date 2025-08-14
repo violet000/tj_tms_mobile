@@ -147,7 +147,7 @@ class _BoxScanPageState extends State<BoxScanPage> {
           if (!deliverPointsMap.containsKey(orgNo) || org['status'] == false) {
             deliverPointsMap[orgNo] = <String, dynamic>{
               ...org,
-              'operationType': 0, // 标记为出库
+              'operationType': 1, // 标记为出库
               // 补充网点显示所需的字段（如果原数据没有，避免UI报错）
               'pointName': org['orgName'] ?? '未知网点', // 适配UI中使用的pointName
               'address': org['address'] ?? '未知地址', // 适配UI中使用的address
@@ -172,7 +172,7 @@ class _BoxScanPageState extends State<BoxScanPage> {
           if (!receivePointsMap.containsKey(orgNo) || org['status'] == false) {
             receivePointsMap[orgNo] = <String, dynamic>{
               ...org,
-              'operationType': 1, // 标记为入库
+              'operationType': 0, // 标记为入库
               // 补充网点显示所需的字段
               'pointName': org['orgName'] ?? '未知网点',
               'address': org['address'] ?? '未知地址',
@@ -228,6 +228,8 @@ class _BoxScanPageState extends State<BoxScanPage> {
               builder: (context) => BoxScanDetailPage(
                 point: point,
                 boxItems: boxItems,
+                operationType: point['operationType'],
+                implBoxDetail: point['implBoxDetail'],
                 lines: lines, // 传递 lines 数据
               ),
             ),

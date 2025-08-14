@@ -6,6 +6,7 @@ import 'package:tj_tms_mobile/presentation/pages/outlets/box-handover/box_handov
 import 'package:tj_tms_mobile/presentation/pages/personal/personal_center_page.dart';
 import 'package:tj_tms_mobile/presentation/pages/plugins/plugin_test_page.dart';
 import 'package:tj_tms_mobile/presentation/pages/outlets/box-scanning/box_scan_verify_page.dart';
+import 'package:tj_tms_mobile/presentation/pages/outlets/box-scanning/box-scan-verify-success.dart';
 
 class AppRoutes {
   static const String login = '/login';
@@ -15,6 +16,7 @@ class AppRoutes {
   static const String personal = '/personal_center_page';
   static const String pluginTest = '/plugin-test';
   static const String boxScanVerify = '/outlets/box_scan_verify_page';
+  static const String boxScanVerifySuccess = '/outlets/box-scan-verify-success';
 
   static Map<String, WidgetBuilder> getRoutes() {
     return {
@@ -23,6 +25,7 @@ class AppRoutes {
       boxScan: (context) => const BoxScanPage(),
       boxHandover: (context) => const BoxHandoverPage(),
       boxScanVerify: (context) => const BoxScanVerifyPage(),
+      boxScanVerifySuccess: (context) => const BoxScanVerifySuccessPage(),
       personal: (context) => const PersonalCenterPage(),
       pluginTest: (context) => const PluginTestPage(),
     };

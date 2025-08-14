@@ -92,13 +92,17 @@ class Service18082 {
     );
   }
 
-  /// 交接款箱
-  Future<Map<String, dynamic>> handoverCashBox(
-      String pointCode, List<dynamic> cashBoxList) async {
+  /// 确认交接
+  Future<Map<String, dynamic>> outletHandover(Map<String, dynamic> params) async {
     return _dioService.post(
-      '/storage/cash-box/check?pointCode=$pointCode',
+      '/manage-center/v2/outletHandover',
       body: <String, dynamic>{
-        'cashBoxList': cashBoxList,
+        'implNo': params['implNo'],
+        'outTre': params['outTre'],
+        'hander': params['hander'],
+        'escortNo': params['escortNo'],
+        'deliver': params['deliver'],
+        'inconsistent': params['inconsistent'],
       },
     );
   }

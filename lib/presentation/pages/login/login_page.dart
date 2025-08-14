@@ -21,14 +21,13 @@ class _LoginPageState extends State<LoginPage> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
-  late final FaceLoginProvider _faceLoginProvider;
+
   late final VerifyTokenProvider _verifyTokenProvider;
   Service18082? _loginService;
 
   @override
   void initState() {
     super.initState();
-    _faceLoginProvider = FaceLoginProvider();
     _initializeLoginService();
     _verifyTokenProvider =
         Provider.of<VerifyTokenProvider>(context, listen: false);
@@ -92,6 +91,11 @@ class _LoginPageState extends State<LoginPage> {
       'token_type': loginResult['token_type'],
       'scope': loginResult['scope'],
     });
+    
+    // 保存押运员信息到全局的 FaceLoginProvider
+    final faceLoginProvider = Provider.of<FaceLoginProvider>(context, listen: false);
+    faceLoginProvider.setUsername(0, username1);
+    faceLoginProvider.setUsername(1, username2);
   }
 
   // 登录提交
@@ -102,18 +106,25 @@ class _LoginPageState extends State<LoginPage> {
         await _initializeLoginService();
       }
       
-      final faceImage1 = _faceLoginProvider.getFaceImage(0);
+      // 获取全局的 FaceLoginProvider
+      final faceLoginProvider = Provider.of<FaceLoginProvider>(context, listen: false);
+      
+      final faceImage1 = faceLoginProvider.getFaceImage(0);
       final username1 = '00000001';
       final password1 = 'Aa123789!';
-      // final username1 = _faceLoginProvider.getUsername(0);
-      // final password1 = _faceLoginProvider.getPassword(0);
+      // final username1 = faceLoginProvider.getUsername(0);
+      // final password1 = faceLoginProvider.getPassword(0);
 
-      final username2 = '88888888';
+      final username2 = '00000002';
       final password2 = 'Aa123789!';
 
-      final faceImage2 = _faceLoginProvider.getFaceImage(1);
-      // final username2 = _faceLoginProvider.getUsername(1);
-      // final password2 = _faceLoginProvider.getPassword(1);
+      final faceImage2 = faceLoginProvider.getFaceImage(1);
+      // final username2 = faceLoginProvider.getUsername(1);
+      // final password2 = faceLoginProvider.getPassword(1);
+      
+      // 在登录前，先将押运员信息保存到全局的 FaceLoginProvider
+      faceLoginProvider.setUsername(0, username1);
+      faceLoginProvider.setUsername(1, username2);
       
       // 验证数据
       _validateFormData(username1, password1, faceImage1);
@@ -165,9 +176,7 @@ class _LoginPageState extends State<LoginPage> {
     final screenWidth = MediaQuery.of(context).size.width;
     final topSectionHeight = screenHeight * 0.4; // 40% 的高度用于蓝色背景
 
-    return ChangeNotifierProvider.value(
-      value: _faceLoginProvider,
-      child: DefaultTabController(
+    return DefaultTabController(
         length: 2,
         child: Scaffold(
           resizeToAvoidBottomInset: false,
@@ -362,7 +371,6 @@ class _LoginPageState extends State<LoginPage> {
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 }

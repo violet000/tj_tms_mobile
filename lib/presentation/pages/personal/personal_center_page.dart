@@ -22,10 +22,6 @@ class _PersonalCenterPageState extends State<PersonalCenterPage> {
   @override
   void initState() {
     super.initState();
-    // 延迟调用，确保 context 可用
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadAllEscortsData();
-    });
   }
 
   Future<void> _loadAllEscortsData() async {
@@ -189,241 +185,264 @@ class _PersonalCenterPageState extends State<PersonalCenterPage> {
   }
 
   // 显示用户信息
-  void _showUserInfo(
-      BuildContext context, Map<String, dynamic> userData, int userIndex) {
-    // 查找对应的押运员信息
-    Map<String, dynamic>? escortInfo;
-    for (Map<String, dynamic> response in _allResponses) {
-      if (response['user_info'] != null &&
-          response['user_info']['username'] == userData['username']) {
-        escortInfo = response;
-        break;
-      }
-    }
+  Future<void> _showUserInfo(
+      BuildContext context, Map<String, dynamic> userData, int userIndex) async {
 
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false, // 防止点击外部关闭
-      builder: (BuildContext context) {
-        return Dialog(
-          insetPadding: EdgeInsets.zero, // 移除默认边距
-          backgroundColor: Colors.transparent,
-          child: Container(
-            width: MediaQuery.of(context).size.width,
-            height: MediaQuery.of(context).size.height,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.zero, // 移除圆角
-            ),
-            child: Column(
-              children: [
-                // 标题栏
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border(
-                      bottom: BorderSide(
-                        color: Colors.grey.shade200,
-                        width: 1,
+    // 显示加载状态
+    EasyLoading.show(
+      status: '信息查询中...',
+      maskType: EasyLoadingMaskType.black,
+    );
+
+    try {
+      // 获取单个用户的押运员信息
+      final service18082 = await Service18082.create();
+      final Map<String, dynamic> escortInfo = await service18082.getEscortByNo(userData['username']?.toString() ?? '');
+      escortInfo['user_info'] = userData;
+
+      EasyLoading.dismiss();
+
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false, // 防止点击外部关闭
+        builder: (BuildContext context) {
+          return Dialog(
+            insetPadding: EdgeInsets.zero, // 移除默认边距
+            backgroundColor: Colors.transparent,
+            child: Container(
+              width: MediaQuery.of(context).size.width,
+              height: MediaQuery.of(context).size.height,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.zero, // 移除圆角
+              ),
+              child: Column(
+                children: [
+                  // 标题栏
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border(
+                        bottom: BorderSide(
+                          color: Colors.grey.shade200,
+                          width: 1,
+                        ),
                       ),
                     ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '押运员$userIndex 详细信息',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        icon: const Icon(
-                          Icons.close,
-                          color: Colors.grey,
-                          size: 20,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // 内容区域
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 14), // 左右间距20，上下间距24
-                    child: Column(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // 头像和基本信息
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 14),
-                          child: Column(
-                            children: [
-                              Container(
-                                width: 100,
-                                height: 100,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                      color: Colors.blue.shade200, width: 3),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.grey.withOpacity(0.3),
-                                      spreadRadius: 2,
-                                      blurRadius: 1,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: ClipOval(
-                                  child: escortInfo != null &&
-                                          escortInfo['cocn'] != null &&
-                                          escortInfo['cocn']
-                                              .toString()
-                                              .isNotEmpty
-                                      ? Image.memory(
-                                          base64Decode(
-                                              escortInfo['cocn'].toString()),
-                                          fit: BoxFit.cover,
-                                          errorBuilder:
-                                              (context, error, stackTrace) {
-                                            return Container(
-                                              color: Colors.grey.shade100,
-                                              child: Icon(Icons.person,
-                                                  size: 60,
-                                                  color: Colors.grey.shade400),
-                                            );
-                                          },
-                                        )
-                                      : Container(
-                                          color: Colors.grey.shade100,
-                                          child: Icon(Icons.person,
-                                              size: 60,
-                                              color: Colors.grey.shade400),
-                                        ),
-                                ),
-                              ),
-                              const SizedBox(height: 14),
-                            ],
+                        Text(
+                          '押运员$userIndex 详细信息',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
                           ),
                         ),
-
-                        // 押运员信息卡片
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade50,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.grey.shade200),
-                          ),
-                          child: Column(
-                            children: [
-                              if (escortInfo != null) ...[
-                                _buildInfoRow('押运员姓名',
-                                    escortInfo['userName']?.toString() ?? '未知'),
-                                _buildInfoRow('押运员编号',
-                                    escortInfo['userNo']?.toString() ?? '未知'),
-                                _buildInfoRow('身份证编号',
-                                    escortInfo['numId']?.toString() ?? '未知'),
-                                _buildInfoRow('手机号码',
-                                    escortInfo['phone']?.toString() ?? '未知'),
-                              ] else ...[
-                                _buildInfoRow('押运员姓名', '暂无数据'),
-                                _buildInfoRow('押运员编号', '暂无数据'),
-                                _buildInfoRow('身份证编号', '暂无数据'),
-                                _buildInfoRow('手机号码', '暂无数据'),
-                              ],
-                            ],
+                        IconButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: const Icon(
+                            Icons.close,
+                            color: Colors.grey,
+                            size: 20,
                           ),
                         ),
                       ],
                     ),
                   ),
-                ),
 
-                // 底部按钮
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            try {
-                              EasyLoading.show(
-                                status: '刷新中...',
-                                maskType: EasyLoadingMaskType.black,
-                              );
-                              // 重新获取所有押运员数据
-                              await _loadAllEscortsData();
-                              EasyLoading.dismiss();
-                            } catch (e) {
-                              // 显示错误提示
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('刷新失败: $e'),
-                                  backgroundColor: Colors.red,
-                                  duration: const Duration(seconds: 3),
+                  // 内容区域
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 14), // 左右间距20，上下间距24
+                      child: Column(
+                        children: [
+                          // 头像和基本信息
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 14),
+                            child: Column(
+                              children: [
+                                Container(
+                                  width: 100,
+                                  height: 100,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                        color: Colors.blue.shade200, width: 3),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.grey.withOpacity(0.3),
+                                        spreadRadius: 2,
+                                        blurRadius: 1,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: ClipOval(
+                                    child: escortInfo != null &&
+                                            escortInfo['cocn'] != null &&
+                                            escortInfo['cocn']
+                                                .toString()
+                                                .isNotEmpty
+                                        ? Image.memory(
+                                            base64Decode(
+                                                escortInfo['cocn'].toString()),
+                                            fit: BoxFit.cover,
+                                            errorBuilder:
+                                                (context, error, stackTrace) {
+                                              return Container(
+                                                color: Colors.grey.shade100,
+                                                child: Icon(Icons.person,
+                                                    size: 60,
+                                                    color: Colors.grey.shade400),
+                                              );
+                                            },
+                                          )
+                                        : Container(
+                                            color: Colors.grey.shade100,
+                                            child: Icon(Icons.person,
+                                                size: 60,
+                                                color: Colors.grey.shade400),
+                                          ),
+                                  ),
                                 ),
-                              );
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.grey.shade100,
-                            foregroundColor: Colors.grey.shade700,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                                const SizedBox(height: 14),
+                              ],
                             ),
-                            elevation: 0,
                           ),
-                          child: const Text(
-                            '刷新',
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w500),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            _showChangePasswordDialog(context, userData);
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                const Color.fromARGB(255, 227, 5, 5),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+
+                          // 押运员信息卡片
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey.shade200),
                             ),
-                            elevation: 2,
+                            child: Column(
+                              children: [
+                                if (escortInfo != null) ...[
+                                  _buildInfoRow('押运员姓名',
+                                      escortInfo['userName']?.toString() ?? '未知'),
+                                  _buildInfoRow('押运员编号',
+                                      escortInfo['userNo']?.toString() ?? '未知'),
+                                  _buildInfoRow('身份证编号',
+                                      escortInfo['numId']?.toString() ?? '未知'),
+                                  _buildInfoRow('手机号码',
+                                      escortInfo['phone']?.toString() ?? '未知'),
+                                ] else ...[
+                                  _buildInfoRow('押运员姓名', '暂无数据'),
+                                  _buildInfoRow('押运员编号', '暂无数据'),
+                                  _buildInfoRow('身份证编号', '暂无数据'),
+                                  _buildInfoRow('手机号码', '暂无数据'),
+                                ],
+                              ],
+                            ),
                           ),
-                          child: const Text(
-                            '修改密码',
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w500),
-                          ),
-                        ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ],
+
+                  // 底部按钮
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              try {
+                                EasyLoading.show(
+                                  status: '刷新中...',
+                                  maskType: EasyLoadingMaskType.black,
+                                );
+                                // 重新获取当前用户的押运员数据
+                                final service18082 = await Service18082.create();
+                                final Map<String, dynamic> updatedEscortInfo = await service18082.getEscortByNo(userData['username']?.toString() ?? '');
+                                updatedEscortInfo['user_info'] = userData;
+                                EasyLoading.dismiss();
+                                
+                                // 关闭当前弹框并重新显示
+                                Navigator.of(context).pop();
+                                _showUserInfo(context, userData, userIndex);
+                              } catch (e) {
+                                EasyLoading.dismiss();
+                                // 显示错误提示
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('刷新失败: $e'),
+                                    backgroundColor: Colors.red,
+                                    duration: const Duration(seconds: 3),
+                                  ),
+                                );
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.grey.shade100,
+                              foregroundColor: Colors.grey.shade700,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: const Text(
+                              '刷新',
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w500),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              _showChangePasswordDialog(context, userData);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  const Color.fromARGB(255, 227, 5, 5),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              elevation: 2,
+                            ),
+                            child: const Text(
+                              '修改密码',
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w500),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        );
-      },
-    );
+          );
+        },
+      );
+    } catch (e) {
+      EasyLoading.dismiss();
+      // 显示错误提示
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('获取用户信息失败: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   Widget _buildInfoRow(String label, String value) {
