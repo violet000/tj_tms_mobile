@@ -62,6 +62,9 @@ class _FaceScanWidgetState extends State<FaceScanWidget> with SingleTickerProvid
               child: IconButton(
                 icon: const Icon(Icons.close, color: Colors.white),
                 onPressed: () => Navigator.of(context).pop(),
+                style: IconButton.styleFrom(
+                  splashFactory: NoSplash.splashFactory,
+                ),
               ),
             ),
           ],

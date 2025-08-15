@@ -82,6 +82,9 @@ class _CustomTextFieldState extends State<CustomTextField> {
                 _obscureText = !_obscureText;
               });
             },
+            style: IconButton.styleFrom(
+              splashFactory: NoSplash.splashFactory,
+            ),
           ) : null,
           border: OutlineInputBorder(
             borderSide: BorderSide(color: widget.borderColor ?? Colors.grey),
@@ -99,6 +102,10 @@ class _CustomTextFieldState extends State<CustomTextField> {
           fillColor: Colors.white,
           contentPadding: widget.contentPadding ?? const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
         ),
+        // 添加键盘相关配置
+        textInputAction: TextInputAction.next,
+        enableSuggestions: false,
+        autocorrect: false,
       ),
     );
   }

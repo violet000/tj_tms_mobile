@@ -41,4 +41,5 @@ class EnvConfig {
   static bool isDevelopment() => _instance?.environment == Environment.dev;
   static bool isTest() => _instance?.environment == Environment.test;
   static bool isProduction() => _instance?.environment == Environment.prod;
+
 } 

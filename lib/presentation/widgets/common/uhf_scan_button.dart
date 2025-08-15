@@ -58,7 +58,10 @@ class _UHFScanButtonState extends State<UHFScanButton> {
       onInitialized: () {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('UHF设备初始化成功')),
+            const SnackBar(
+              content: Text('UHF设备初始化成功'),
+              duration: Duration(seconds: 1),
+            ),
           );
         }
       },
@@ -116,25 +119,6 @@ class _UHFScanButtonState extends State<UHFScanButton> {
               ),
             );
 
-            // Widget buttonContent = Row(
-            //   mainAxisSize: MainAxisSize.min,
-            //   mainAxisAlignment: MainAxisAlignment.center,
-            //   children: [
-            //     Text(_isScanning ? widget.stopText! : widget.startText!),
-            //     if (_isScanning) ...[
-            //       const SizedBox(width: 8),
-            //       widget.loadingIndicator ?? const SizedBox(
-            //         width: 16,
-            //         height: 16,
-            //         child: CircularProgressIndicator(
-            //           strokeWidth: 2,
-            //           valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-            //         ),
-            //       ),
-            //     ],
-            //   ],
-            // );
-
             if (snapshot.hasError) {
               return ElevatedButton(
                 onPressed: () => _toggleScan(controller),
@@ -158,20 +142,6 @@ class _UHFScanButtonState extends State<UHFScanButton> {
 
             return InkWell(
               onTap: () => _toggleScan(controller),
-              // style: ElevatedButton.styleFrom(
-              //   backgroundColor:
-              //       widget.buttonColor ?? Theme.of(context).primaryColor,
-              //   foregroundColor: widget.textColor ?? Colors.white,
-              //   minimumSize: Size(
-              //     widget.buttonWidth ?? 100,
-              //     widget.buttonHeight ?? 40,
-              //   ),
-              //   padding: widget.padding ??
-              //       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              //   textStyle: TextStyle(
-              //     fontSize: widget.fontSize ?? 16,
-              //   ),
-              // ),
               child: buttonContent,
             );
           },

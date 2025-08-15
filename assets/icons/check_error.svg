@@ -1,17 +1,1 @@
-<svg width="48px" height="48px" viewBox="0 0 48 48" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-<g id="页面-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-<g id="总行金库" transform="translate(-887, -1220)" stroke-width="4">
-<g id="编组-7备份-3" transform="translate(20, 1161)">
-<g id="编组-5" transform="translate(113, 52)">
-<g id="编组" transform="translate(754, 7)" fill="#E20437" stroke="#E20437">
-<rect id="矩形" x="0" y="0" width="48" height="48" rx="24"></rect>
-</g>
-<g id="编组-6" transform="translate(767, 17)" stroke="#FFFFFF" stroke-linecap="round">
-<line x1="18.1066017" y1="3.10660172" x2="3.10660172" y2="18.1066017" id="直线-2" transform="translate(10.6066, 10.6066) rotate(-45) translate(-10.6066, -10.6066)"></line>
-<path d="" id="直线-2" transform="translate(10.6066, 28.2132) rotate(-45) translate(-10.6066, -28.2132)"></path>
-</g>
-</g>
-</g>
-</g>
-</g>
-</svg>
+<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg t="1755071057684" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="7671" width="48" height="48" xmlns:xlink="http://www.w3.org/1999/xlink"><path d="M512.5 171.25l397.5 687.5L115 858.75 512.5 171.25M512.5 35 0 922.5l1023.75 0L512.5 35 512.5 35 512.5 35zM480 346.25l63.75 0 0 320-63.75 0L480 346.25 480 346.25zM543.75 730l0 63.75-63.75 0 0-63.75" p-id="7672" fill="#d81e06"></path></svg>

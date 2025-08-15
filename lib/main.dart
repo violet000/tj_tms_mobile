@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'routes/app_routes.dart';
 import 'routes/route_generator.dart';
 import 'services/location_service.dart';
 import 'presentation/state/providers/face_login_provider.dart';
 import 'presentation/state/providers/verify_token_provider.dart';
+import 'presentation/state/providers/line_info_provider.dart';
+import 'presentation/state/providers/teller_verify_provider.dart';
+import 'presentation/state/providers/box_handover_provider.dart';
 import 'package:tj_tms_mobile/core/config/env.dart';
 
 void main() async {
@@ -41,6 +45,9 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => FaceLoginProvider()),
         ChangeNotifierProvider(create: (_) => VerifyTokenProvider(access_token: '')),
+        ChangeNotifierProvider(create: (_) => LineInfoProvider()),
+        ChangeNotifierProvider(create: (_) => TellerVerifyProvider()),
+        ChangeNotifierProvider(create: (_) => BoxHandoverProvider()),
       ],
       child: MaterialApp(
         title: Env.config.appName,
@@ -52,13 +59,28 @@ class MyApp extends StatelessWidget {
         routes: AppRoutes.getRoutes(),
         onGenerateRoute: RouteGenerator.generateRoute,
         builder: (context, child) {
+          Widget result = child!;
+          
           if (kIsWeb) {
-            return MediaQuery(
-              data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
-              child: child!,
-            );
+            result = MediaQuery(
+                data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
+                child: Theme(
+                  data: Theme.of(context).copyWith(
+                    // Web端额外禁用点击反馈
+                    splashColor: Colors.transparent,
+                    highlightColor: Colors.transparent,
+                    focusColor: Colors.transparent,
+                    hoverColor: Colors.transparent,
+                  ),
+                  child: child!,
+                ),
+              );
           }
-          return child!;
+          
+          // 初始化 EasyLoading
+          result = EasyLoading.init()(context, result);
+          
+          return result;
         },
       ),
     );

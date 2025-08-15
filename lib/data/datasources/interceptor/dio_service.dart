@@ -19,6 +19,7 @@ class DioService {
           headers: <String, String>{
             'Content-Type': 'application/json',
             'Accept': 'application/json',
+            'Authorization': 'Basic emhhbmdzYW46MTIzNDU2',
           },
         )) {
     _setupInterceptors();
@@ -30,11 +31,11 @@ class DioService {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          // 添加 access_token 到请求头
-          if (_accessToken != null && _accessToken!.isNotEmpty) {
-            options.headers['Authorization'] = 'Bearer $_accessToken';
-            AppLogger.debug('添加 Authorization 头: Bearer $_accessToken');
-          }
+          // 添加Authorization到请求头
+          options.headers['Authorization'] = 'Basic emhhbmdzYW46MTIzNDU2';
+          // if (_accessToken != null && _accessToken!.isNotEmpty) {
+          //   options.headers['Authorization'] = 'Bearer $_accessToken';
+          // }
           
           // 记录请求日志
           AppLogger.network(
@@ -48,16 +49,15 @@ class DioService {
         },
         onResponse: (response, handler) {
           // 记录响应日志
-          AppLogger.apiResponse(
-            '${response.requestOptions.baseUrl}${response.requestOptions.path}',
-            response.data,
-            statusCode: response.statusCode,
-          );
+          // AppLogger.apiResponse(
+          //   '${response.requestOptions.baseUrl}${response.requestOptions.path}',
+          //   response.data,
+          //   statusCode: response.statusCode,
+          // );
           
           handler.next(response);
         },
         onError: (error, handler) {
-          // 记录错误日志
           AppLogger.apiResponse(
             '${error.requestOptions.baseUrl}${error.requestOptions.path}',
             null,
@@ -155,7 +155,7 @@ class DioService {
     }
   }
 
-  Future<Map<String, dynamic>> post(String endpoint, {Map<String, dynamic>? body}) async {
+  Future<Map<String, dynamic>> post(String endpoint, {dynamic body}) async {
     try {
       final response = await _dio.post<Map<String, dynamic>>(
         endpoint,
@@ -267,71 +267,3 @@ class DioServiceManager {
     AppLogger.info('清除所有 DioService 实例');
   }
 }
-
-/*
-使用示例：
-
-1. 登录成功后设置 token：
-```dart
-// 在登录页面中
-void _saveLoginData(String username, Map<String, dynamic> loginResult) {
-  _verifyTokenProvider.setToken(loginResult['access_token'].toString());
-  _verifyTokenProvider.setUserData(<String, dynamic>{
-    'username': username,
-    'access_token': loginResult['access_token'],
-    'refresh_token': loginResult['refresh_token'],
-    'expires_in': loginResult['expires_in'],
-    'token_type': loginResult['token_type'],
-    'scope': loginResult['scope'],
-  });
-}
-```
-
-2. 创建服务实例（会自动获取到带有 token 的 DioService）：
-```dart
-class MyService {
-  final DioService _dioService;
-  
-  MyService() : _dioService = DioServiceManager().getService('https://api.example.com');
-  
-  Future<Map<String, dynamic>> getData() async {
-    // 这个请求会自动带上 Authorization: Bearer <token> 头
-    return _dioService.get('/api/data');
-  }
-}
-```
-
-3. 登出时清除 token：
-```dart
-void logout() {
-  _verifyTokenProvider.clearToken();
-  // 这会自动清除所有 DioService 的 token
-}
-```
-
-4. 手动设置 token（如果需要）：
-```dart
-// 直接操作 DioServiceManager
-DioServiceManager().setAccessTokenForAll('your_token_here');
-
-// 或者操作单个服务
-final service = DioServiceManager().getService('https://api.example.com');
-service.setAccessToken('your_token_here');
-```
-
-5. 检查当前 token：
-```dart
-// 从 Provider 获取
-String? token = _verifyTokenProvider.getToken();
-
-// 从服务获取
-String? token = service.getAccessToken();
-```
-
-这个系统的优势：
-- 自动管理：登录后自动为所有服务设置 token
-- 统一管理：所有 DioService 实例共享同一个 token
-- 日志记录：所有请求和响应都有详细的日志
-- 易于扩展：可以轻松添加新的服务
-- 类型安全：使用强类型确保代码质量
-*/
