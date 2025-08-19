@@ -8,6 +8,8 @@ import 'package:flutter/services.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/logger.dart';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'dart:io';
+import 'package:tj_tms_mobile/core/utils/util.dart' as app_utils;
 
 class PersonalCenterPage extends StatefulWidget {
   const PersonalCenterPage({super.key});
@@ -18,10 +20,22 @@ class PersonalCenterPage extends StatefulWidget {
 
 class _PersonalCenterPageState extends State<PersonalCenterPage> {
   List<Map<String, dynamic>> _allResponses = [];
+  Map<String, dynamic> _deviceInfo = <String, dynamic>{};
+  bool _isLoadingDeviceInfo = true;
 
   @override
   void initState() {
     super.initState();
+    _loadDeviceInfo();
+  }
+
+  Future<void> _loadDeviceInfo() async {
+    final info = await app_utils.loadDeviceInfo();
+    if (!mounted) return;
+    setState(() {
+      _deviceInfo = info;
+      _isLoadingDeviceInfo = false;
+    });
   }
 
   Future<void> _loadAllEscortsData() async {
@@ -90,14 +104,18 @@ class _PersonalCenterPageState extends State<PersonalCenterPage> {
             // 功能区块
             ..._buildMenuList(context),
             const SizedBox(height: 20), // 替换 Spacer，添加固定间距
+            // 设备信息展示
+            _buildDeviceInfoSection(),
+            const SizedBox(height: 20), // 底部间距
             // 退出登录按钮
             _buildLogoutButton(),
-            const SizedBox(height: 20), // 底部间距
+            const SizedBox(height: 10), // 底部间距
           ],
         ),
       ),
     );
   }
+
 
   Widget _buildTopProfile(BuildContext context) {
     return Stack(
@@ -757,6 +775,117 @@ class _PersonalCenterPageState extends State<PersonalCenterPage> {
         child: const Text('退出登录',
             style: TextStyle(
                 fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1)),
+      ),
+    );
+  }
+
+  Widget _buildDeviceInfoSection() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      child: Card(
+        elevation: 1,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 16,
+                    color: Colors.grey[600],
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '设备信息',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              if (_isLoadingDeviceInfo)
+                const Center(
+                  child: SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              else if (_deviceInfo.isEmpty)
+                Text(
+                  '无法获取设备信息',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[500],
+                  ),
+                )
+              else
+                ..._buildDeviceInfoItems(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildDeviceInfoItems() {
+    final List<Widget> items = [];
+    
+    if (Platform.isAndroid) {
+      items.addAll([
+        _buildInfoItem('设备型号', (_deviceInfo['model'] as String?) ?? '未知'),
+        _buildInfoItem('制造商', (_deviceInfo['manufacturer'] as String?) ?? '未知'),
+        _buildInfoItem('Android版本', (_deviceInfo['version'] as String?) ?? '未知'),
+        _buildInfoItem('SDK版本', '${_deviceInfo['sdkInt'] ?? '未知'}'),
+        _buildInfoItem('设备ID', (_deviceInfo['deviceId'] as String?) ?? '未知'),
+      ]);
+    } else if (Platform.isIOS) {
+      items.addAll([
+        _buildInfoItem('设备名称', (_deviceInfo['name'] as String?) ?? '未知'),
+        _buildInfoItem('设备型号', (_deviceInfo['model'] as String?) ?? '未知'),
+        _buildInfoItem('系统版本', (_deviceInfo['systemVersion'] as String?) ?? '未知'),
+        _buildInfoItem('设备ID', (_deviceInfo['deviceId'] as String?) ?? '未知'),
+      ]);
+    }
+    
+    return items;
+  }
+
+  Widget _buildInfoItem(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey[800],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

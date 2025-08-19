@@ -92,6 +92,14 @@ class Service18082 {
     );
   }
 
+  /// 发送GPS信息
+  Future<dynamic> sendGpsInfo(Map<String, dynamic> params) async {
+    return _dioService.post(
+      '/manage-center/v2/gps',
+      body: params,
+    );
+  }
+
   /// 确认交接
   Future<Map<String, dynamic>> outletHandover(Map<String, dynamic> params) async {
     return _dioService.post(

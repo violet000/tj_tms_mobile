@@ -10,6 +10,7 @@ import 'package:crypto/crypto.dart';
 import 'dart:convert';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:tj_tms_mobile/presentation/pages/setting/network_settings_page.dart';
+import 'package:tj_tms_mobile/core/utils/util.dart' as app_utils;
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -21,6 +22,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
+  Map<String, dynamic> _deviceInfo = <String, dynamic>{};
   bool _isLoading = false;
 
   late final VerifyTokenProvider _verifyTokenProvider;
@@ -29,6 +31,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
+    _loadDeviceInfo();
     _initializeLoginService();
     _verifyTokenProvider =
         Provider.of<VerifyTokenProvider>(context, listen: false);
@@ -43,6 +46,14 @@ class _LoginPageState extends State<LoginPage> {
     _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadDeviceInfo() async {
+    final info = await app_utils.loadDeviceInfo();
+    if (!mounted) return;
+    setState(() {
+      _deviceInfo = info;
+    });
   }
 
   // 验证表单
@@ -148,6 +159,7 @@ class _LoginPageState extends State<LoginPage> {
               ? null
               : md5.convert(utf8.encode(password1 + 'messi')).toString(),
           'face': faceImage1,
+          'handheldNo': _deviceInfo['deviceId'],
           'isImport': true
         },
         <String, dynamic>{
@@ -156,6 +168,7 @@ class _LoginPageState extends State<LoginPage> {
               ? null
               : md5.convert(utf8.encode(password2 + 'messi')).toString(),
           'face': faceImage2,
+          'handheldNo': _deviceInfo['deviceId'],
           'isImport': false
         }
       ]);

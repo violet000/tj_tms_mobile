@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:ui';
 import 'package:flutter/services.dart';
+import 'dart:async';
 import 'package:tj_tms_mobile/presentation/widgets/common/page_scaffold.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/error_page.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/logger.dart';
 import 'package:tj_tms_mobile/presentation/pages/personal/personal_center_page.dart';
+import 'package:tj_tms_mobile/services/location_polling_manager.dart';
+import 'package:tj_tms_mobile/data/datasources/api/18082/service_18082.dart';
 
 class HomePage extends StatefulWidget {
   final Map<String, dynamic>? arguments;
@@ -16,17 +19,24 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   int _selectedIndex = 0;
   final List<Widget> _pages = [];
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   List<MenuItem> menus = [];
   bool _isInitialized = false; // 初始化状态
+  
+  // 位置轮询相关
+  final LocationPollingManager _locationPollingManager = LocationPollingManager();
 
   @override
   void initState() {
     super.initState();
+    
+    // 注册应用生命周期监听
+    WidgetsBinding.instance.addObserver(this);
+    
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
@@ -48,12 +58,71 @@ class _HomePageState extends State<HomePage>
   // 异步初始化
   Future<void> _initializeAsync() async {
     _initializeBasicUI();
+    // 初始化位置轮询服务
+    await _initializeLocationPolling();
 
     if (mounted) {
       setState(() {
         _isInitialized = true;
       });
       _animationController.forward();
+    }
+  }
+
+  // 初始化位置轮询服务
+  Future<void> _initializeLocationPolling() async {
+    try {
+      await _locationPollingManager.initialize();
+      _attachLocationCallbacks();
+      
+      // 启动位置轮询
+      _locationPollingManager.startPolling();
+      
+    } catch (e) {
+      AppLogger.error('位置轮询服务初始化失败: $e');
+    }
+  }
+
+  // 绑定位置更新与错误回调（前台时启用）
+  void _attachLocationCallbacks() {
+    _locationPollingManager.setCallbacks(
+      onLocationUpdate: (location) {
+        if (!mounted) return;
+        setState(() {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('位置更新: 纬度=${location['latitude']}, 经度=${location['longitude']}'),
+              duration: const Duration(seconds: 1),
+            ),
+          );
+        });
+      },
+      onError: (error) {
+        AppLogger.error('错误: $error');
+      },
+    );
+  }
+
+  // 解绑回调（后台时避免触发UI）
+  void _detachLocationCallbacks() {
+    _locationPollingManager.setCallbacks(onLocationUpdate: null, onError: null);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // 前台：恢复回调并确保轮询运行；后台：仅解绑回调，不停止轮询
+    switch (state) {
+      case AppLifecycleState.resumed:
+        _attachLocationCallbacks();
+        if (!_locationPollingManager.isPolling) {
+          _locationPollingManager.startPolling();
+        }
+        break;
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.paused:
+      case AppLifecycleState.detached:
+        _detachLocationCallbacks();
+        break;
     }
   }
 
@@ -102,7 +171,12 @@ class _HomePageState extends State<HomePage>
 
   @override
   void dispose() {
+    // 移除应用生命周期监听
+    WidgetsBinding.instance.removeObserver(this);
+    
     _animationController.dispose();
+    // 清空回调，避免已销毁页面触发UI更新
+    _locationPollingManager.setCallbacks(onLocationUpdate: null, onError: null);
     super.dispose();
   }
 
