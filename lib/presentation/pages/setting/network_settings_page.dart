@@ -26,7 +26,7 @@ class _NetworkSettingsPageState extends State<NetworkSettingsPage> {
 
   Future<void> _loadConfig() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    // _vmsIpController.text = prefs.getString(vmsKey) ?? '10.34.12.130:9087';
+    // _vmsIpController.text = prefs.getString(vmsKey) ?? '10.7.100.230:8082';
     _vpsIpController.text = prefs.getString(vpsKey) ?? '10.7.100.22:8082';
   }
 
