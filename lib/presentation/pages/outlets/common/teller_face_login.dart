@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:tj_tms_mobile/presentation/state/providers/teller_verify_provider.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/face_scan_widget.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/custom_text_field.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 
 class TellerFaceLogin extends StatefulWidget {
   final int personIndex; // 添加索引
@@ -77,20 +78,52 @@ class _TellerFaceLoginState extends State<TellerFaceLogin>
 
   Future<void> _takePicture() async {
     try {
+
+      // 显示拍照提示
+      EasyLoading.show(
+        status: '拍照中...',
+        maskType: EasyLoadingMaskType.black,
+      );
       final XFile? photo = await _picker.pickImage(
         source: ImageSource.camera,
-        imageQuality: 50,
+        imageQuality: 30, // 降低图片质量到30%
+        maxWidth: 640,    // 限制最大宽度
+        maxHeight: 480,   // 限制最大高度
       );
 
       if (photo != null) {
-        final bytes = await photo.readAsBytes();
+        EasyLoading.show(status: '处理中...');
+        
+        // 添加超时处理
+        final bytes = await photo.readAsBytes().timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            throw TimeoutException('图片读取超时');
+          },
+        );
+        
+        // 检查图片大小
+        if (bytes.length > 500 * 1024) { // 500KB限制
+          throw Exception('图片太大，请重新拍照');
+        }
         final base64String = base64Encode(bytes);
 
         // 在异步操作前获取Provider
         final provider = Provider.of<TellerVerifyProvider>(context, listen: false);
         provider.setFaceImage(widget.personIndex, base64String);
+        EasyLoading.dismiss();
       }
     } catch (e) {
+      EasyLoading.dismiss();
+      if (e is TimeoutException) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('拍照超时，请重试')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('拍照失败: ${e.toString()}')),
+        );
+      }
       print('拍照失败: $e');
     }
   }
