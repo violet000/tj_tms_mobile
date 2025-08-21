@@ -4,6 +4,7 @@ import 'package:tj_tms_mobile/core/config/location_polling_config.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/logger.dart';
 import 'package:tj_tms_mobile/data/datasources/api/18082/service_18082.dart';
 import 'package:tj_tms_mobile/core/utils/util.dart' as app_utils;
+import 'package:tj_tms_mobile/services/foreground_service_manager.dart';
 
 class LocationPollingManager {
   static final LocationPollingManager _instance = LocationPollingManager._internal();
@@ -55,32 +56,67 @@ class LocationPollingManager {
   // 启动位置轮询
   void startPolling() {
     if (_isPolling) {
+      AppLogger.info('位置轮询已在运行中，跳过启动');
       return;
     }
 
     if (!LocationPollingConfig.enableLocationPolling) {
+      AppLogger.warning('位置轮询功能已禁用，无法启动');
       return;
     }
 
     _isPolling = true;
+    AppLogger.info('开始位置轮询，间隔: ${_pollingInterval}秒');
+    
+    // 启动前台服务以保持后台运行
+    _startForegroundService();
     
     // 获取一次位置
     _getCurrentLocation();
     
     // 设置定时器
     _locationTimer = Timer.periodic(Duration(seconds: _pollingInterval), (timer) {
+      AppLogger.info('定时器触发，获取位置信息');
       _getCurrentLocation();
     });
+  }
+  
+  // 启动前台服务
+  Future<void> _startForegroundService() async {
+    try {
+      final success = await ForegroundServiceManager.startForegroundService();
+      if (success) {
+        AppLogger.info('前台服务启动成功');
+      } else {
+        AppLogger.warning('前台服务启动失败');
+      }
+    } catch (e) {
+      AppLogger.error('启动前台服务异常: $e');
+    }
   }
 
   // 停止位置轮询
   void stopPolling() {
     if (!_isPolling) {
+      AppLogger.info('位置轮询未在运行，无需停止');
       return;
     }
     _locationTimer?.cancel();
     _locationTimer = null;
     _isPolling = false;
+    AppLogger.info('位置轮询已停止');
+    
+    // 停止前台服务
+    _stopForegroundService();
+  }
+  
+  // 停止前台服务
+  Future<void> _stopForegroundService() async {
+    try {
+      await ForegroundServiceManager.stopForegroundService();
+    } catch (e) {
+      AppLogger.error('停止前台服务异常: $e');
+    }
   }
 
   // 设置轮询间隔
@@ -106,9 +142,29 @@ class LocationPollingManager {
         _currentLocation = location;
         _processLocationData(location);
         _onLocationUpdate?.call(location);
+      } else {
+        _uploadHeartbeat();
       }
     } catch (e) {
       _onError?.call('获取位置失败: $e');
+      // 发生异常时也上传心跳包
+      _uploadHeartbeat();
+    }
+  }
+  
+  // 上传心跳包
+  Future<void> _uploadHeartbeat() async {
+    try {
+      await _service18082?.sendGpsInfo(<String, dynamic>{
+        'handheldNo': _deviceInfo['deviceId'],
+        'x': null,
+        'y': null,
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+        'status': 'heartbeat',
+        'message': '设备正常运行，但位置获取失败'
+      });
+    } catch (e) {
+      AppLogger.error('心跳包上传失败: $e');
     }
   }
 
@@ -117,20 +173,38 @@ class LocationPollingManager {
     // 检查位置是否有效
     if (location['latitude'] != null && location['longitude'] != null) {
       _uploadLocationData(location);
+    } else {
+      _uploadLocationData(location);
     }
   }
 
   // 上传位置数据到服务器
   Future<void> _uploadLocationData(Map<String, dynamic> location) async {
-    try {
-      await _service18082?.sendGpsInfo(<String, dynamic>{
-        'handheldNo': _deviceInfo['deviceId'],
-        'x': location['latitude'],
-        'y': location['longitude']
-      });
-      AppLogger.info('位置数据上传完成');
-    } catch (e) {
-      _onError?.call('位置数据上传失败: $e');
+    const int maxRetries = 5; // 增加重试次数
+    int retryCount = 0;
+    
+    while (retryCount < maxRetries) {
+      try {
+        final dynamic latitude = location['latitude'];
+        final dynamic longitude = location['longitude'];
+        await _service18082?.sendGpsInfo(<String, dynamic>{
+          'handheldNo': _deviceInfo['deviceId'],
+          'x': latitude,
+          'y': longitude,
+          'timestamp': DateTime.now().millisecondsSinceEpoch,
+          'status': (latitude != null && longitude != null) ? 'valid' : 'invalid'
+        });
+        
+        return; // 成功上传，退出重试循环
+      } catch (e) {
+        retryCount++;
+        if (retryCount >= maxRetries) {
+          _onError?.call('位置数据上传失败: $e');
+        } else {
+          final delaySeconds = retryCount * 3;
+          await Future<void>.delayed(Duration(seconds: delaySeconds));
+        }
+      }
     }
   }
 
@@ -153,4 +227,4 @@ class LocationPollingManager {
     _onLocationUpdate = null;
     _onError = null;
   }
-} 
+}

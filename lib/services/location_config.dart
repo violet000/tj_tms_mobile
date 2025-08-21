@@ -7,13 +7,13 @@ class LocationConfig {
   static BaiduLocationAndroidOption getAndroidOptions() {
     return BaiduLocationAndroidOption(
       coorType: 'bd09ll',
-      locationMode: BMFLocationMode.deviceSensors,
+      locationMode: BMFLocationMode.batterySaving, // 使用省电模式，更适合后台运行
       isNeedAddress: false,
-      isNeedAltitude: true,
+      isNeedAltitude: false, // 不需要海拔，减少功耗
       isNeedLocationPoiList: false,
       isNeedNewVersionRgc: false,
       isNeedLocationDescribe: false,
-      openGps: true,
+      openGps: false, // 关闭GPS，使用网络定位，减少功耗
       locationPurpose: BMFLocationPurpose.sport,
       coordType: BMFLocationCoordType.bd09ll
     );

@@ -9,15 +9,18 @@ class LocationPollingTestPage extends StatefulWidget {
   State<LocationPollingTestPage> createState() => _LocationPollingTestPageState();
 }
 
-class _LocationPollingTestPageState extends State<LocationPollingTestPage> {
+class _LocationPollingTestPageState extends State<LocationPollingTestPage> with WidgetsBindingObserver {
   final LocationPollingManager _locationPollingManager = LocationPollingManager();
   Map<String, dynamic>? _currentLocation;
   Map<String, dynamic>? _status;
   List<String> _logMessages = [];
+  AppLifecycleState _currentLifecycleState = AppLifecycleState.resumed;
 
   @override
   void initState() {
     super.initState();
+    // 注册应用生命周期监听
+    WidgetsBinding.instance.addObserver(this);
     _initializeLocationPolling();
   }
 
@@ -57,6 +60,14 @@ class _LocationPollingTestPageState extends State<LocationPollingTestPage> {
     setState(() {
       _status = _locationPollingManager.getStatus();
     });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    setState(() {
+      _currentLifecycleState = state;
+    });
+    _addLogMessage('应用生命周期状态变化: $state');
   }
 
   void _togglePolling() {
@@ -107,6 +118,7 @@ class _LocationPollingTestPageState extends State<LocationPollingTestPage> {
                     _buildStatusItem('启用轮询', _status!['enablePolling'] ?? false),
                     _buildStatusItem('启用日志', _status!['enableLogging'] ?? false),
                     _buildStatusItem('需要上传', _status!['shouldUpload'] ?? false),
+                    _buildStatusItem('应用状态', _currentLifecycleState.toString().split('.').last),
                   ],
                 ),
               ),
@@ -276,6 +288,8 @@ class _LocationPollingTestPageState extends State<LocationPollingTestPage> {
 
   @override
   void dispose() {
+    // 移除应用生命周期监听
+    WidgetsBinding.instance.removeObserver(this);
     _locationPollingManager.dispose();
     super.dispose();
   }

@@ -8,12 +8,14 @@ import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
 import com.example.tj_tms_mobile.plugin.PluginManager
 import com.example.uhf_plugin.UHFPlugin
+import com.example.tj_tms_mobile.LocationServicePlugin
 
 class MainActivity : FlutterActivity() {
     private val TAG = "MainActivity"
     private lateinit var pluginManager: PluginManager
     private lateinit var barcodeScannerPlugin: BarcodeScannerPlugin
     private lateinit var uhfPlugin: UHFPlugin
+    private lateinit var locationServicePlugin: LocationServicePlugin
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -22,7 +24,6 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        Log.d(TAG, "配置Flutter引擎")
         
         try {
             // 初始化插件管理器
@@ -72,6 +73,10 @@ class MainActivity : FlutterActivity() {
 
             // 初始化所有插件
             pluginManager.initializePlugins()
+            
+            // 注册位置服务插件
+            locationServicePlugin = LocationServicePlugin()
+            flutterEngine.plugins.add(locationServicePlugin)
             
             Log.d(TAG, "Flutter引擎配置完成")
         } catch (e: Exception) {

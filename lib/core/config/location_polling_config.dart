@@ -3,10 +3,10 @@ class LocationPollingConfig {
   static const int defaultPollingInterval = 30;
   
   // 最小轮询间隔（秒）
-  static const int minPollingInterval = 10;
+  static const int minPollingInterval = 30;
   
   // 最大轮询间隔（秒）
-  static const int maxPollingInterval = 300;
+  static const int maxPollingInterval = 60;
   
   // 是否启用位置轮询
   static const bool enableLocationPolling = true;
@@ -28,8 +28,6 @@ class LocationPollingConfig {
   
   // 获取当前轮询间隔
   static int getPollingInterval() {
-    // 这里可以从本地存储或配置文件读取
-    // 暂时返回默认值
     return defaultPollingInterval;
   }
   
@@ -38,9 +36,6 @@ class LocationPollingConfig {
     if (seconds < minPollingInterval || seconds > maxPollingInterval) {
       throw ArgumentError('轮询间隔必须在${minPollingInterval}-${maxPollingInterval}秒之间');
     }
-    
-    // 这里可以保存到本地存储或配置文件
-    // 暂时只是验证参数
   }
   
   // 检查是否应该上传位置数据

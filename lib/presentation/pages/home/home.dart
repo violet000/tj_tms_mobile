@@ -26,17 +26,18 @@ class _HomePageState extends State<HomePage>
   late Animation<double> _fadeAnimation;
   List<MenuItem> menus = [];
   bool _isInitialized = false; // 初始化状态
-  
+
   // 位置轮询相关
-  final LocationPollingManager _locationPollingManager = LocationPollingManager();
+  final LocationPollingManager _locationPollingManager =
+      LocationPollingManager();
 
   @override
   void initState() {
     super.initState();
-    
+
     // 注册应用生命周期监听
     WidgetsBinding.instance.addObserver(this);
-    
+
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
@@ -74,10 +75,9 @@ class _HomePageState extends State<HomePage>
     try {
       await _locationPollingManager.initialize();
       _attachLocationCallbacks();
-      
+
       // 启动位置轮询
       _locationPollingManager.startPolling();
-      
     } catch (e) {
       AppLogger.error('位置轮询服务初始化失败: $e');
     }
@@ -88,14 +88,7 @@ class _HomePageState extends State<HomePage>
     _locationPollingManager.setCallbacks(
       onLocationUpdate: (location) {
         if (!mounted) return;
-        setState(() {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('位置更新: 纬度=${location['latitude']}, 经度=${location['longitude']}'),
-              duration: const Duration(seconds: 1),
-            ),
-          );
-        });
+        setState(() {});
       },
       onError: (error) {
         AppLogger.error('错误: $error');
@@ -110,18 +103,39 @@ class _HomePageState extends State<HomePage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // 前台：恢复回调并确保轮询运行；后台：仅解绑回调，不停止轮询
+    AppLogger.info('应用生命周期状态变化: $state');
+    
+    // 前台：恢复回调并确保轮询运行；后台：仅解绑回调，确保轮询继续运行
     switch (state) {
       case AppLifecycleState.resumed:
+        AppLogger.info('应用恢复前台，重新绑定回调并确保轮询运行');
         _attachLocationCallbacks();
         if (!_locationPollingManager.isPolling) {
           _locationPollingManager.startPolling();
         }
         break;
       case AppLifecycleState.inactive:
-      case AppLifecycleState.paused:
-      case AppLifecycleState.detached:
+        AppLogger.info('应用进入非活动状态，保持回调并确保轮询运行');
+        _attachLocationCallbacks();
+        if (!_locationPollingManager.isPolling) {
+          _locationPollingManager.startPolling();
+        }
+        break;
+      case AppLifecycleState.paused: // 息屏待机
+        AppLogger.info('应用进入后台（息屏待机），解绑回调但保持轮询运行');
         _detachLocationCallbacks();
+        // 确保轮询继续运行，不受息屏影响
+        if (!_locationPollingManager.isPolling) {
+          _locationPollingManager.startPolling();
+        }
+        break;
+      case AppLifecycleState.detached: // 退出
+        AppLogger.info('应用退出，解绑回调但保持轮询运行');
+        _detachLocationCallbacks();
+        // 应用退出时也确保轮询运行
+        if (!_locationPollingManager.isPolling) {
+          _locationPollingManager.startPolling();
+        }
         break;
     }
   }
@@ -173,7 +187,7 @@ class _HomePageState extends State<HomePage>
   void dispose() {
     // 移除应用生命周期监听
     WidgetsBinding.instance.removeObserver(this);
-    
+
     _animationController.dispose();
     // 清空回调，避免已销毁页面触发UI更新
     _locationPollingManager.setCallbacks(onLocationUpdate: null, onError: null);
@@ -247,7 +261,8 @@ class _HomePageState extends State<HomePage>
           splashColor: Colors.transparent, // 点击时没有水波纹效果
           highlightColor: Colors.transparent, // 点击时没有高亮效果
           onTap: () {
-            Navigator.pushNamed(context, menu.route!, arguments: {'mode': menu.mode});
+            Navigator.pushNamed(context, menu.route!,
+                arguments: {'mode': menu.mode});
           },
           borderRadius: BorderRadius.circular(8),
           child: Container(
