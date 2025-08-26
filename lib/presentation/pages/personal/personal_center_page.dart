@@ -220,22 +220,27 @@ class _PersonalCenterPageState extends State<PersonalCenterPage> {
 
       EasyLoading.dismiss();
 
+      // 在对话框内部维护可变数据，便于刷新时就地更新
+      Map<String, dynamic> currentEscortInfo = escortInfo;
+
       showDialog<void>(
         context: context,
         barrierDismissible: false, // 防止点击外部关闭
         builder: (BuildContext context) {
-          return Dialog(
-            insetPadding: EdgeInsets.zero, // 移除默认边距
-            backgroundColor: Colors.transparent,
-            child: Container(
-              width: MediaQuery.of(context).size.width,
-              height: MediaQuery.of(context).size.height,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.zero, // 移除圆角
-              ),
-              child: Column(
-                children: [
+          return StatefulBuilder(
+            builder: (BuildContext context, void Function(void Function()) setState) {
+              return Dialog(
+                insetPadding: EdgeInsets.zero, // 移除默认边距
+                backgroundColor: Colors.transparent,
+                child: Container(
+                  width: MediaQuery.of(context).size.width,
+                  height: MediaQuery.of(context).size.height,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.zero, // 移除圆角
+                  ),
+                  child: Column(
+                    children: [
                   // 标题栏
                   Container(
                     padding:
@@ -286,8 +291,8 @@ class _PersonalCenterPageState extends State<PersonalCenterPage> {
                             child: Column(
                               children: [
                                 Container(
-                                  width: 100,
-                                  height: 100,
+                                  width: 150,
+                                  height: 150,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     border: Border.all(
@@ -302,14 +307,14 @@ class _PersonalCenterPageState extends State<PersonalCenterPage> {
                                     ],
                                   ),
                                   child: ClipOval(
-                                    child: escortInfo != null &&
-                                            escortInfo['cocn'] != null &&
-                                            escortInfo['cocn']
+                                    child: currentEscortInfo != null &&
+                                            currentEscortInfo['cocn'] != null &&
+                                            currentEscortInfo['cocn']
                                                 .toString()
                                                 .isNotEmpty
                                         ? Image.memory(
                                             base64Decode(
-                                                escortInfo['cocn'].toString()),
+                                                currentEscortInfo['cocn'].toString()),
                                             fit: BoxFit.cover,
                                             errorBuilder:
                                                 (context, error, stackTrace) {
@@ -340,25 +345,25 @@ class _PersonalCenterPageState extends State<PersonalCenterPage> {
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
                               color: Colors.grey.shade50,
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(6),
                               border: Border.all(color: Colors.grey.shade200),
                             ),
                             child: Column(
                               children: [
-                                if (escortInfo != null) ...[
+                                if (currentEscortInfo != null) ...[
                                   _buildInfoRow('押运员姓名',
-                                      escortInfo['userName']?.toString() ?? '未知'),
+                                      currentEscortInfo['userName']?.toString() ?? '未知'),
                                   _buildInfoRow('押运员编号',
-                                      escortInfo['userNo']?.toString() ?? '未知'),
+                                      currentEscortInfo['userNo']?.toString() ?? '未知'),
                                   _buildInfoRow('身份证编号',
-                                      escortInfo['numId']?.toString() ?? '未知'),
-                                  _buildInfoRow('手机号码',
-                                      escortInfo['phone']?.toString() ?? '未知'),
+                                      currentEscortInfo['numId']?.toString() ?? '未知'),
+                                  _buildInfoRow('手机号码 ',
+                                      currentEscortInfo['phone']?.toString() ?? '未知'),
                                 ] else ...[
                                   _buildInfoRow('押运员姓名', '暂无数据'),
                                   _buildInfoRow('押运员编号', '暂无数据'),
                                   _buildInfoRow('身份证编号', '暂无数据'),
-                                  _buildInfoRow('手机号码', '暂无数据'),
+                                  _buildInfoRow('手机号码 ', '暂无数据'),
                                 ],
                               ],
                             ),
@@ -381,15 +386,15 @@ class _PersonalCenterPageState extends State<PersonalCenterPage> {
                                   status: '刷新中...',
                                   maskType: EasyLoadingMaskType.black,
                                 );
-                                // 重新获取当前用户的押运员数据
+                                // 重新获取当前用户的押运员数据，直接更新当前弹框的状态
                                 final service18082 = await Service18082.create();
                                 final Map<String, dynamic> updatedEscortInfo = await service18082.getEscortByNo(userData['username']?.toString() ?? '');
                                 updatedEscortInfo['user_info'] = userData;
                                 EasyLoading.dismiss();
-                                
-                                // 关闭当前弹框并重新显示
-                                Navigator.of(context).pop();
-                                _showUserInfo(context, userData, userIndex);
+
+                                setState(() {
+                                  currentEscortInfo = updatedEscortInfo;
+                                });
                               } catch (e) {
                                 EasyLoading.dismiss();
                                 // 显示错误提示
@@ -444,9 +449,11 @@ class _PersonalCenterPageState extends State<PersonalCenterPage> {
                       ],
                     ),
                   ),
-                ],
-              ),
-            ),
+                    ],
+                  ),
+                ),
+              );
+            },
           );
         },
       );
@@ -495,6 +502,7 @@ class _PersonalCenterPageState extends State<PersonalCenterPage> {
           Expanded(
             child: Text(
               value,
+              textAlign: TextAlign.right,
               style: const TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
@@ -520,11 +528,35 @@ class _PersonalCenterPageState extends State<PersonalCenterPage> {
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
+        // 为了实现就地刷新与实时校验，使用StatefulBuilder维护局部状态
+        String? oldPwdError;
+        String? newPwdError;
+        String? confirmPwdError;
+
+        void recalcErrors(void Function(void Function()) setState) {
+          final oldPwd = oldPasswordController.text.trim();
+          final newPwd = newPasswordController.text.trim();
+          final confirmPwd = confirmPasswordController.text.trim();
+
+          setState(() {
+            oldPwdError = oldPwd.isEmpty ? '旧密码不能为空' : null;
+            newPwdError = newPwd.isEmpty ? '新密码不能为空' : null;
+            confirmPwdError = confirmPwd.isEmpty ? '请再次输入新密码' : null;
+
+            // 交叉校验：仅当两者都不为空时检查一致性
+            if ((newPwdError == null && confirmPwdError == null) && newPwd != confirmPwd) {
+              confirmPwdError = '两次输入的新密码不一致';
+            }
+          });
+        }
+
         return Dialog(
           insetPadding:
               const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
           backgroundColor: Colors.transparent,
-          child: Container(
+          child: StatefulBuilder(
+            builder: (BuildContext context, void Function(void Function()) setState) {
+              return Container(
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
@@ -592,6 +624,8 @@ class _PersonalCenterPageState extends State<PersonalCenterPage> {
                         label: '旧密码',
                         hint: '请输入当前密码',
                         icon: Icons.lock_outline,
+                        errorText: oldPwdError,
+                        onChanged: (_) => recalcErrors(setState),
                       ),
 
                       const SizedBox(height: 16),
@@ -602,6 +636,8 @@ class _PersonalCenterPageState extends State<PersonalCenterPage> {
                         label: '新密码',
                         hint: '请输入新密码',
                         icon: Icons.lock_outline,
+                        errorText: newPwdError,
+                        onChanged: (_) => recalcErrors(setState),
                       ),
 
                       const SizedBox(height: 16),
@@ -612,6 +648,8 @@ class _PersonalCenterPageState extends State<PersonalCenterPage> {
                         label: '确认密码',
                         hint: '请再次输入新密码',
                         icon: Icons.lock_outline,
+                        errorText: confirmPwdError,
+                        onChanged: (_) => recalcErrors(setState),
                       ),
                     ],
                   ),
@@ -645,6 +683,11 @@ class _PersonalCenterPageState extends State<PersonalCenterPage> {
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () {
+                            // 提交前校验，错误显示在输入框下方
+                            recalcErrors(setState);
+                            if (oldPwdError != null || newPwdError != null || confirmPwdError != null) {
+                              return;
+                            }
                             _handleChangePassword(
                               context,
                               userData,
@@ -674,6 +717,8 @@ class _PersonalCenterPageState extends State<PersonalCenterPage> {
                 ),
               ],
             ),
+              );
+            },
           ),
         );
       },
@@ -686,12 +731,16 @@ class _PersonalCenterPageState extends State<PersonalCenterPage> {
     required String label,
     required String hint,
     required IconData icon,
+    String? errorText,
+    ValueChanged<String>? onChanged,
   }) {
     return _PasswordInputField(
       controller: controller,
       label: label,
       hint: hint,
       icon: icon,
+      errorText: errorText,
+      onChanged: onChanged,
     );
   }
 
@@ -908,12 +957,16 @@ class _PasswordInputField extends StatefulWidget {
   final String label;
   final String hint;
   final IconData icon;
+  final String? errorText;
+  final ValueChanged<String>? onChanged;
 
   const _PasswordInputField({
     required this.controller,
     required this.label,
     required this.hint,
     required this.icon,
+    this.errorText,
+    this.onChanged,
   });
 
   @override
@@ -930,10 +983,9 @@ class _PasswordInputFieldState extends State<_PasswordInputField> {
       children: [
         Text(
           widget.label,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey.shade700,
+            color: Color.fromARGB(255, 124, 123, 123),
           ),
         ),
         const SizedBox(height: 8),
@@ -941,20 +993,24 @@ class _PasswordInputFieldState extends State<_PasswordInputField> {
           decoration: BoxDecoration(
             color: Colors.grey.shade50,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(
+              color: (widget.errorText != null && widget.errorText!.isNotEmpty)
+                  ? Colors.red.shade400
+                  : Colors.grey.shade300,
+            ),
           ),
           child: TextField(
             controller: widget.controller,
             obscureText: _obscureText,
             decoration: InputDecoration(
               hintText: widget.hint,
-              hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+              hintStyle: const TextStyle(color: Color.fromARGB(255, 197, 196, 196), fontSize: 14),
               prefixIcon:
-                  Icon(widget.icon, color: Colors.grey.shade600, size: 20),
+                  Icon(widget.icon, color: const Color.fromARGB(255, 180, 179, 179), size: 20),
               suffixIcon: IconButton(
                 icon: Icon(
                   _obscureText ? Icons.visibility : Icons.visibility_off,
-                  color: Colors.grey.shade600,
+                  color: const Color.fromARGB(255, 207, 206, 206),
                   size: 20,
                 ),
                 onPressed: () {
@@ -968,9 +1024,18 @@ class _PasswordInputFieldState extends State<_PasswordInputField> {
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             ),
             style: const TextStyle(fontSize: 16),
+            onChanged: widget.onChanged,
           ),
         ),
+        if (widget.errorText != null && widget.errorText!.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Text(
+            widget.errorText!,
+            style: TextStyle(fontSize: 12, color: Colors.red.shade600),
+          ),
+        ],
       ],
     );
   }
 }
+

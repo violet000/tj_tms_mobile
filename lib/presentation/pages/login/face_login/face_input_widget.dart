@@ -28,14 +28,14 @@ class _FaceInputWidgetState extends State<FaceInputWidget> {
   Widget build(BuildContext context) {
     return CustomTextField(
       controller: widget.controller,
-      hintText: '请输入柜员号',
+      hintText: '请输入押运员账号',
       prefixIcon: Icons.person,
       onTap: () {
         _focusNode.unfocus();
       },
       validator: (value) {
         if (value == null || value.isEmpty) {
-          return '请输入柜员号';
+          return '请输入押运员账号';
         }
         return null;
       },

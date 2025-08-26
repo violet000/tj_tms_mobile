@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter_udid/flutter_udid.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/logger.dart';
 
 // 公共方法：获取设备信息
@@ -8,8 +9,9 @@ Future<Map<String, dynamic>> getDeviceInfo() async {
 
   if (Platform.isAndroid) {
     final androidInfo = await deviceInfo.androidInfo;
+    String deviceId = await FlutterUdid.consistentUdid ?? '';
     return <String, dynamic>{
-      'deviceId': androidInfo.id,
+      'deviceId': deviceId,
       'model': androidInfo.model,
       'manufacturer': androidInfo.manufacturer,
       'version': androidInfo.version.release,
@@ -17,8 +19,9 @@ Future<Map<String, dynamic>> getDeviceInfo() async {
     };
   } else if (Platform.isIOS) {
     final iosInfo = await deviceInfo.iosInfo;
+    String deviceId = await FlutterUdid.consistentUdid ?? '';
     return <String, dynamic>{
-      'deviceId': iosInfo.identifierForVendor,
+      'deviceId': deviceId,
       'model': iosInfo.model,
       'systemVersion': iosInfo.systemVersion,
       'name': iosInfo.name,
@@ -34,5 +37,24 @@ Future<Map<String, dynamic>> loadDeviceInfo() async {
   } catch (e) {
     AppLogger.error('获取设备信息失败: $e');
     return <String, dynamic>{};
+  }
+}
+
+// 公共方法：单独获取 UDID（便于需要裸 UDID 的调用方）
+Future<String> getUdid() async {
+  try {
+    final udid = await FlutterUdid.consistentUdid;
+    return udid;
+  } catch (e) {
+    // 获取失败时回退到平台标识符
+    final deviceInfo = DeviceInfoPlugin();
+    if (Platform.isAndroid) {
+      final androidInfo = await deviceInfo.androidInfo;
+      return androidInfo.id;
+    } else if (Platform.isIOS) {
+      final iosInfo = await deviceInfo.iosInfo;
+      return iosInfo.identifierForVendor ?? 'unknown';
+    }
+    return 'unknown';
   }
 }

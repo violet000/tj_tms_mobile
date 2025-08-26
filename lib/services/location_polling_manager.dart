@@ -7,7 +7,8 @@ import 'package:tj_tms_mobile/core/utils/util.dart' as app_utils;
 import 'package:tj_tms_mobile/services/foreground_service_manager.dart';
 
 class LocationPollingManager {
-  static final LocationPollingManager _instance = LocationPollingManager._internal();
+  static final LocationPollingManager _instance =
+      LocationPollingManager._internal();
   factory LocationPollingManager() => _instance;
   LocationPollingManager._internal();
 
@@ -39,6 +40,16 @@ class LocationPollingManager {
     }
   }
 
+  // 重新加载网络服务（用于切换IP后生效）
+  Future<void> reloadService() async {
+    try {
+      _service18082 = await Service18082.create();
+      AppLogger.info('LocationPollingManager 已重新加载 Service18082');
+    } catch (e) {
+      AppLogger.error('重新加载 Service18082 失败: $e');
+    }
+  }
+
   Future<void> _loadDeviceInfo() async {
     final info = await app_utils.loadDeviceInfo();
     _deviceInfo = info;
@@ -67,20 +78,21 @@ class LocationPollingManager {
 
     _isPolling = true;
     AppLogger.info('开始位置轮询，间隔: ${_pollingInterval}秒');
-    
+
     // 启动前台服务以保持后台运行
     _startForegroundService();
-    
+
     // 获取一次位置
     _getCurrentLocation();
-    
+
     // 设置定时器
-    _locationTimer = Timer.periodic(Duration(seconds: _pollingInterval), (timer) {
+    _locationTimer =
+        Timer.periodic(Duration(seconds: _pollingInterval), (timer) {
       AppLogger.info('定时器触发，获取位置信息');
       _getCurrentLocation();
     });
   }
-  
+
   // 启动前台服务
   Future<void> _startForegroundService() async {
     try {
@@ -105,11 +117,11 @@ class LocationPollingManager {
     _locationTimer = null;
     _isPolling = false;
     AppLogger.info('位置轮询已停止');
-    
+
     // 停止前台服务
     _stopForegroundService();
   }
-  
+
   // 停止前台服务
   Future<void> _stopForegroundService() async {
     try {
@@ -151,7 +163,7 @@ class LocationPollingManager {
       _uploadHeartbeat();
     }
   }
-  
+
   // 上传心跳包
   Future<void> _uploadHeartbeat() async {
     try {
@@ -160,8 +172,8 @@ class LocationPollingManager {
         'x': null,
         'y': null,
         'timestamp': DateTime.now().millisecondsSinceEpoch,
-        'status': 'heartbeat',
-        'message': '设备正常运行，但位置获取失败'
+        'status': 'invalid',
+        'message': '获取位置失败，上传心跳包'
       });
     } catch (e) {
       AppLogger.error('心跳包上传失败: $e');
@@ -182,7 +194,7 @@ class LocationPollingManager {
   Future<void> _uploadLocationData(Map<String, dynamic> location) async {
     const int maxRetries = 5; // 增加重试次数
     int retryCount = 0;
-    
+
     while (retryCount < maxRetries) {
       try {
         final dynamic latitude = location['latitude'];
@@ -192,9 +204,10 @@ class LocationPollingManager {
           'x': latitude,
           'y': longitude,
           'timestamp': DateTime.now().millisecondsSinceEpoch,
-          'status': (latitude != null && longitude != null) ? 'valid' : 'invalid'
+          'status':
+              (latitude != null && longitude != null) ? 'valid' : 'invalid'
         });
-        
+
         return; // 成功上传，退出重试循环
       } catch (e) {
         retryCount++;

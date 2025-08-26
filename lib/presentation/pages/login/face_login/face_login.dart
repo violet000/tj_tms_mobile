@@ -124,7 +124,7 @@ class _FaceLoginState extends State<FaceLogin>
                       // 输入框
                       CustomTextField(
                         controller: _usernameController,
-                        hintText: '请输入柜员号',
+                        hintText: '请输入押运员账号',
                         prefixIcon: Icons.person,
                         obscureText: false,
                         onChanged: (value) {

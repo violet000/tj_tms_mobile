@@ -114,6 +114,30 @@ class _LoginPageState extends State<LoginPage> {
     faceLoginProvider.setUsername(1, username2);
   }
 
+  // 校验登录参数
+  // bool _validateLoginParams() {
+  //   final faceLoginProvider =
+  //       Provider.of<FaceLoginProvider>(context, listen: false);
+
+  //   final faceImage1 = faceLoginProvider.getFaceImage(0);
+  //   final username1 = faceLoginProvider.getUsername(0);
+  //   final password1 = faceLoginProvider.getPassword(0);
+
+  //   final faceImage2 = faceLoginProvider.getFaceImage(1);
+  //   final username2 = faceLoginProvider.getUsername(1);
+  //   final password2 = faceLoginProvider.getPassword(1);
+
+  //   // 检查押运员1：faceImage1和username1有值 或者 username1和password1有值
+  //   bool person1Valid = (faceImage1 != null && faceImage1.isNotEmpty && username1 != null && username1.isNotEmpty) ||
+  //                      (username1 != null && username1.isNotEmpty && password1 != null && password1.isNotEmpty);
+
+  //   // 检查押运员2：faceImage2和username2有值 或者 username2和password2有值
+  //   bool person2Valid = (faceImage2 != null && faceImage2.isNotEmpty && username2 != null && username2.isNotEmpty) ||
+  //                      (username2 != null && username2.isNotEmpty && password2 != null && password2.isNotEmpty);
+
+  //   return person1Valid && person2Valid;
+  // }
+
   // 登录提交
   Future<void> _login() async {
     try {
@@ -356,38 +380,62 @@ class _LoginPageState extends State<LoginPage> {
             Positioned(
               left: 0,
               right: 0,
-              bottom: 30,
+              bottom: 80,
               child: Center(
                 child: Column(
                   children: [
-                    ElevatedButton(
-                      onPressed: _isLoading ? null : _login,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF29A8FF),
-                        minimumSize: Size(screenWidth * 0.85, 45),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        disabledBackgroundColor: Color(0xFF29A8FF),
-                      ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            )
-                          : const Text(
-                              '登录',
-                              style: TextStyle(
-                                  color: Color.fromARGB(255, 241, 240, 240),
-                                  fontSize: 16),
+                    Consumer<FaceLoginProvider>(
+                      builder: (context, faceLoginProvider, child) {
+                        final faceImage1 = faceLoginProvider.getFaceImage(0);
+                        final username1 = faceLoginProvider.getUsername(0);
+                        final password1 = faceLoginProvider.getPassword(0);
+
+                        final faceImage2 = faceLoginProvider.getFaceImage(1);
+                        final username2 = faceLoginProvider.getUsername(1);
+                        final password2 = faceLoginProvider.getPassword(1);
+
+                        // 检查押运员1：faceImage1和username1有值 或者 username1和password1有值
+                        bool person1Valid = (faceImage1 != null && faceImage1.isNotEmpty && username1 != null && username1.isNotEmpty) ||
+                                           (username1 != null && username1.isNotEmpty && password1 != null && password1.isNotEmpty);
+
+                        // 检查押运员2：faceImage2和username2有值 或者 username2和password2有值
+                        bool person2Valid = (faceImage2 != null && faceImage2.isNotEmpty && username2 != null && username2.isNotEmpty) ||
+                                           (username2 != null && username2.isNotEmpty && password2 != null && password2.isNotEmpty);
+
+                        bool isLoginEnabled = person1Valid && person2Valid && !_isLoading;
+
+                        return ElevatedButton(
+                          onPressed: isLoginEnabled ? _login : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF29A8FF),
+                            minimumSize: Size(screenWidth * 0.85, 45),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
                             ),
+                            disabledBackgroundColor: const Color.fromARGB(255, 228, 227, 227),
+                          ),
+                          child: _isLoading
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor:
+                                        AlwaysStoppedAnimation<Color>(Colors.white),
+                                  ),
+                                )
+                              : Text(
+                                  '登录',
+                                  style: TextStyle(
+                                      color: isLoginEnabled 
+                                          ? Color.fromARGB(255, 241, 240, 240)
+                                          : Colors.grey.shade600,
+                                      fontSize: 16),
+                                ),
+                        );
+                      },
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 30),
                     TextButton(
                       onPressed: () {
                         Navigator.push<void>(
