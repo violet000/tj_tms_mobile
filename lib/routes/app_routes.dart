@@ -11,6 +11,7 @@ import 'package:tj_tms_mobile/presentation/pages/outlets/box-handover/box_handov
 import 'package:tj_tms_mobile/presentation/pages/outlets/box-handover/box_handover_verify_page.dart';
 import 'package:tj_tms_mobile/presentation/pages/outlets/box-handover/box-handover-verify-success.dart';
 import 'package:tj_tms_mobile/presentation/pages/setting/network_settings_page.dart';
+import 'package:tj_tms_mobile/presentation/pages/personal/personal_detail_page.dart';
 
 class AppRoutes {
   static const String login = '/login';
@@ -25,11 +26,18 @@ class AppRoutes {
   static const String boxHandoverVerify = '/outlets/box-handover-verify';
   static const String boxHandoverVerifySuccess = '/outlets/box-handover-verify-success';
   static const String networkSettings = '/network-settings';
+  static const String personalDetail = '/personal/detail';
 
   static Map<String, WidgetBuilder> getRoutes() {
     return {
       login: (context) => const LoginPage(),
-      home: (context) => const HomePage(),
+      home: (context) {
+        final args = ModalRoute.of(context)?.settings.arguments;
+        if (args is Map<String, dynamic>) {
+          return HomePage(arguments: args);
+        }
+        return const HomePage();
+      },
       boxScan: (context) => const BoxScanPage(),
       boxHandover: (context) => const BoxHandoverPage(),
       boxScanVerify: (context) => const BoxScanVerifyPage(),
@@ -37,6 +45,7 @@ class AppRoutes {
       boxHandoverDetail: (context) => const BoxHandoverDetailPage(),
       boxHandoverVerify: (context) => const BoxHandoverVerifyPage(),
       boxHandoverVerifySuccess: (context) => const BoxHandoverVerifySuccessPage(),
+      personalDetail: (context) => const PersonalDetailPage(),
       networkSettings: (context) => const NetworkSettingsPage(),
       personal: (context) => const PersonalCenterPage(),
       pluginTest: (context) => const PluginTestPage(),

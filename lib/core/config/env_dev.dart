@@ -9,7 +9,7 @@ class DevConfig {
     // final locationData = await locationConfig;
     // print('locationData: $locationData');
     return EnvConfig(
-      apiBaseUrl: 'http://10.7.100.160',
+      apiBaseUrl: 'http://10.34.12.164',
       appName: '天津银行配送系统(开发环境)',
       enableLogging: true,
       environment: Environment.dev,

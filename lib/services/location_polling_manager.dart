@@ -32,6 +32,11 @@ class LocationPollingManager {
   Future<void> initialize() async {
     try {
       await _locationManager.initialize();
+      // 从配置加载已保存的轮询间隔
+      try {
+        final int saved = await LocationPollingConfig.getSavedPollingInterval();
+        _pollingInterval = saved;
+      } catch (_) {}
       _loadDeviceInfo();
       _service18082 = await Service18082.create();
     } catch (e) {

@@ -380,7 +380,7 @@ class _LoginPageState extends State<LoginPage> {
             Positioned(
               left: 0,
               right: 0,
-              bottom: 80,
+              bottom: 50,
               child: Center(
                 child: Column(
                   children: [
@@ -435,7 +435,7 @@ class _LoginPageState extends State<LoginPage> {
                         );
                       },
                     ),
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 20),
                     TextButton(
                       onPressed: () {
                         Navigator.push<void>(

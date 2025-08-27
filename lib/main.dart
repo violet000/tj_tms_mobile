@@ -12,6 +12,7 @@ import 'presentation/state/providers/line_info_provider.dart';
 import 'presentation/state/providers/teller_verify_provider.dart';
 import 'presentation/state/providers/box_handover_provider.dart';
 import 'package:tj_tms_mobile/core/config/env.dart';
+import 'package:tj_tms_mobile/core/utils/global_navigator.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,7 +31,7 @@ void main() async {
       systemNavigationBarColor: Colors.transparent,
       systemNavigationBarIconBrightness: Brightness.dark,
     ));
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   }
   
   runApp(const MyApp());
@@ -55,6 +56,7 @@ class MyApp extends StatelessWidget {
           primarySwatch: Colors.blue,
           useMaterial3: true,
         ),
+        scaffoldMessengerKey: GlobalNavigator.scaffoldMessengerKey,
         initialRoute: '/',
         routes: AppRoutes.getRoutes(),
         onGenerateRoute: RouteGenerator.generateRoute,

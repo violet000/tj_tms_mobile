@@ -44,7 +44,6 @@ class _FaceLoginState extends State<FaceLogin>
 
   Future<void> _takePicture() async {
     try {
-      // 显示拍照提示
       EasyLoading.show(
         status: '拍照中...',
         maskType: EasyLoadingMaskType.black,
@@ -56,6 +55,11 @@ class _FaceLoginState extends State<FaceLogin>
         maxWidth: 640,    // 限制最大宽度
         maxHeight: 480,   // 限制最大高度
       );
+
+      if (photo == null) {
+        EasyLoading.dismiss();
+        return;
+      }
 
       if (photo != null) {
         EasyLoading.show(status: '处理中...');

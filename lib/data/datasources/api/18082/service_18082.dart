@@ -144,10 +144,11 @@ class Service18082 {
   }
 
   /// 重置密码
-  Future<Map<String, dynamic>> resetPassword(String newPsd, String password) async {
+  Future<Map<String, dynamic>> resetPassword(String username, String newPsd, String password) async {
     return _dioService.post(
-      '/user-center/v2/user/password',
+      '/user-center/v2/user/passwordByUser',
       body: <String, dynamic>{
+        'username': username,
         'newPassword': newPsd,
         'password': password
       },
