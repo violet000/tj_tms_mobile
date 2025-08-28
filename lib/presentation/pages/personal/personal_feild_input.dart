@@ -71,7 +71,7 @@ class _PasswordInputFieldState extends State<PasswordInputField> {
               ),
               border: InputBorder.none,
               contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
               isDense: true,
             ),
             style: const TextStyle(fontSize: 14),
