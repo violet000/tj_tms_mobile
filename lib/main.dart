@@ -17,6 +17,55 @@ import 'package:tj_tms_mobile/core/utils/global_navigator.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
+  // 设置虚拟按键为透明，在启动屏显示之前
+  if (!kIsWeb) {
+    // 设置系统UI样式为透明
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarIconBrightness: Brightness.dark,
+    ));
+    
+    // 设置系统UI模式为透明，隐藏底部虚拟按键
+    await SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.immersiveSticky,
+      overlays: [],
+    );
+    
+    // 延迟再次设置，确保生效
+    Future.delayed(const Duration(milliseconds: 100), () {
+      SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ));
+    });
+    
+    // 多次设置，确保生效
+    for (int i = 0; i < 5; i++) {
+      Future.delayed(Duration(milliseconds: 200 * (i + 1)), () {
+        SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
+          systemNavigationBarColor: Colors.transparent,
+          systemNavigationBarIconBrightness: Brightness.dark,
+        ));
+      });
+    }
+    
+    // 监听系统UI变化，保持透明
+    SystemChrome.setSystemUIChangeCallback((systemOverlaysAreVisible) async {
+      SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ));
+    });
+  }
+  
   // 初始化环境配置
   Env.init();
   
@@ -24,14 +73,6 @@ void main() async {
   if (!kIsWeb) {
     final locationService = LocationService();
     await locationService.initialize();
-    // 禁用掉底部的虚拟按键
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-      systemNavigationBarColor: Colors.transparent,
-      systemNavigationBarIconBrightness: Brightness.dark,
-    ));
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   }
   
   runApp(const MyApp());
@@ -42,6 +83,18 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 在应用构建时再次确保虚拟按键为透明
+    if (!kIsWeb) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
+          systemNavigationBarColor: Colors.transparent,
+          systemNavigationBarIconBrightness: Brightness.dark,
+        ));
+      });
+    }
+    
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => FaceLoginProvider()),

@@ -172,14 +172,7 @@ class LocationPollingManager {
   // 上传心跳包
   Future<void> _uploadHeartbeat() async {
     try {
-      await _service18082?.sendGpsInfo(<String, dynamic>{
-        'handheldNo': _deviceInfo['deviceId'],
-        'x': null,
-        'y': null,
-        'timestamp': DateTime.now().millisecondsSinceEpoch,
-        'status': 'invalid',
-        'message': '获取位置失败，上传心跳包'
-      });
+      AppLogger.info('上传心跳包');
     } catch (e) {
       AppLogger.error('心跳包上传失败: $e');
     }
@@ -204,16 +197,17 @@ class LocationPollingManager {
       try {
         final dynamic latitude = location['latitude'];
         final dynamic longitude = location['longitude'];
-        await _service18082?.sendGpsInfo(<String, dynamic>{
-          'handheldNo': _deviceInfo['deviceId'],
-          'x': latitude,
-          'y': longitude,
-          'timestamp': DateTime.now().millisecondsSinceEpoch,
-          'status':
-              (latitude != null && longitude != null) ? 'valid' : 'invalid'
-        });
-
-        return; // 成功上传，退出重试循环
+        if (latitude != null && longitude != null) {
+          await _service18082?.sendGpsInfo(<String, dynamic>{
+            'handheldNo': _deviceInfo['deviceId'],
+            'x': latitude,
+            'y': longitude,
+            'timestamp': DateTime.now().millisecondsSinceEpoch,
+            'status':
+                (latitude != null && longitude != null) ? 'valid' : 'invalid'
+          });
+          return; // 成功上传，退出重试循环
+        }
       } catch (e) {
         retryCount++;
         if (retryCount >= maxRetries) {

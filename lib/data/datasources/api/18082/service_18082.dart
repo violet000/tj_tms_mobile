@@ -2,12 +2,14 @@ import 'package:tj_tms_mobile/data/datasources/interceptor/dio_service.dart';
 import 'package:tj_tms_mobile/core/config/env.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tj_tms_mobile/core/utils/password_encrypt.dart';
+import 'package:tj_tms_mobile/core/utils/util.dart' as app_utils;
 
 /// 18082服务接口部分
 class Service18082 {
   static const String vpsKey = 'network_vps_ip';
 
   final DioService _dioService;
+  Map<String, dynamic> _deviceInfo = <String, dynamic>{};
 
   Service18082._(this._dioService);
 
@@ -15,9 +17,14 @@ class Service18082 {
     final prefs = await SharedPreferences.getInstance();
     final vpsIp = prefs.getString(vpsKey) ?? '${Env.config.apiBaseUrl}:8082';
     final baseUrl = vpsIp.startsWith('http') ? vpsIp : 'http://$vpsIp';
-    return Service18082._(
-      DioServiceManager().getService(baseUrl),
-    );
+    final service = Service18082._(DioServiceManager().getService(baseUrl));
+    await service._loadDeviceInfo();
+    return service;
+  }
+
+  Future<void> _loadDeviceInfo() async {
+    final info = await app_utils.loadDeviceInfo();
+    _deviceInfo = info;
   }
 
   /// 用户登陆
@@ -38,21 +45,9 @@ class Service18082 {
     );
   }
 
-  /// 老的登录方式
-  // Future<Map<String, dynamic>> accountLogin(
-  //     String username, String? password, String? image) async {
-  //   return _dioService.post(
-  //     '/auth/callback/login',
-  //     body: <String, dynamic>{
-  //       'username': username,
-  //       'password': password,
-  //       'image': image,
-  //     },
-  //   );
-  // }
-
   // 新的登录方式
-  Future<Map<String, dynamic>> accountLogin(List<Map<String, dynamic>> loginParams) async {
+  Future<Map<String, dynamic>> accountLogin(
+      List<Map<String, dynamic>> loginParams) async {
     return _dioService.post(
       '/user-center/v2/user/faceLogin',
       body: loginParams,
@@ -64,6 +59,7 @@ class Service18082 {
       {int? mode}) async {
     final Map<String, dynamic> body = <String, dynamic>{
       'escortNo': escortNo,
+      'handheldNo': _deviceInfo['deviceId'],
     };
     if (mode != null) {
       body['mode'] = mode;
@@ -101,7 +97,8 @@ class Service18082 {
   }
 
   /// 确认交接
-  Future<Map<String, dynamic>> outletHandover(Map<String, dynamic> params) async {
+  Future<Map<String, dynamic>> outletHandover(
+      Map<String, dynamic> params) async {
     return _dioService.post(
       '/manage-center/v2/outletHandover',
       body: <String, dynamic>{
@@ -144,7 +141,8 @@ class Service18082 {
   }
 
   /// 重置密码
-  Future<Map<String, dynamic>> resetPassword(String username, String newPsd, String password) async {
+  Future<Map<String, dynamic>> resetPassword(
+      String username, String newPsd, String password) async {
     return _dioService.post(
       '/user-center/v2/user/passwordByUser',
       body: <String, dynamic>{
@@ -154,5 +152,4 @@ class Service18082 {
       },
     );
   }
-
 }
