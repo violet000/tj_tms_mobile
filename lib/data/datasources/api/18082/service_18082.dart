@@ -140,6 +140,12 @@ class Service18082 {
     );
   }
 
+  /// 查询AGPS系统参数
+  Future<Map<String, dynamic>> getAGPSParam(Map<String, dynamic> params) async {
+    return _dioService.get('/param-center/v2/paramManage',
+        queryParameters: params);
+  }
+
   /// 重置密码
   Future<Map<String, dynamic>> resetPassword(
       String username, String newPsd, String password) async {
