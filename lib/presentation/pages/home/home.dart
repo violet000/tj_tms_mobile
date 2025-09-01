@@ -9,6 +9,7 @@ import 'package:tj_tms_mobile/presentation/widgets/common/logger.dart';
 import 'package:tj_tms_mobile/presentation/pages/personal/personal_center_page.dart';
 import 'package:tj_tms_mobile/services/location_polling_manager.dart';
 import 'package:tj_tms_mobile/data/datasources/api/18082/service_18082.dart';
+import 'package:tj_tms_mobile/services/interval_manager.dart';
 
 class HomePage extends StatefulWidget {
   final Map<String, dynamic>? arguments;
@@ -19,7 +20,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage>
-    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver, RouteAware {
   int _selectedIndex = 0;
   final List<Widget> _pages = [];
   late AnimationController _animationController;
@@ -30,6 +31,8 @@ class _HomePageState extends State<HomePage>
   // 位置轮询相关
   final LocationPollingManager _locationPollingManager =
       LocationPollingManager();
+  
+  // AGPS相关 - 使用IntervalManager统一管理
 
   @override
   void initState() {
@@ -44,7 +47,7 @@ class _HomePageState extends State<HomePage>
     );
     _fadeAnimation =
         Tween<double>(begin: 0.0, end: 1.0).animate(_animationController);
-
+    
     // 检查是否有传入的tab索引参数
     if (widget.arguments != null && widget.arguments!['selectedTab'] != null) {
       _selectedIndex = widget.arguments!['selectedTab'] as int;
@@ -56,26 +59,138 @@ class _HomePageState extends State<HomePage>
     });
   }
 
+  int parseIntervalToSeconds({
+    required String paramValue,
+    required String statement,
+  }) {
+    final int? raw = int.tryParse(paramValue);
+    if (raw == null) return 0;
+    // 若含 ss 则按秒；否则若含 mm 按分钟；否则若含 HH 按小时；默认当作秒
+    if (statement.contains('ss')) return raw;
+    if (statement.contains('mm')) return raw * 60;
+    if (statement.contains('HH')) return raw * 3600;
+    return raw;
+  }
+
+  Future<void> _loadAGPSInterval() async {
+    try {
+      AppLogger.info('开始加载AGPS间隔配置');
+      
+      final service = await Service18082.create();
+      final result = await service.getAGPSParam(<String, dynamic>{
+        'catalog': '',
+        'paramName': 'GPS_SEND_TIME',
+        'statement': '',
+        'description': '',
+        'pageSize': 10,
+        'curRow': 1
+      });
+      
+      if ((result['retCode'] as String?) == '000000') {
+        final List<dynamic> dataList =
+            (result['retList'] as List<dynamic>?) ?? <dynamic>[];
+        if (dataList.isNotEmpty) {
+          final Map<String, dynamic> agpsData =
+              dataList.first as Map<String, dynamic>;
+          final String? paramValue = agpsData['paramValue']?.toString();
+          final String? statement = agpsData['statement']?.toString();
+          if (paramValue != null) {
+            final int interval = parseIntervalToSeconds(
+                paramValue: paramValue, statement: statement ?? '');
+            
+            AppLogger.info('从服务器获取到AGPS间隔: ${interval}秒');
+            await IntervalManager.setBothIntervals(interval);
+            await _startLocationPolling();
+            return;
+          }
+        }
+      }
+      
+      // 如果服务器获取失败，使用本地保存的配置
+      AppLogger.info('服务器获取AGPS间隔失败，使用本地配置');
+      final saved = await IntervalManager.getAGPSInterval();
+      final current = saved ?? await IntervalManager.getDefaultInterval();
+      await IntervalManager.setCurrentInterval(current);
+      if (saved != null && saved > 0) {
+        await IntervalManager.updateLocationPollingConfig(saved);
+      }
+      await _startLocationPolling();
+    } catch (e) {
+      AppLogger.error('加载AGPS间隔配置失败: $e');
+      
+      // 异常情况下使用默认配置
+      try {
+        final saved = await IntervalManager.getAGPSInterval();
+        final current = saved ?? await IntervalManager.getDefaultInterval();
+        await IntervalManager.setCurrentInterval(current);
+        if (saved != null && saved > 0) {
+          await IntervalManager.updateLocationPollingConfig(saved);
+        }
+        await _startLocationPolling();
+      } catch (innerError) {
+        AppLogger.error('启动位置轮询服务失败: $innerError');
+      }
+    }
+  }
+
   // 异步初始化
   Future<void> _initializeAsync() async {
     _initializeBasicUI();
-    // 初始化位置轮询服务
-    await _initializeLocationPolling();
 
     if (mounted) {
       setState(() {
         _isInitialized = true;
       });
       _animationController.forward();
+      
+      // 在UI初始化完成后再启动AGPS服务
+      _loadAGPSInterval();
+    }
+  }
+  
+  // 页面恢复机制
+  void _restorePageState() {
+    if (mounted && _isInitialized) {
+      AppLogger.info('恢复页面状态');
+      
+      // 延迟执行，避免快速切换导致的问题
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          setState(() {
+            // 强制刷新UI
+          });
+          
+          // 重新初始化页面
+          _initializePages();
+          
+          // 确保动画控制器状态正确
+          if (_animationController.status != AnimationStatus.completed) {
+            _animationController.forward();
+          }
+        }
+      });
     }
   }
 
-  // 初始化位置轮询服务
-  Future<void> _initializeLocationPolling() async {
+  // 启动位置轮询服务
+  Future<void> _startLocationPolling() async {
     try {
       await _locationPollingManager.initialize();
       _attachLocationCallbacks();
-
+      
+      // 使用IntervalManager获取有效的间隔值，添加错误处理
+      int effectiveInterval = 0;
+      try {
+        effectiveInterval = await IntervalManager.getEffectiveInterval();
+      } catch (e) {
+        AppLogger.error('获取AGPS间隔失败: $e');
+        effectiveInterval = 30; // 使用默认值
+      }
+      
+      if (effectiveInterval > 0) {
+        _locationPollingManager.setPollingInterval(effectiveInterval);
+      }
+      
       // 启动位置轮询
       _locationPollingManager.startPolling();
     } catch (e) {
@@ -104,11 +219,18 @@ class _HomePageState extends State<HomePage>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     AppLogger.info('应用生命周期状态变化: $state');
-    
+
     // 前台：恢复回调并确保轮询运行；后台：仅解绑回调，确保轮询继续运行
     switch (state) {
       case AppLifecycleState.resumed:
         AppLogger.info('应用恢复前台，重新绑定回调并确保轮询运行');
+        // 确保UI状态正确恢复
+        if (mounted) {
+          setState(() {
+          });
+        }
+        // 调用页面恢复机制
+        _restorePageState();
         _attachLocationCallbacks();
         if (!_locationPollingManager.isPolling) {
           _locationPollingManager.startPolling();
@@ -130,12 +252,6 @@ class _HomePageState extends State<HomePage>
         }
         break;
       case AppLifecycleState.detached: // 退出
-        AppLogger.info('应用退出，解绑回调但保持轮询运行');
-        _detachLocationCallbacks();
-        // 应用退出时也确保轮询运行
-        if (!_locationPollingManager.isPolling) {
-          _locationPollingManager.startPolling();
-        }
         break;
     }
   }
@@ -188,9 +304,15 @@ class _HomePageState extends State<HomePage>
     // 移除应用生命周期监听
     WidgetsBinding.instance.removeObserver(this);
 
+    // 确保动画控制器正确释放
+    if (_animationController.isAnimating) {
+      _animationController.stop();
+    }
     _animationController.dispose();
+    
     // 清空回调，避免已销毁页面触发UI更新
     _locationPollingManager.setCallbacks(onLocationUpdate: null, onError: null);
+    
     super.dispose();
   }
 
@@ -346,6 +468,18 @@ class _HomePageState extends State<HomePage>
 
   @override
   Widget build(BuildContext context) {
+    // 添加额外的安全检查，防止黑屏
+    if (!mounted) {
+      return const Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF29A8FF)),
+          ),
+        ),
+      );
+    }
+    
     if (!_isInitialized) {
       return Scaffold(
         backgroundColor: Colors.white,
@@ -369,14 +503,60 @@ class _HomePageState extends State<HomePage>
         ),
       );
     }
-    return Scaffold(
-      body: _pages.isEmpty
-          ? const Center(
-              child: CircularProgressIndicator(
+    
+    // 安全检查页面索引
+    if (_pages.isEmpty || _selectedIndex >= _pages.length) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(
                 valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF29A8FF)),
               ),
-            )
-          : _pages[_selectedIndex],
+              const SizedBox(height: 16),
+              Text(
+                '页面加载中...',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    
+    // 确保当前页面有效
+    final currentPage = _pages[_selectedIndex];
+    if (currentPage == null) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF29A8FF)),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                '页面恢复中...',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    
+    return Scaffold(
+      body: currentPage,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           boxShadow: [
@@ -405,10 +585,15 @@ class _HomePageState extends State<HomePage>
               elevation: 0,
               enableFeedback: false,
               onTap: (index) {
-                setState(() {
-                  _selectedIndex = index;
-                  AppLogger.info('selectedIndex: $_selectedIndex');
-                });
+                // 安全检查索引范围
+                if (index >= 0 && index < menus.length) {
+                  setState(() {
+                    _selectedIndex = index;
+                    AppLogger.info('selectedIndex: $_selectedIndex');
+                  });
+                } else {
+                  AppLogger.error('无效的页面索引: $index');
+                }
               },
               items: menus
                   .map((menu) => BottomNavigationBarItem(

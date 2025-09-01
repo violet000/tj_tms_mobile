@@ -2,7 +2,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class LocationPollingConfig {
   // 默认轮询间隔（秒）
-  static const int defaultPollingInterval = 30;
+  static const int defaultPollingInterval = 120;
 
   // 最小轮询间隔（秒）
   static const int minPollingInterval = 3;

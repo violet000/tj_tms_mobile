@@ -11,6 +11,7 @@ import io.flutter.plugin.common.MethodChannel
 import com.example.tj_tms_mobile.plugin.PluginManager
 import com.example.uhf_plugin.UHFPlugin
 import com.example.tj_tms_mobile.LocationServicePlugin
+import com.example.tj_tms_mobile.plugins.LivenessDetectionPlugin
 
 class MainActivity : FlutterActivity() {
     private val TAG = "MainActivity"
@@ -18,6 +19,7 @@ class MainActivity : FlutterActivity() {
     private lateinit var barcodeScannerPlugin: BarcodeScannerPlugin
     private lateinit var uhfPlugin: UHFPlugin
     private lateinit var locationServicePlugin: LocationServicePlugin
+    private lateinit var livenessDetectionPlugin: LivenessDetectionPlugin
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,6 +43,10 @@ class MainActivity : FlutterActivity() {
             // 创建并注册UHF插件
             uhfPlugin = UHFPlugin(applicationContext, flutterEngine)
             pluginManager.registerPlugin(uhfPlugin.pluginId, uhfPlugin)
+
+            // 创建并注册活体检测插件
+            livenessDetectionPlugin = LivenessDetectionPlugin(context = this, engine = flutterEngine)
+            pluginManager.registerPlugin("liveness_detection", livenessDetectionPlugin)
 
             // 设置条形码扫描插件的事件通道
             val barcodeEventChannel = EventChannel(flutterEngine.dartExecutor.binaryMessenger, "com.example.tj_tms_mobile/barcode_events")

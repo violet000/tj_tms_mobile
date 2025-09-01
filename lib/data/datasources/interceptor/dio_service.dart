@@ -3,11 +3,16 @@ import 'dart:core';
 import 'package:dio/dio.dart';
 import 'package:tj_tms_mobile/core/errors/exceptions.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/logger.dart';
+import 'package:tj_tms_mobile/core/utils/global_navigator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tj_tms_mobile/services/location_polling_manager.dart';
 
 class DioService {
   final String baseUrl;
   final Dio _dio;
   String? _accessToken;
+  // 指定接口使用固定 token 的匹配规则：key 为匹配 Pattern（String 或 RegExp），value 为固定 token
+  final Map<Pattern, String> _fixedTokenByPattern = <Pattern, String>{};
 
   DioService({
     required this.baseUrl,
@@ -19,7 +24,6 @@ class DioService {
           headers: <String, String>{
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'Authorization': 'Basic emhhbmdzYW46MTIzNDU2',
           },
         )) {
     _setupInterceptors();
@@ -31,11 +35,21 @@ class DioService {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          // 添加Authorization到请求头
-          options.headers['Authorization'] = 'Basic emhhbmdzYW46MTIzNDU2';
-          // if (_accessToken != null && _accessToken!.isNotEmpty) {
-          //   options.headers['Authorization'] = 'Bearer $_accessToken';
-          // }
+          // 添加Authorization到请求头（指定接口优先使用固定token）
+          final String fullUrl = '${options.baseUrl}${options.path}';
+          String? tokenToUse;
+          // 命中任一匹配规则则使用固定 token
+          _fixedTokenByPattern.forEach((Pattern pattern, String token) {
+            if (fullUrl.contains(pattern)) {
+              tokenToUse = token;
+            }
+          });
+          tokenToUse ??= _accessToken;
+          if (tokenToUse != null && tokenToUse!.isNotEmpty) {
+            final String t = tokenToUse!.trim();
+            final bool hasScheme = t.startsWith('Basic ') || t.startsWith('Bearer ');
+            options.headers['Authorization'] = hasScheme ? t : 'Bearer ' + t;
+          }
           
           // 记录请求日志
           AppLogger.network(
@@ -65,6 +79,12 @@ class DioService {
             error: error.message,
           );
           
+          // 处理401认证失败，自动跳转到登录页面
+          if (error.response?.statusCode == 401) {
+            AppLogger.info('检测到401认证失败，准备跳转到登录页面');
+            _handleAuthFailure();
+          }
+          
           handler.next(error);
         },
       ),
@@ -85,6 +105,64 @@ class DioService {
 
   /// 获取当前的 access_token
   String? getAccessToken() => _accessToken;
+
+  /// 处理认证失败，清除token并跳转到登录页面
+  void _handleAuthFailure() async {
+    // 清除当前token
+    clearAccessToken();
+    
+    // 清除所有服务的token
+    DioServiceManager().clearAccessTokenForAll();
+    
+    // 清除SharedPreferences中的token
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('access_token');
+      AppLogger.info('已清除SharedPreferences中的token');
+    } catch (e) {
+      AppLogger.error('清除SharedPreferences中的token失败: $e');
+    }
+    
+    // 确保AGPS位置轮询服务继续运行
+    _ensureLocationPollingContinues();
+    
+    // 使用全局导航器跳转到登录页面
+    GlobalNavigator.navigateToLogin();
+    
+    AppLogger.info('已清除token并跳转到登录页面，AGPS服务继续运行');
+  }
+
+  /// 确保位置轮询服务在认证失效时继续运行
+  void _ensureLocationPollingContinues() {
+    try {
+      final locationPollingManager = LocationPollingManager();
+      
+      // 如果位置轮询服务正在运行，确保它继续运行
+      if (locationPollingManager.isPolling) {
+        AppLogger.info('AGPS位置轮询服务正在运行，确保继续运行');
+      } else {
+        // 如果位置轮询服务未运行，不自动启动，保持当前状态
+        AppLogger.info('AGPS位置轮询服务未运行，保持当前状态');
+      }
+    } catch (e) {
+      AppLogger.error('确保AGPS位置轮询服务继续运行时出错: $e');
+    }
+  }
+
+  /// 为匹配到的接口设置固定 token（pattern 可为子串或正则）
+  void setFixedTokenFor(Pattern pattern, String token) {
+    _fixedTokenByPattern[pattern] = token;
+  }
+
+  /// 移除某条固定 token 规则
+  void removeFixedTokenFor(Pattern pattern) {
+    _fixedTokenByPattern.remove(pattern);
+  }
+
+  /// 清空所有固定 token 规则
+  void clearFixedTokenRules() {
+    _fixedTokenByPattern.clear();
+  }
 
   // 基础请求方法
   Future<Map<String, dynamic>> get(String endpoint, {Map<String, dynamic>? queryParameters}) async {

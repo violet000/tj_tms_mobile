@@ -19,11 +19,13 @@ class NetworkSettingsPage extends StatefulWidget {
 class _NetworkSettingsPageState extends State<NetworkSettingsPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _vpsIpController = TextEditingController();
-  final TextEditingController _agpsIntervalController = TextEditingController();
+  final TextEditingController _vmsIpController = TextEditingController();
+  // final TextEditingController _agpsIntervalController = TextEditingController();
   final TextEditingController _deviceIdController = TextEditingController();
 
   static const String vpsKey = 'network_vps_ip';
-  static const String agpsIntervalKey = 'agps_interval_seconds';
+  static const String vmsKey = 'network_vms_ip';
+  // static const String agpsIntervalKey = 'agps_interval_seconds';
   Map<String, dynamic> _deviceInfo = <String, dynamic>{};
 
   @override
@@ -59,88 +61,48 @@ class _NetworkSettingsPageState extends State<NetworkSettingsPage> {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     _vpsIpController.text =
         prefs.getString(vpsKey) ?? '${Env.config.apiBaseUrl}:8082';
-    // 从接口获取AGPS时间间隔
-    await _loadAGPSInterval();
-  }
-
-  Future<void> _loadAGPSInterval() async {
-    try {
-      debugPrint('开始加载AGPS时间间隔...');
-      final service = await Service18082.create();
-      final Map<String, dynamic> result =
-          await service.getAGPSParam(<String, dynamic>{
-        'catalog': '',
-        'paramName': 'GPS_SEND_TIME',
-        'statement': '',
-        'description': '',
-        'pageSize': 10,
-        'curRow': 1
-      });
-      debugPrint('AGPS时间间隔接口返回结果: $result');
-      if (result['retCode'] == '000000') {
-        final List<dynamic> dataList =
-            result['data']['list'] as List<dynamic>? ?? <dynamic>[];
-        if (dataList.isNotEmpty) {
-          final Map<String, dynamic> agpsData =
-              dataList.first as Map<String, dynamic>;
-          final String? paramValue = agpsData['paramValue'] as String?;
-          if (paramValue != null) {
-            final int? interval = int.tryParse(paramValue);
-            if (interval != null) {
-              _agpsIntervalController.text = interval.toString();
-              // 保存到本地存储
-              final SharedPreferences prefs =
-                  await SharedPreferences.getInstance();
-              await prefs.setInt(agpsIntervalKey, interval);
-              return;
-            }
-          }
-        }
-      }
-      // 如果接口获取失败，使用本地保存的值或默认值
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      final int? saved = prefs.getInt(agpsIntervalKey);
-      final int current =
-          saved ?? await LocationPollingConfig.getSavedPollingInterval();
-      _agpsIntervalController.text = current.toString();
-    } catch (e) {
-      // 如果接口调用失败，使用本地保存的值或默认值
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      final int? saved = prefs.getInt(agpsIntervalKey);
-      final int current =
-          saved ?? await LocationPollingConfig.getSavedPollingInterval();
-      _agpsIntervalController.text = current.toString();
-    }
+    _vmsIpController.text =
+        prefs.getString(vmsKey) ?? '${Env.config.apiBaseUrl}:8082';
   }
 
   Future<void> _saveConfig() async {
     if (_formKey.currentState?.validate() ?? false) {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
-      var input = _vpsIpController.text.trim();
-      if (!input.startsWith('http')) {
-        input = "http://" + input;
+      var vpsInput = _vpsIpController.text.trim();
+      var vmsInput = _vmsIpController.text.trim();
+      if (!vpsInput.startsWith('http')) {
+        vpsInput = "http://" + vpsInput;
       }
-      if (!_isValidServerAddress(input)) {
+      if (!vmsInput.startsWith('http')) {
+        vmsInput = "http://" + vmsInput;
+      }
+      if (!_isValidServerAddress(vpsInput)) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('IP/域名格式不正确，请检查后重试')),
+          const SnackBar(content: Text('网络IP/域名格式不正确，请检查后重试')),
+        );
+        return;
+      }
+      if (!_isValidServerAddress(vmsInput)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('GPSIP/域名格式不正确，请检查后重试')),
         );
         return;
       }
       // 去除末尾多余斜杠
-      final normalized = input.replaceAll(RegExp(r"/+$/"), '');
-      // 同步写入 vpsKey（主）和 vmsKey（兼容）
+      final normalized = vpsInput.replaceAll(RegExp(r"/+$/"), '');
+      final normalizedVms = vmsInput.replaceAll(RegExp(r"/+$/"), '');
+      // 同步写入 vpsKey
       await prefs.setString(vpsKey, normalized);
-      // AGPS时间间隔从接口获取，不需要手动保存
-      // 获取当前保存的AGPS时间间隔用于后台轮询
-      final int? savedInterval = prefs.getInt(agpsIntervalKey);
-      if (savedInterval != null) {
-        await LocationPollingConfig.setPollingInterval(savedInterval);
-        // 让后台轮询立即生效
-        LocationPollingManager().setPollingInterval(savedInterval);
-      }
-      DioServiceManager().clearAllServices();
-      // 刷新后台轮询使用的 Service 实例
-      await LocationPollingManager().reloadService();
+      await prefs.setString(vmsKey, normalizedVms);
+      // final int? savedInterval = prefs.getInt(agpsIntervalKey);
+      // if (savedInterval != null) {
+      //   await LocationPollingConfig.setPollingInterval(savedInterval);
+      //   // 让后台轮询立即生效
+      //   LocationPollingManager().setPollingInterval(savedInterval);
+      // }
+      // DioServiceManager().clearAllServices();
+      // // 刷新后台轮询使用的 Service 实例
+      // await LocationPollingManager().reloadService();
       Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('保存成功')),
@@ -192,19 +154,40 @@ class _NetworkSettingsPageState extends State<NetworkSettingsPage> {
                       ),
                       const SizedBox(height: 32),
                       TextFormField(
-                        controller: _agpsIntervalController,
-                        enabled: false,
+                        controller: _vmsIpController,
                         decoration: const InputDecoration(
-                          labelText: 'AGPS时间间隔（秒）',
-                          helperText: '此值由系统自动获取',
+                          labelText: 'GPSIP配置',
+                          helperText: '应用程序访问的网络地址（GPS）',
                           helperStyle: TextStyle(
                             color: Color.fromARGB(255, 191, 189, 189),
                           ),
                           border: OutlineInputBorder(),
-                          filled: true,
-                          fillColor: Color(0xFFF5F5F5),
                         ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return '请输入GPS IP配置';
+                          }
+                          if (!_isValidServerAddress(value)) {
+                            return 'GPS IP配置格式不正确';
+                          }
+                          return null;
+                        },
                       ),
+                      // const SizedBox(height: 32),
+                      // TextFormField(
+                      //   controller: _agpsIntervalController,
+                      //   enabled: false,
+                      //   decoration: const InputDecoration(
+                      //     labelText: 'AGPS时间间隔（秒）',
+                      //     helperText: '此值由系统自动获取',
+                      //     helperStyle: TextStyle(
+                      //       color: Color.fromARGB(255, 191, 189, 189),
+                      //     ),
+                      //     border: OutlineInputBorder(),
+                      //     filled: true,
+                      //     fillColor: Color(0xFFF5F5F5),
+                      //   ),
+                      // ),
                       const SizedBox(height: 32),
                       TextFormField(
                         controller: _deviceIdController,
@@ -296,7 +279,7 @@ class _NetworkSettingsPageState extends State<NetworkSettingsPage> {
   void dispose() {
     // _vmsIpController.dispose();
     _vpsIpController.dispose();
-    _agpsIntervalController.dispose();
+    // _agpsIntervalController.dispose();
     _deviceIdController.dispose();
     super.dispose();
   }

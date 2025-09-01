@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:tj_tms_mobile/services/location_manager.dart';
 import 'package:tj_tms_mobile/core/config/location_polling_config.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/logger.dart';
-import 'package:tj_tms_mobile/data/datasources/api/18082/service_18082.dart';
+import 'package:tj_tms_mobile/data/datasources/api/9087/service_9087.dart';
 import 'package:tj_tms_mobile/core/utils/util.dart' as app_utils;
 import 'package:tj_tms_mobile/services/foreground_service_manager.dart';
 
@@ -17,7 +17,7 @@ class LocationPollingManager {
   Map<String, dynamic>? _currentLocation;
   bool _isPolling = false;
   int _pollingInterval = LocationPollingConfig.defaultPollingInterval;
-  Service18082? _service18082;
+  Service9087? _service9087;
   Map<String, dynamic> _deviceInfo = <String, dynamic>{};
 
   Function(Map<String, dynamic>)? _onLocationUpdate;
@@ -38,7 +38,7 @@ class LocationPollingManager {
         _pollingInterval = saved;
       } catch (_) {}
       _loadDeviceInfo();
-      _service18082 = await Service18082.create();
+      _service9087 = await Service9087.create();
     } catch (e) {
       AppLogger.error('位置轮询管理器初始化失败: $e');
       rethrow;
@@ -48,10 +48,10 @@ class LocationPollingManager {
   // 重新加载网络服务（用于切换IP后生效）
   Future<void> reloadService() async {
     try {
-      _service18082 = await Service18082.create();
-      AppLogger.info('LocationPollingManager 已重新加载 Service18082');
+      _service9087 = await Service9087.create();
+      AppLogger.info('LocationPollingManager 已重新加载 Service9087');
     } catch (e) {
-      AppLogger.error('重新加载 Service18082 失败: $e');
+      AppLogger.error('重新加载 Service9087 失败: $e');
     }
   }
 
@@ -198,7 +198,7 @@ class LocationPollingManager {
         final dynamic latitude = location['latitude'];
         final dynamic longitude = location['longitude'];
         if (latitude != null && longitude != null) {
-          await _service18082?.sendGpsInfo(<String, dynamic>{
+          await _service9087?.sendGpsInfo(<String, dynamic>{
             'handheldNo': _deviceInfo['deviceId'],
             'x': latitude,
             'y': longitude,

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:tj_tms_mobile/core/utils/location_helper.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/uhf_scan_button.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/barcode_scanner_widget.dart';
+import 'package:tj_tms_mobile/routes/app_routes.dart';
 
 class PluginTestPage extends StatefulWidget {
   const PluginTestPage({super.key});
@@ -136,7 +137,7 @@ class _PluginTestPageState extends State<PluginTestPage> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('插件测试'),
@@ -157,6 +158,7 @@ class _PluginTestPageState extends State<PluginTestPage> {
               Tab(text: 'AGPS定位'),
               Tab(text: 'UHF扫描'),
               Tab(text: '条码扫描'),
+              Tab(text: '活体检测'),
             ],
           ),
         ),
@@ -168,6 +170,8 @@ class _PluginTestPageState extends State<PluginTestPage> {
             _buildUHFPage(),
             // 条码扫描页面
             _buildBarcodePage(),
+            // 活体检测页面
+            _buildLivenessDetectionPage(),
           ],
         ),
       ),
@@ -350,6 +354,72 @@ class _PluginTestPageState extends State<PluginTestPage> {
                     ),
                     loadingBuilder: const Center(
                       child: CircularProgressIndicator(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLivenessDetectionPage() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '活体检测功能',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Card(
+            elevation: 2,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '活体检测说明:',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    '• 支持眨眼、张嘴、左转、右转等动作检测\n'
+                    '• 可配置检测动作数量和随机性\n'
+                    '• 支持前端和后端防Hack检测\n'
+                    '• 提供完整的检测结果回调',
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pushNamed(AppRoutes.livenessDetection);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      child: const Text(
+                        '进入活体检测',
+                        style: TextStyle(fontSize: 16),
+                      ),
                     ),
                   ),
                 ],

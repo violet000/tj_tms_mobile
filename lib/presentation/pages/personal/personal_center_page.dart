@@ -5,6 +5,7 @@ import 'package:tj_tms_mobile/presentation/state/providers/verify_token_provider
 import 'package:flutter/services.dart';
 import 'dart:io';
 import 'package:tj_tms_mobile/core/utils/util.dart' as app_utils;
+import 'package:tj_tms_mobile/services/interval_manager.dart';
 
 class PersonalCenterPage extends StatefulWidget {
   const PersonalCenterPage({super.key});
@@ -24,12 +25,20 @@ class _PersonalCenterPageState extends State<PersonalCenterPage> {
   }
 
   Future<void> _loadDeviceInfo() async {
-    final info = await app_utils.loadDeviceInfo();
-    if (!mounted) return;
-    setState(() {
-      _deviceInfo = info;
-      _isLoadingDeviceInfo = false;
-    });
+    try {
+      final info = await app_utils.loadDeviceInfo();
+      if (!mounted) return;
+      setState(() {
+        _deviceInfo = info ?? <String, dynamic>{};
+        _isLoadingDeviceInfo = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _deviceInfo = <String, dynamic>{};
+        _isLoadingDeviceInfo = false;
+      });
+    }
   }
 
   @override
@@ -46,9 +55,17 @@ class _PersonalCenterPageState extends State<PersonalCenterPage> {
             const SizedBox(height: 5),
             // 功能区块
             ..._buildMenuList(context),
-            const SizedBox(height: 20), // 替换 Spacer，添加固定间距
+            const SizedBox(height: 10), // 替换 Spacer，添加固定间距
             // 设备信息展示
-            _buildDeviceInfoSection(),
+            FutureBuilder<Widget>(
+              future: _buildDeviceInfoSection(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                return snapshot.data ?? const SizedBox.shrink();
+              },
+            ),
             const SizedBox(height: 20), // 底部留白，避免与底部按钮贴合
           ],
         ),
@@ -150,7 +167,7 @@ class _PersonalCenterPageState extends State<PersonalCenterPage> {
 
   Widget _buildLogoutButton() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 0, 24, 18), // 底部留白
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 12), // 底部留白
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color.fromARGB(255, 225, 20, 20),
@@ -171,7 +188,7 @@ class _PersonalCenterPageState extends State<PersonalCenterPage> {
     );
   }
 
-  Widget _buildDeviceInfoSection() {
+  Future<Widget> _buildDeviceInfoSection() async {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24.0),
       child: Card(
@@ -211,16 +228,30 @@ class _PersonalCenterPageState extends State<PersonalCenterPage> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   ),
                 )
-              else if (_deviceInfo.isEmpty)
-                Text(
-                  '无法获取设备信息',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[500],
-                  ),
-                )
+                             else if (_deviceInfo.isEmpty)
+                 Column(
+                   children: [
+                     FutureBuilder<int>(
+                       future: _getAGPSInterval(),
+                       builder: (context, snapshot) {
+                         if (snapshot.connectionState == ConnectionState.waiting) {
+                           return const Text('AGPS时间间隔：加载中...');
+                         }
+                         return Text('AGPS时间间隔：${snapshot.data ?? 0}秒');
+                       },
+                     ),
+                     const SizedBox(height: 10),
+                     Text(
+                       '无法获取设备信息',
+                       style: TextStyle(
+                         fontSize: 12,
+                         color: Colors.grey[500],
+                       ),
+                     )
+                   ],
+                 )
               else
-                ..._buildDeviceInfoItems(),
+                ...await _buildDeviceInfoItems(),
             ],
           ),
         ),
@@ -228,11 +259,27 @@ class _PersonalCenterPageState extends State<PersonalCenterPage> {
     );
   }
 
-  List<Widget> _buildDeviceInfoItems() {
+  Future<int> _getAGPSInterval() async {
+    try {
+      return await IntervalManager.getEffectiveInterval();
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  Future<List<Widget>> _buildDeviceInfoItems() async {
     final List<Widget> items = [];
+    int effectiveInterval = 0;
+    
+    try {
+      effectiveInterval = await IntervalManager.getEffectiveInterval();
+    } catch (e) {
+      effectiveInterval = 0;
+    }
 
     if (Platform.isAndroid) {
       items.addAll([
+        _buildInfoItem('AGPS间隔', '${effectiveInterval}秒'),
         _buildInfoItem('设备型号', (_deviceInfo['model'] as String?) ?? '未知'),
         _buildInfoItem('制造商', (_deviceInfo['manufacturer'] as String?) ?? '未知'),
         _buildInfoItem(

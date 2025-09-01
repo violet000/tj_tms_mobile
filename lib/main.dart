@@ -17,6 +17,11 @@ import 'package:tj_tms_mobile/core/utils/global_navigator.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
+  // 添加全局错误处理
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+  };
+  
   // 设置虚拟按键为透明，在启动屏显示之前
   if (!kIsWeb) {
     // 设置系统UI样式为透明
@@ -109,6 +114,7 @@ class MyApp extends StatelessWidget {
           primarySwatch: Colors.blue,
           useMaterial3: true,
         ),
+        navigatorKey: GlobalNavigator.navigatorKey,
         scaffoldMessengerKey: GlobalNavigator.scaffoldMessengerKey,
         initialRoute: '/',
         routes: AppRoutes.getRoutes(),

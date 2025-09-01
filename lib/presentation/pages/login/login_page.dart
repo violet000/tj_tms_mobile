@@ -11,6 +11,9 @@ import 'dart:convert';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:tj_tms_mobile/presentation/pages/setting/network_settings_page.dart';
 import 'package:tj_tms_mobile/core/utils/util.dart' as app_utils;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tj_tms_mobile/core/config/env.dart';
+import 'package:tj_tms_mobile/data/datasources/interceptor/dio_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -56,6 +59,8 @@ class _LoginPageState extends State<LoginPage> {
     });
   }
 
+
+
   // 验证表单
   bool _validateFormData(
       String? username, String? password, String? faceImage) {
@@ -72,10 +77,14 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // 保存登录数据
-  void _saveLoginData(
-      String username1, String username2, Map<String, dynamic> loginResult) {
+  Future<void> _saveLoginData(
+      String username1, String username2, Map<String, dynamic> loginResult) async {
     // 设置最后一个用户的token作为当前token
     _verifyTokenProvider.setToken(loginResult['access_token'].toString());
+
+    // 保存token到SharedPreferences，供其他服务使用
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('access_token', loginResult['access_token'].toString());
 
     // 保存第一个用户数据到列表
     _verifyTokenProvider.addUserData(<String, dynamic>{
@@ -114,30 +123,6 @@ class _LoginPageState extends State<LoginPage> {
     faceLoginProvider.setUsername(1, username2);
   }
 
-  // 校验登录参数
-  // bool _validateLoginParams() {
-  //   final faceLoginProvider =
-  //       Provider.of<FaceLoginProvider>(context, listen: false);
-
-  //   final faceImage1 = faceLoginProvider.getFaceImage(0);
-  //   final username1 = faceLoginProvider.getUsername(0);
-  //   final password1 = faceLoginProvider.getPassword(0);
-
-  //   final faceImage2 = faceLoginProvider.getFaceImage(1);
-  //   final username2 = faceLoginProvider.getUsername(1);
-  //   final password2 = faceLoginProvider.getPassword(1);
-
-  //   // 检查押运员1：faceImage1和username1有值 或者 username1和password1有值
-  //   bool person1Valid = (faceImage1 != null && faceImage1.isNotEmpty && username1 != null && username1.isNotEmpty) ||
-  //                      (username1 != null && username1.isNotEmpty && password1 != null && password1.isNotEmpty);
-
-  //   // 检查押运员2：faceImage2和username2有值 或者 username2和password2有值
-  //   bool person2Valid = (faceImage2 != null && faceImage2.isNotEmpty && username2 != null && username2.isNotEmpty) ||
-  //                      (username2 != null && username2.isNotEmpty && password2 != null && password2.isNotEmpty);
-
-  //   return person1Valid && person2Valid;
-  // }
-
   // 登录提交
   Future<void> _login() async {
     try {
@@ -151,12 +136,12 @@ class _LoginPageState extends State<LoginPage> {
           Provider.of<FaceLoginProvider>(context, listen: false);
 
       final faceImage1 = faceLoginProvider.getFaceImage(0);
-      final username1 = faceLoginProvider.getUsername(0);
-      final password1 = faceLoginProvider.getPassword(0);
+      final username1 = faceLoginProvider.getUsername(0) ?? '';
+      final password1 = faceLoginProvider.getPassword(0) ?? '';
 
       final faceImage2 = faceLoginProvider.getFaceImage(1);
-      final username2 = faceLoginProvider.getUsername(1);
-      final password2 = faceLoginProvider.getPassword(1);
+      final username2 = faceLoginProvider.getUsername(1) ?? '';
+      final password2 = faceLoginProvider.getPassword(1) ?? '';
 
       // 在登录前，先将押运员信息保存到全局的 FaceLoginProvider
       faceLoginProvider.setUsername(0, username1!);
@@ -175,32 +160,36 @@ class _LoginPageState extends State<LoginPage> {
         maskType: EasyLoadingMaskType.black,
       );
 
+      if (_loginService == null) {
+        await _initializeLoginService();
+      }
       final Map<String, dynamic> loginResult =
           await _loginService!.accountLogin([
         <String, dynamic>{
-          'username': username1!,
+          'username': username1,
           'password': (password1 == null || password1.isEmpty)
               ? null
               : md5.convert(utf8.encode(password1 + 'messi')).toString(),
           'face': faceImage1,
-          'handheldNo': _deviceInfo['deviceId'],
+          'handheldNo': _deviceInfo['deviceId'] ?? '',
           'isImport': true
         },
         <String, dynamic>{
-          'username': username2!,
+          'username': username2,
           'password': (password2 == null || password2.isEmpty)
               ? null
               : md5.convert(utf8.encode(password2 + 'messi')).toString(),
           'face': faceImage2,
-          'handheldNo': _deviceInfo['deviceId'],
+          'handheldNo': _deviceInfo['deviceId'] ?? '',
           'isImport': false
         }
       ]);
 
-      _saveLoginData(username1!, username2!, loginResult);
+      await _saveLoginData(username1, username2, loginResult);
 
       EasyLoading.dismiss();
       EasyLoading.showSuccess('登录成功');
+      
       Navigator.of(context).pushReplacementNamed('/home');
     } catch (e) {
       EasyLoading.dismiss();

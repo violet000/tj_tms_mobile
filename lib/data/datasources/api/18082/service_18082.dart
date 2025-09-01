@@ -17,7 +17,17 @@ class Service18082 {
     final prefs = await SharedPreferences.getInstance();
     final vpsIp = prefs.getString(vpsKey) ?? '${Env.config.apiBaseUrl}:8082';
     final baseUrl = vpsIp.startsWith('http') ? vpsIp : 'http://$vpsIp';
-    final service = Service18082._(DioServiceManager().getService(baseUrl));
+    final dio = DioServiceManager().getService(baseUrl);
+    // 指定接口使用固定 Basic token
+    dio.setFixedTokenFor('/user-center/v2/user/faceLogin', 'Basic emhhbmdzYW46MTIzNDU2');
+    
+    // 尝试从SharedPreferences获取已保存的access_token
+    final String? savedToken = prefs.getString('access_token');
+    if (savedToken != null && savedToken.isNotEmpty) {
+      dio.setAccessToken(savedToken);
+    }
+    
+    final service = Service18082._(dio);
     await service._loadDeviceInfo();
     return service;
   }
