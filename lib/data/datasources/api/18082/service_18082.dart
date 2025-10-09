@@ -65,11 +65,12 @@ class Service18082 {
   }
 
   ///查询押运员编号查询线路及线路涉及机构信息
-  Future<Map<String, dynamic>> getLineByEscortNo(String escortNo,
+  Future<Map<String, dynamic>> getLineByEscortNo(dynamic escortNo,
       {int? mode}) async {
     final Map<String, dynamic> body = <String, dynamic>{
       'escortNo': escortNo,
-      'handheldNo': _deviceInfo['deviceId'],
+      // 'handheldNo': _deviceInfo['deviceId'],
+      'handheldNo': 'c7aec416ab7f236a71495d2849a662229974bab16723e7a012e41d6998288001',
     };
     if (mode != null) {
       body['mode'] = mode;

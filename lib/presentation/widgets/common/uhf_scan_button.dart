@@ -41,6 +41,7 @@ class _UHFScanButtonState extends State<UHFScanButton> {
   final List<String> _scannedTags = [];
   String? _lastProcessedEpc;
   DateTime? _lastProcessedTime;
+  bool _isStarting = false;
 
   List<String> get scannedTags => List.unmodifiable(_scannedTags);
 
@@ -151,6 +152,9 @@ class _UHFScanButtonState extends State<UHFScanButton> {
   }
 
   Future<void> _toggleScan(UHFController controller) async {
+    if (_isStarting) {
+      return;
+    }
     if (_isScanning) {
       await _stopScan(controller);
     } else {
@@ -160,13 +164,41 @@ class _UHFScanButtonState extends State<UHFScanButton> {
 
   Future<void> _startScan(UHFController controller) async {
     try {
-      setState(() => _isScanning = true);
-      widget.onScanStateChanged?.call(true);
+      if (_isStarting) return;
+      _isStarting = true;
+      // 先尝试停止一次，确保设备处于可启动状态
+      try {
+        await controller.stopScan();
+      } catch (_) {}
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+
       _lastProcessedEpc = null;
       _lastProcessedTime = null;
       await controller.startScan();
+
+      if (!mounted) return;
+      setState(() => _isScanning = true);
+      widget.onScanStateChanged?.call(true);
+
+      // 启动后1秒内未收到任何标签，自动重启一次以增强可靠性
+      Future<void>.delayed(const Duration(seconds: 1), () async {
+        if (!mounted) return;
+        if (_isScanning && _lastProcessedEpc == null) {
+          try {
+            await controller.stopScan();
+            await Future<void>.delayed(const Duration(milliseconds: 150));
+            await controller.startScan();
+          } catch (e) {
+            widget.onError?.call(e.toString());
+          }
+        }
+      });
     } catch (e) {
-      setState(() => _isScanning = false);
+      if (mounted) {
+        setState(() => _isScanning = false);
+      } else {
+        _isScanning = false;
+      }
       widget.onScanStateChanged?.call(false);
       widget.onError?.call(e.toString());
       if (mounted) {
@@ -174,6 +206,9 @@ class _UHFScanButtonState extends State<UHFScanButton> {
           SnackBar(content: Text('扫描失败: $e')),
         );
       }
+    }
+    finally {
+      _isStarting = false;
     }
   }
 
@@ -183,7 +218,11 @@ class _UHFScanButtonState extends State<UHFScanButton> {
     } catch (e) {
       widget.onError?.call(e.toString());
     } finally {
-      setState(() => _isScanning = false);
+      if (mounted) {
+        setState(() => _isScanning = false);
+      } else {
+        _isScanning = false;
+      }
       widget.onScanStateChanged?.call(false);
       _lastProcessedEpc = null;
       _lastProcessedTime = null;

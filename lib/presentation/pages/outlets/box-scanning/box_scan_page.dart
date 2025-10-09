@@ -56,18 +56,20 @@ class _BoxScanPageState extends State<BoxScanPage> {
       if (_service == null) {
         await _initializeService();
       }
-      final String? username =
-          _verifyTokenProvider.getUserData()?['username'] as String?;
-      if (username == null) {
-        AppLogger.warning('用户名为空，无法获取线路数据');
-        return;
-      }
+      // final String? username =
+      //     _verifyTokenProvider.getUserData()?['username'] as String?;
+      // if (username == null) {
+      //   AppLogger.warning('用户名为空，无法获取线路数据');
+      //   return;
+      // }
+      final allNames = _verifyTokenProvider.getAllUsersData();
+      final userName = allNames.map<String>((e) => e['username'].toString()).toList();
       EasyLoading.show(
         status: '加载中...',
         maskType: EasyLoadingMaskType.black,
       );
       final dynamic escortRouteToday =
-          await _service!.getLineByEscortNo(username, mode: _mode);
+          await _service!.getLineByEscortNo(userName, mode: _mode);
 
       final List<dynamic>? rawList =
           escortRouteToday['retList'] as List<dynamic>?;
@@ -100,9 +102,7 @@ class _BoxScanPageState extends State<BoxScanPage> {
         }
       });
     } catch (e, s) {
-      // 统一处理可能发生的任何错误
       AppLogger.error('获取或解析线路数据时发生错误', e, s);
-      // 可以在这里弹出一个对话框告诉用户加载失败
       if (mounted) {
         setState(() {
           lines = [];

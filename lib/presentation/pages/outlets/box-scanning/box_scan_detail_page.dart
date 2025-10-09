@@ -341,7 +341,9 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
                         const SizedBox(width: 25),
                         Expanded(
                           child: Text(
-                            item['boxCode'].toString(),
+                            item['boxCode'] == null
+                                ? ''
+                                : item['boxCode'].toString().split('-').first,
                             style: const TextStyle(fontSize: 16),
                           ),
                         ),
@@ -580,9 +582,9 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
                                              ),
                                              child: Row(
                                                children: [
-                                                 Icon(
+                                                 const Icon(
                                                    Icons.inventory_2_outlined,
-                                                   color: const Color(0xFF29A8FF),
+                                                   color: Color(0xFF29A8FF),
                                                    size: 14,
                                                  ),
                                                  const SizedBox(width: 6),
@@ -676,8 +678,10 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
                                                                size: 16,
                                                              ),
                                                            ),
-                                                           title: Text(
-                                                             box['boxCode'].toString(),
+                                                          title: Text(
+                                                            box['boxCode'] == null
+                                                                ? ''
+                                                                : box['boxCode'].toString().split('-').first,
                                                              style: TextStyle(
                                                                fontSize: 14,
                                                                fontWeight: FontWeight.w500,
@@ -781,7 +785,7 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
                                      ),
                                      child: Row(
                                        mainAxisAlignment: MainAxisAlignment.center,
-                                       children: [
+                                       children: const [
                                          Icon(Icons.close, size: 16),
                                          SizedBox(width: 6),
                                          Text(
@@ -803,14 +807,14 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
                                          ScaffoldMessenger.of(context).showSnackBar(
                                            SnackBar(
                                              content: Row(
-                                               children: [
-                                                 const Icon(
+                                               children: const [
+                                                Icon(
                                                    Icons.warning_amber_rounded,
                                                    color: Colors.white,
                                                    size: 16,
                                                  ),
-                                                 const SizedBox(width: 6),
-                                                 const Text(
+                                                SizedBox(width: 6),
+                                                Text(
                                                    '请选择至少一个款箱进行匹配',
                                                    style: TextStyle(fontSize: 13),
                                                  ),
@@ -831,9 +835,14 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
                                            selectedSnapshot =
                                            List<Map<String, dynamic>>.from(
                                                _selectedManualBoxes);
-                                       for (var box in selectedSnapshot) {
-                                         _handleUHFTagScanned(box['boxCode'].toString());
-                                       }
+                                      for (var box in selectedSnapshot) {
+                                        final String boxCodeFront = box['boxCode'] == null
+                                            ? ''
+                                            : box['boxCode'].toString().split('-').first;
+                                        if (boxCodeFront.isNotEmpty) {
+                                          _updateCashBoxStatus(boxCodeFront, 0);
+                                        }
+                                      }
                                        Navigator.pop(context);
                                        setState(() {
                                          _selectedManualBoxes = [];
@@ -851,7 +860,7 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
                                      ),
                                      child: Row(
                                        mainAxisAlignment: MainAxisAlignment.center,
-                                       children: [
+                                       children: const [
                                          Icon(Icons.check_circle_outline, size: 16),
                                          SizedBox(width: 6),
                                          Text(
@@ -1333,39 +1342,51 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
     );
   }
 
-  // 辅助方法：根据不一致原因获取输入框标签
-  String _getDiscrepancyInputLabel(String reason) {
-    switch (reason) {
-      case '押运车信息不符':
-        return '请输入实际押运车号';
-      case '押运员信息不符':
-        return '请输入实际押运员信息';
-      case '其他原因':
-        return '请输入具体原因';
-      default:
-        return '请输入不一致信息';
-    }
-  }
-
   // 更新款箱状态
   Future<void> _updateCashBoxStatus(String boxCode, int scanStatus) async {
     try {
       setState(() {
+        // 依据传入 code（可能是完整 boxCode、boxCode 前段、rfId、或 boxCode-rfId）匹配 items
+        final List<String> parts = boxCode.split('-');
+        final String requestFront = parts.isNotEmpty ? parts.first : boxCode;
+        final String requestBack = parts.length > 1 ? parts.last : boxCode; // 兼容直接传 RFID 的情况
+
+        Map<String, dynamic>? matchedItem;
         for (var item in items) {
-          if (item['boxCode'] == boxCode) {
-            item['scanStatus'] = scanStatus;
+          final String itemBoxCode = item['boxCode']?.toString() ?? '';
+          if (itemBoxCode.isEmpty) continue;
+          final String itemFront = itemBoxCode.split('-').first;
+          final String itemRfId = item['rfId']?.toString() ?? '';
+          final bool matchByFull = itemBoxCode == boxCode;
+          final bool matchByFront = itemFront == requestFront;
+          final bool matchByRfId = itemRfId.isNotEmpty && itemRfId == requestBack;
+          if (matchByFull || matchByFront || matchByRfId) {
+            matchedItem = item;
             break;
           }
         }
-        if (scanStatus == 0 && !_uhfScannedTags.contains(boxCode)) {
-          _uhfScannedTags.insert(0, boxCode);
+
+        if (matchedItem == null) {
+          throw '未找到匹配的款箱：$boxCode';
+        }
+
+        final String fullBoxCode = matchedItem['boxCode']?.toString() ?? boxCode;
+        final String? matchedRfId = matchedItem['rfId']?.toString();
+        matchedItem['scanStatus'] = scanStatus;
+
+        final String combinedBoxNo = (matchedRfId == null || matchedRfId.isEmpty)
+            ? fullBoxCode
+            : "$fullBoxCode-$matchedRfId";
+
+        if (scanStatus == 0 && !_uhfScannedTags.contains(fullBoxCode)) {
+          _uhfScannedTags.insert(0, fullBoxCode);
           if (_uhfScannedTags.length > 100) {
             _uhfScannedTags.removeLast();
           }
-          _scannedBoxes.add({"boxNo": boxCode});
+          _scannedBoxes.add({"boxNo": combinedBoxNo});
         } else if (scanStatus == 1) {
-          _uhfScannedTags.remove(boxCode);
-          _scannedBoxes.removeWhere((box) => box['boxNo'] == boxCode);
+          _uhfScannedTags.remove(fullBoxCode);
+          _scannedBoxes.removeWhere((box) => box['boxNo'] == combinedBoxNo || box['boxNo'] == fullBoxCode || box['boxNo'] == boxCode);
         }
       });
     } catch (e) {
@@ -1379,46 +1400,21 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
 
   // UHF扫描和手工匹配的统一处理函数
   void _handleUHFTagScanned(String tag) {
-    if (tag.length > 8) {
-      tag = tag.substring(0, 8);
-    }
+    // UHF 扫描优先按 RFID 匹配；若传入是 "boxCode-rfId"，取 '-' 后段
+    final String rfidCandidate = tag.contains('-') ? tag.split('-').last : tag;
 
-    final matchedItem = items.firstWhere(
-        (item) => item['boxCode'].toString() == tag || item['rfId'].toString() == tag,
-        orElse: () => <String, dynamic>{});
+    final matchedItem = items.firstWhere((item) {
+      final String? itemRfId = item['rfId']?.toString();
+      final String? itemBoxCode = item['boxCode']?.toString();
+      final bool matchByRfId = itemRfId != null && itemRfId == rfidCandidate;
+      final bool matchByBoxCodeTail = itemBoxCode != null &&
+          itemBoxCode.contains('-') &&
+          itemBoxCode.split('-').last == rfidCandidate;
+      return matchByRfId || matchByBoxCodeTail;
+    }, orElse: () => <String, dynamic>{});
 
     if (matchedItem.isNotEmpty) {
-      if (matchedItem['scanStatus'] == 0) {
-        showDialog<void>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('款箱已扫描'),
-            content: Text('款箱 $tag 已扫描'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('确定'),
-              ),
-            ],
-          ),
-        );
-      } else {
-        _updateCashBoxStatus(tag, 0);
-      }
-    } else {
-      showDialog<void>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('款箱不在列表'),
-          content: Text('款箱 $tag 不在当前线路的款箱列表中'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('确定'),
-            ),
-          ],
-        ),
-      );
+      _updateCashBoxStatus(matchedItem['boxCode'].toString(), 0);
     }
   }
 

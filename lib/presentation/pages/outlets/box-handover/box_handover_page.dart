@@ -67,18 +67,20 @@ class _BoxHandoverPageState extends State<BoxHandoverPage> {
       if (_service == null) {
         await _initializeService();
       }
-      final String? username =
-          _verifyTokenProvider.getUserData()?['username'] as String?;
-      if (username == null) {
-        AppLogger.warning('用户名为空，无法获取线路数据');
-        return;
-      }
+      // final String? username =
+      //     _verifyTokenProvider.getUserData()?['username'] as String?;
+      // if (username == null) {
+      //   AppLogger.warning('用户名为空，无法获取线路数据');
+      //   return;
+      // }
+      final allNames = _verifyTokenProvider.getAllUsersData();
+      final userName = allNames.map<String>((e) => e['username'].toString()).toList();
       EasyLoading.show(
         status: '加载中...',
         maskType: EasyLoadingMaskType.black,
       );
       final dynamic escortRouteToday =
-          await _service!.getLineByEscortNo(username, mode: _mode);
+          await _service!.getLineByEscortNo(userName, mode: _mode);
 
       final List<dynamic>? rawList =
           escortRouteToday['retList'] as List<dynamic>?;
