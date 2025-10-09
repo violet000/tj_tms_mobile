@@ -142,8 +142,12 @@ class LocationPollingManager {
       await LocationPollingConfig.setPollingInterval(seconds);
       _pollingInterval = seconds;
       if (_isPolling) {
-        stopPolling();
-        startPolling();
+        // 正在轮询时仅重置定时器，避免前台服务的重复 stop/start 造成竞态
+        _locationTimer?.cancel();
+        _locationTimer = Timer.periodic(Duration(seconds: _pollingInterval), (timer) {
+          AppLogger.info('定时器触发，获取位置信息');
+          _getCurrentLocation();
+        });
       }
     } catch (e) {
       AppLogger.error('设置轮询间隔失败: $e');

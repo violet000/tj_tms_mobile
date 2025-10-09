@@ -10,6 +10,7 @@ import android.content.Context
 class LocationServicePlugin: FlutterPlugin, MethodCallHandler {
     private lateinit var channel: MethodChannel
     private lateinit var context: Context
+    @Volatile private var serviceStarted: Boolean = false
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         context = binding.applicationContext
@@ -21,7 +22,10 @@ class LocationServicePlugin: FlutterPlugin, MethodCallHandler {
         when (call.method) {
             "startForegroundService" -> {
                 try {
-                    LocationForegroundService.startService(context)
+                    if (!serviceStarted) {
+                        LocationForegroundService.startService(context)
+                        serviceStarted = true
+                    }
                     result.success(true)
                 } catch (e: Exception) {
                     result.error("START_SERVICE_ERROR", e.message, null)
@@ -30,6 +34,7 @@ class LocationServicePlugin: FlutterPlugin, MethodCallHandler {
             "stopForegroundService" -> {
                 try {
                     LocationForegroundService.stopService(context)
+                    serviceStarted = false
                     result.success(true)
                 } catch (e: Exception) {
                     result.error("STOP_SERVICE_ERROR", e.message, null)

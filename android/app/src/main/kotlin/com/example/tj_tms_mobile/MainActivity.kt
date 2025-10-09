@@ -20,6 +20,7 @@ class MainActivity : FlutterActivity() {
     private lateinit var uhfPlugin: UHFPlugin
     private lateinit var locationServicePlugin: LocationServicePlugin
     private lateinit var livenessDetectionPlugin: LivenessDetectionPlugin
+    private var isApplyingSystemUi = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -105,49 +106,43 @@ class MainActivity : FlutterActivity() {
     }
     
     private fun hideSystemUI() {
-        // 设置透明状态栏和导航栏
-        window.statusBarColor = android.graphics.Color.TRANSPARENT
-        window.navigationBarColor = android.graphics.Color.TRANSPARENT
-        
-        // 设置系统UI为透明模式，隐藏导航栏
-        window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_FULLSCREEN)
-        
-        // 强制设置导航栏为透明
-        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
-        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
-        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
-        
-        // 设置系统UI可见性变化监听器，保持透明和隐藏
-        window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
-            // 如果系统UI变为可见，立即隐藏
-            if (visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0) {
-                hideSystemUI()
+        if (isApplyingSystemUi) return
+        isApplyingSystemUi = true
+        try {
+            // 设置透明状态栏和导航栏
+            window.statusBarColor = android.graphics.Color.TRANSPARENT
+            window.navigationBarColor = android.graphics.Color.TRANSPARENT
+
+            // 设置系统UI为透明模式，隐藏导航栏
+            window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                    or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                    or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    or View.SYSTEM_UI_FLAG_FULLSCREEN)
+
+            // 强制设置导航栏为透明
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
+            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
+
+            // 简化监听器，避免递归调用和频繁重入
+            window.decorView.setOnSystemUiVisibilityChangeListener { _ ->
+                window.navigationBarColor = android.graphics.Color.TRANSPARENT
+                window.statusBarColor = android.graphics.Color.TRANSPARENT
             }
-            // 确保导航栏保持透明
-            window.navigationBarColor = android.graphics.Color.TRANSPARENT
-            window.statusBarColor = android.graphics.Color.TRANSPARENT
-        }
-        
-        // 延迟再次设置，确保生效
-        window.decorView.post {
-            window.navigationBarColor = android.graphics.Color.TRANSPARENT
-            window.statusBarColor = android.graphics.Color.TRANSPARENT
+        } catch (e: Exception) {
+            Log.e(TAG, "设置沉浸式UI失败", e)
+        } finally {
+            isApplyingSystemUi = false
         }
     }
     
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (hasFocus) {
+            // 仅执行一次轻量设置，避免在焦点抖动时多次重入
             hideSystemUI()
-            // 强制设置导航栏透明
-            setNavigationBarTransparent()
-            // 禁用虚拟按键
-            disableNavigationBar()
         }
     }
     
@@ -179,23 +174,13 @@ class MainActivity : FlutterActivity() {
                 WindowManager.LayoutParams.FLAG_FULLSCREEN
             )
             
-            // 强制隐藏导航栏
+            // 保持与 hideSystemUI 同步，不再重复设置，避免 ANR 风险
             window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
                     or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                     or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                     or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
                     or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                     or View.SYSTEM_UI_FLAG_FULLSCREEN)
-            
-            // 延迟再次设置，确保生效
-            window.decorView.postDelayed({
-                window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                        or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                        or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                        or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                        or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                        or View.SYSTEM_UI_FLAG_FULLSCREEN)
-            }, 1000)
             
         } catch (e: Exception) {
             Log.e(TAG, "禁用导航栏失败", e)

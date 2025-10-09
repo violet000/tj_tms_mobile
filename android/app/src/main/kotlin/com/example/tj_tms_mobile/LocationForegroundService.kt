@@ -32,11 +32,25 @@ class LocationForegroundService : Service() {
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
+        // 提前在 onCreate 即前台化，避免主线程在 onStartCommand 调度前被阻塞导致超时
+        try {
+            val notification = createNotification()
+            startForeground(NOTIFICATION_ID, notification)
+        } catch (_: Exception) {
+            // 忽略，onStartCommand 中还有一次兜底
+        }
     }
     
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val notification = createNotification()
-        startForeground(NOTIFICATION_ID, notification)
+        try {
+            val notification = createNotification()
+            // 确保在最早时机前台化，避免 5 秒超时崩溃
+            startForeground(NOTIFICATION_ID, notification)
+        } catch (e: Exception) {
+            // 安全停止，避免系统抛异常
+            stopSelf()
+            return START_NOT_STICKY
+        }
         return START_STICKY
     }
     
