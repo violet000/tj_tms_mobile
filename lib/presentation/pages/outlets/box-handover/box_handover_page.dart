@@ -835,59 +835,7 @@ class _BoxHandoverPageState extends State<BoxHandoverPage> {
   // 处理选中的网点数据
   void _processSelectedPoints() {
     final selectedPoints = _getSelectedPointsData();
-    _showConfirmationDialog(selectedPoints);
-  }
-
-  // 显示确认对话框
-  void _showConfirmationDialog(List<Map<String, dynamic>> selectedPoints) {
-    final int deliverCount = selectedPoints
-        .where((point) => point['operationType'] == InOutStatus.outlet.code)
-        .length;
-    final int receiveCount = selectedPoints
-        .where((point) => point['operationType'] == InOutStatus.inlet.code)
-        .length;
-
-    showDialog<void>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('确认处理'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('您选择了以下网点进行处理：'),
-              const SizedBox(height: 8),
-              if (deliverCount > 0)
-                Text('• 出库网点：$deliverCount个',
-                    style: const TextStyle(color: Color(0xFF29A8FF))),
-              if (receiveCount > 0)
-                Text('• 入库网点：$receiveCount个',
-                    style: const TextStyle(color: Color(0xFF29A8FF))),
-              const SizedBox(height: 8),
-              const Text('确定要继续处理吗？'),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('取消'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _executeProcessing(selectedPoints);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 2, 112, 215),
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('确定'),
-            ),
-          ],
-        );
-      },
-    );
+    _executeProcessing(selectedPoints);
   }
 
   // 执行处理逻辑
