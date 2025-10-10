@@ -159,6 +159,30 @@ class _AuthDialogState extends State<AuthDialog>
     return Colors.grey[100]!;
   }
 
+  String _middleEllipsis(String? value, {int head = 4, int tail = 4}) {
+    final text = (value ?? '').trim();
+    if (text.isEmpty) return '';
+    if (text.length <= head + tail + 3) return text;
+    return '${text.substring(0, head)}...${text.substring(text.length - tail)}';
+  }
+
+  void _showFullText(String title, String? content) {
+    final text = (content ?? '').trim();
+    showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(title, style: const TextStyle(fontSize: 14)),
+        content: SelectableText(text.isNotEmpty ? text : '无', style: const TextStyle(fontSize: 12)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('关闭'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _tabController.dispose();
@@ -577,57 +601,77 @@ class _AuthDialogState extends State<AuthDialog>
   Widget _buildVehicleVerifyStep() {
     return Column(
       children: [
-        const Text(
-          '请扫描车辆RFID标签',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
         const SizedBox(height: 16),
-
         // UHF扫描区域
         Expanded(
           child: UHFPluginWidget(
             builder: (context, controller) {
               return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // 扫描按钮
-                  UHFScanButton(
-                    startText: '车辆RFID扫描',
-                    stopText: '车辆RFID停止',
-                    onTagScanned: _onVehicleRfidScanned,
-                    onScanStateChanged: (isScanning) {
-                      setState(() {
-                        _isVehicleScanning = isScanning;
-                      });
-                    },
-                    onError: _showError,
+                  // 扫描按钮（居中显示）
+                  Container(
+                    padding: const EdgeInsets.only(left: 20),
+                    child: UHFScanButton(
+                      startText: '车辆RFID扫描',
+                      stopText: '车辆RFID停止',
+                      onTagScanned: (rfid) {
+                        _onVehicleRfidScanned(rfid);
+                        // 扫描到即自动停止
+                        controller.stopScan();
+                      },
+                      onScanStateChanged: (isScanning) {
+                        setState(() {
+                          _isVehicleScanning = isScanning;
+                        });
+                      },
+                      onError: _showError,
+                    ),
                   ),
                   const SizedBox(height: 16),
 
-                  // 扫描结果显示
+                  // 扫描结果信息（标签ID、车牌号）
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                     decoration: BoxDecoration(
-                      color: Colors.green[50],
-                      border: Border.all(color: Colors.green),
+                      color: Colors.grey[50],
+                      border: Border.all(color: Colors.grey[300]!),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(
-                          Icons.check_circle,
-                          color: Colors.green,
-                          size: 48,
+                        Row(
+                          children: [
+                            const Text(
+                              '标签ID：',
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                            ),
+                            Expanded(
+                              child: Text(
+                                _scannedVehicleRfid ?? '未扫描',
+                                style: const TextStyle(fontSize: 12),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 8),
-                        Text(
-                          '车辆RFID: $_scannedVehicleRfid',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        Row(
+                          children: [
+                            const Text(
+                              '车牌号：',
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                            ),
+                            Expanded(
+                              child: Text(
+                                // 暂以RFID替代
+                                _scannedVehicleRfid ?? '未扫描',
+                                style: const TextStyle(fontSize: 12),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -645,260 +689,196 @@ class _AuthDialogState extends State<AuthDialog>
   Widget _buildConfirmVerifyStep() {
     return Column(
       children: [
-        const Text(
-          '人车核验确认',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
         const SizedBox(height: 16),
 
-        // 表格形式显示核验信息
+        // 显示核验信息
         Container(
           decoration: BoxDecoration(
             border: Border.all(color: Colors.grey[300]!),
             borderRadius: BorderRadius.circular(8),
           ),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
           child: Column(
             children: [
-              // 表头
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(8),
-                    topRight: Radius.circular(8),
+              // 车辆
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(
+                    width: 52,
+                    child: Text('车辆', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500)),
                   ),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        '',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[700],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[200],
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.grey[300]!),
+                              ),
+                              child: const Text('原定', style: TextStyle(fontSize: 10, color: Colors.black54)),
+                            ),
+                            const SizedBox(width: 6),
+                            GestureDetector(
+                              onTap: () => _showFullText('车辆原定', widget.vehicleRfidExpected),
+                              child: Text(
+                                _middleEllipsis(widget.vehicleRfidExpected, head: 6, tail: 6).isNotEmpty
+                                    ? _middleEllipsis(widget.vehicleRfidExpected, head: 6, tail: 6)
+                                    : '无',
+                                style: const TextStyle(fontSize: 11, color: Colors.black87),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ),
-                    Expanded(
-                      flex: 3,
-                      child: Text(
-                        '原定',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[700],
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.blue[50],
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.blue[200]!),
+                              ),
+                              child: const Text('实际', style: TextStyle(fontSize: 10, color: Colors.blue)),
+                            ),
+                            const SizedBox(width: 6),
+                            GestureDetector(
+                              onTap: () => _showFullText('车辆实际', _scannedVehicleRfid),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                                decoration: BoxDecoration(
+                                  color: _badgeBackground(
+                                    _comparisonColor(widget.vehicleRfidExpected, _scannedVehicleRfid),
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: _comparisonColor(
+                                      widget.vehicleRfidExpected,
+                                      _scannedVehicleRfid,
+                                    ).withOpacity(0.4),
+                                  ),
+                                ),
+                                child: Text(
+                                  _middleEllipsis(_scannedVehicleRfid, head: 6, tail: 6).isNotEmpty
+                                      ? _middleEllipsis(_scannedVehicleRfid, head: 6, tail: 6)
+                                      : '未扫描',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: _comparisonColor(
+                                      widget.vehicleRfidExpected,
+                                      _scannedVehicleRfid,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        textAlign: TextAlign.center,
-                      ),
+                      ],
                     ),
-                    Expanded(
-                      flex: 3,
-                      child: Text(
-                        '实际',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[700],
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
+              const SizedBox(height: 8),
+              // 人员
+              Builder(builder: (context) {
+                final faceLoginProvider =
+                    Provider.of<FaceLoginProvider>(context, listen: false);
+                final expected1 = (faceLoginProvider.getUsername(1) ?? '').trim();
+                final expected2 = (faceLoginProvider.getUsername(2) ?? '').trim();
+                // 文本显示为 两人占位
+                final expectedDisplay =
+                    '${expected1.isNotEmpty ? expected1 : '未设置'} / ${expected2.isNotEmpty ? expected2 : '未设置'}';
+                // 比对仅在两人都存在时进行
+                final expectedForCompare =
+                    (expected1.isNotEmpty && expected2.isNotEmpty) ? '$expected1, $expected2' : '';
 
-              // 车辆RFID行
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                decoration: BoxDecoration(
-                  border: Border(
-                    top: BorderSide(color: Colors.grey[300]!),
-                  ),
-                ),
-                child: Row(
+                final actual1 = _usernameController1.text.trim();
+                final actual2 = _usernameController2.text.trim();
+                final actualDisplay =
+                    '${actual1.isNotEmpty ? actual1 : '未输入'} / ${actual2.isNotEmpty ? actual2 : '未输入'}';
+                final actualForCompare =
+                    (actual1.isNotEmpty && actual2.isNotEmpty) ? '$actual1, $actual2' : '';
+                final color = _comparisonColor(expectedForCompare, actualForCompare);
+
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Expanded(
-                      flex: 2,
-                      child: Text(
-                        '车辆',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+                    const SizedBox(
+                      width: 52,
+                      child: Text('人员', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500)),
                     ),
                     Expanded(
-                      flex: 3,
-                      child: Text(
-                        widget.vehicleRfidExpected ?? '无',
-                        style: const TextStyle(
-                          fontSize: 11,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    Expanded(
-                      flex: 3,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            _isEqual(widget.vehicleRfidExpected,
-                                    _scannedVehicleRfid)
-                                ? Icons.check_circle
-                                : Icons.error,
-                            size: 14,
-                            color: _comparisonColor(widget.vehicleRfidExpected,
-                                _scannedVehicleRfid),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 6),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200],
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.grey[300]!),
+                                ),
+                                child: const Text('原定', style: TextStyle(fontSize: 10, color: Colors.black54)),
+                              ),
+                              const SizedBox(width: 6),
+                              GestureDetector(
+                                onTap: () => _showFullText('人员原定', expectedDisplay),
+                                child: Text(
+                                  _middleEllipsis(expectedDisplay, head: 6, tail: 6),
+                                  style: const TextStyle(fontSize: 11, color: Colors.black87),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 4, horizontal: 8),
-                            decoration: BoxDecoration(
-                              color: _badgeBackground(_comparisonColor(
-                                  widget.vehicleRfidExpected,
-                                  _scannedVehicleRfid)),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: _comparisonColor(
-                                        widget.vehicleRfidExpected,
-                                        _scannedVehicleRfid)
-                                    .withOpacity(0.4),
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 6),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue[50],
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.blue[200]!),
+                                ),
+                                child: const Text('实际', style: TextStyle(fontSize: 10, color: Colors.blue)),
                               ),
-                            ),
-                            child: Text(
-                              _scannedVehicleRfid ?? '未扫描',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: _comparisonColor(
-                                    widget.vehicleRfidExpected,
-                                    _scannedVehicleRfid),
+                              const SizedBox(width: 6),
+                              GestureDetector(
+                                onTap: () => _showFullText('人员实际', actualDisplay),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                                  decoration: BoxDecoration(
+                                    color: _badgeBackground(color),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: color.withOpacity(0.4)),
+                                  ),
+                                  child: Text(
+                                    _middleEllipsis(actualDisplay, head: 6, tail: 6),
+                                    style: TextStyle(fontSize: 11, color: color),
+                                  ),
+                                ),
                               ),
-                            ),
+                            ],
                           ),
                         ],
                       ),
                     ),
                   ],
-                ),
-              ),
-
-              // 人员信息行
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                decoration: BoxDecoration(
-                  border: Border(
-                    top: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(8),
-                    bottomRight: Radius.circular(8),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    const Expanded(
-                      flex: 2,
-                      child: Text(
-                        '人员',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      flex: 3,
-                      child: Text(
-                        widget.personRfidExpected ?? '无',
-                        style: const TextStyle(
-                          fontSize: 11,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    Expanded(
-                      flex: 3,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            _isEqual(
-                              widget.personRfidExpected,
-                              _usernameController1.text.isNotEmpty &&
-                                      _usernameController2.text.isNotEmpty
-                                  ? '${_usernameController1.text}, ${_usernameController2.text}'
-                                  : '',
-                            )
-                                ? Icons.check_circle
-                                : Icons.error,
-                            size: 14,
-                            color: _comparisonColor(
-                              widget.personRfidExpected,
-                              _usernameController1.text.isNotEmpty &&
-                                      _usernameController2.text.isNotEmpty
-                                  ? '${_usernameController1.text}, ${_usernameController2.text}'
-                                  : '',
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 4, horizontal: 8),
-                            decoration: BoxDecoration(
-                              color: _badgeBackground(
-                                _comparisonColor(
-                                  widget.personRfidExpected,
-                                  _usernameController1.text.isNotEmpty &&
-                                          _usernameController2.text.isNotEmpty
-                                      ? '${_usernameController1.text}, ${_usernameController2.text}'
-                                      : '',
-                                ),
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: _comparisonColor(
-                                  widget.personRfidExpected,
-                                  _usernameController1.text.isNotEmpty &&
-                                          _usernameController2.text.isNotEmpty
-                                      ? '${_usernameController1.text}, ${_usernameController2.text}'
-                                      : '',
-                                ).withOpacity(0.4),
-                              ),
-                            ),
-                            child: Text(
-                              _usernameController1.text.isNotEmpty &&
-                                      _usernameController2.text.isNotEmpty
-                                  ? '${_usernameController1.text}, ${_usernameController2.text}'
-                                  : '未输入',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: _comparisonColor(
-                                  widget.personRfidExpected,
-                                  _usernameController1.text.isNotEmpty &&
-                                          _usernameController2.text.isNotEmpty
-                                      ? '${_usernameController1.text}, ${_usernameController2.text}'
-                                      : '',
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+                );
+              }),
             ],
           ),
         ),

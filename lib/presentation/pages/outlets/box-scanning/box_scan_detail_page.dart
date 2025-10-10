@@ -64,7 +64,7 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
     AppLogger.info('BoxScanDetailPage: ${widget.point}');
     AppLogger.info('BoxScanDetailPage: ${widget.boxItems}');
     AppLogger.info('BoxScanDetailPage: ${widget.lines}');
-    
+
     // 页面加载完成后显示认证弹框
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showAuthDialog();
@@ -78,14 +78,14 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
   /// 显示认证弹框
   void _showAuthDialog() {
     if (_isAuthDialogShown) return;
-    
+
     _isAuthDialogShown = true;
-    
+
     // 获取预期的车辆和人员RFID（这里可以根据实际业务逻辑获取）
     final lineInfo = findLineByOrgNo(widget.point['orgNo'].toString());
     final expectedVehicleRfid = lineInfo?['carNo']?.toString();
     final expectedPersonRfid = lineInfo?['escortName']?.toString();
-    
+
     AuthDialog.show(
       context: context,
       title: '身份认证',
@@ -1122,7 +1122,8 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
         _uhfScannedTags.clear();
         _uhfScannedTags.addAll(result['uhfScannedTags'] as List<String>);
         _scannedBoxes.clear();
-        _scannedBoxes.addAll(result['scannedBoxes'] as List<Map<String, String>>);
+        _scannedBoxes
+            .addAll(result['scannedBoxes'] as List<Map<String, String>>);
       });
     } else {
       if (mounted) {
@@ -1145,7 +1146,8 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
         _uhfScannedTags.clear();
         _uhfScannedTags.addAll(result['uhfScannedTags'] as List<String>);
         _scannedBoxes.clear();
-        _scannedBoxes.addAll(result['scannedBoxes'] as List<Map<String, String>>);
+        _scannedBoxes
+            .addAll(result['scannedBoxes'] as List<Map<String, String>>);
       });
     }
   }
@@ -1164,7 +1166,8 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
         _uhfScannedTags.clear();
         _uhfScannedTags.addAll(result['uhfScannedTags'] as List<String>);
         _scannedBoxes.clear();
-        _scannedBoxes.addAll(result['scannedBoxes'] as List<Map<String, String>>);
+        _scannedBoxes
+            .addAll(result['scannedBoxes'] as List<Map<String, String>>);
       });
     } else {
       if (mounted) {
@@ -1241,24 +1244,64 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
 
     return Consumer<LineInfoProvider>(
       builder: (context, lineInfoProvider, child) {
-        return PageScaffold(
-          title: lineInfoProvider.lineName ?? '暂无数据',
-          showBackButton: true,
-          onBackPressed: () {
-            Navigator.pop(context);
-          },
-          child: Column(
-            children: [
-              customBodyHeader(items),
-              Expanded(
-                child: _isAuthenticated 
-                    ? cashBoxList(items)
-                    : _buildAuthPendingWidget(),
+        return WillPopScope(
+            onWillPop: () async {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('确认返回'),
+                  content: const Text('是否返回上一步？'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(false),
+                      child: const Text('取消'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(true),
+                      child: const Text('确定'),
+                    ),
+                  ],
+                ),
+              );
+              return confirm ?? false;
+            },
+            child: PageScaffold(
+              title: lineInfoProvider.lineName ?? '暂无数据',
+              showBackButton: true,
+              onBackPressed: () {
+                showDialog<void>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('确认返回'),
+                    content: const Text('是否返回上一步？'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        child: const Text('取消'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(ctx).pop();
+                          Navigator.pop(context);
+                        },
+                        child: const Text('确定'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+              child: Column(
+                children: [
+                  customBodyHeader(items),
+                  Expanded(
+                    child: _isAuthenticated
+                        ? cashBoxList(items)
+                        : _buildAuthPendingWidget(),
+                  ),
+                  if (_isAuthenticated) footerButton(items),
+                ],
               ),
-              if (_isAuthenticated) footerButton(items),
-            ],
-          ),
-        );
+            ));
       },
     );
   }
