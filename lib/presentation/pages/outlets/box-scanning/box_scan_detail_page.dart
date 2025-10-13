@@ -49,8 +49,8 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
   // 存储手工匹配弹窗中用户选中的款箱
   List<Map<String, dynamic>> _selectedManualBoxes = [];
 
-  // 不一致原因的输入控制器
-  TextEditingController _discrepancyInputController = TextEditingController();
+  // 不一致原因
+  String? isConsistent = null;
 
   // 认证相关
   bool _isAuthenticated = false;
@@ -61,9 +61,6 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
     super.initState();
     _initializeService();
     items = widget.boxItems;
-    AppLogger.info('BoxScanDetailPage: ${widget.point}');
-    AppLogger.info('BoxScanDetailPage: ${widget.boxItems}');
-    AppLogger.info('BoxScanDetailPage: ${widget.lines}');
 
     // 页面加载完成后显示认证弹框
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -81,7 +78,6 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
 
     _isAuthDialogShown = true;
 
-    // 获取预期的车辆和人员RFID（这里可以根据实际业务逻辑获取）
     final lineInfo = findLineByOrgNo(widget.point['orgNo'].toString());
     final expectedVehicleRfid = lineInfo?['carNo']?.toString();
     final expectedPersonRfid = lineInfo?['escortName']?.toString();
@@ -99,18 +95,9 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
         if (result.success) {
           setState(() {
             _isAuthenticated = true;
+            isConsistent = result.errorMessage ?? '';
           });
-          AppLogger.info('认证成功: ${result.username}');
-          AppLogger.info('车辆RFID: ${result.vehicleRfid}');
-          AppLogger.info('人员RFID: ${result.personRfid}');
         } else {
-          // 认证失败，显示错误信息
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('认证失败: ${result.errorMessage ?? '未知错误'}'),
-              backgroundColor: Colors.red,
-            ),
-          );
           // 可以选择返回上一页或重新认证
           Navigator.of(context).pop();
         }
@@ -1088,7 +1075,7 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
                       'orgName': widget.point['orgName']?.toString() ?? '',
                       'operationType': widget.operationType,
                       'implBoxDetail': widget.implBoxDetail,
-                      'isConsistent': '',
+                      'isConsistent': isConsistent,
                     },
                   );
                 }
@@ -1308,7 +1295,6 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
 
   @override
   void dispose() {
-    _discrepancyInputController.dispose();
     if (_isUHFScanning) {
       _isUHFScanning = false;
     }

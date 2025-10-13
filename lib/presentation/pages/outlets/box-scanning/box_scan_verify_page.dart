@@ -11,6 +11,7 @@ import 'package:tj_tms_mobile/presentation/state/providers/teller_verify_provide
 import 'package:tj_tms_mobile/presentation/state/providers/face_login_provider.dart';
 import 'package:tj_tms_mobile/presentation/state/providers/line_info_provider.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:tj_tms_mobile/core/utils/util.dart' as app_utils;
 
 class BoxScanVerifyPage extends StatefulWidget {
   const BoxScanVerifyPage({super.key});
@@ -28,6 +29,8 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage>
   String _escortName = '';
   final ScrollController _mainScrollController = ScrollController();
   final GlobalKey _inputAreaKey = GlobalKey();
+  
+  Map<String, dynamic> _deviceInfo = <String, dynamic>{};
 
   @override
   void initState() {
@@ -60,6 +63,12 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage>
 
   Future<void> _initializeService() async {
     _service = await Service18082.create();
+    await _loadDeviceInfo();
+  }
+
+  Future<void> _loadDeviceInfo() async {
+    final info = await app_utils.loadDeviceInfo();
+    _deviceInfo = info;
   }
 
   @override
@@ -275,18 +284,21 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage>
     // 键盘弹起时自动滚动到输入框区域
     if (isKeyboardVisible) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_mainScrollController.hasClients && _inputAreaKey.currentContext != null) {
+        if (_mainScrollController.hasClients &&
+            _inputAreaKey.currentContext != null) {
           // 计算更精确的滚动位置，确保输入框在键盘上方可见
-          final RenderBox? renderBox = _inputAreaKey.currentContext!.findRenderObject() as RenderBox?;
+          final RenderBox? renderBox =
+              _inputAreaKey.currentContext!.findRenderObject() as RenderBox?;
           if (renderBox != null) {
             final position = renderBox.localToGlobal(Offset.zero);
             final screenHeight = MediaQuery.of(context).size.height;
             final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
             final availableHeight = screenHeight - keyboardHeight;
-            
+
             // 如果输入框区域在键盘下方，则滚动到合适位置
             if (position.dy > availableHeight - 200) {
-              final scrollOffset = _mainScrollController.position.pixels + (position.dy - availableHeight + 200);
+              final scrollOffset = _mainScrollController.position.pixels +
+                  (position.dy - availableHeight + 200);
               _mainScrollController.animateTo(
                 scrollOffset,
                 duration: const Duration(milliseconds: 300),
@@ -539,6 +551,7 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage>
               ? null
               : md5.convert(utf8.encode(handerPassword + 'messi')).toString(),
           'face': handerFaceImage,
+          'handheldNo': _deviceInfo['deviceId'],
           'isImport': true
         });
       }
@@ -551,6 +564,7 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage>
               ? null
               : md5.convert(utf8.encode(deliverPassword + 'messi')).toString(),
           'face': deliverFaceImage,
+          'handheldNo': _deviceInfo['deviceId'],
           'isImport': false
         });
       }

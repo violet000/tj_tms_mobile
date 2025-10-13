@@ -64,13 +64,29 @@ class Service18082 {
     );
   }
 
+  // 人脸验证（用于华宝认证）
+  Future<Map<String, dynamic>> faceVerify(
+      List<Map<String, dynamic>> loginParams) async {
+    return _dioService.post(
+      '/user-center/v2/user/faceVerify',
+      body: loginParams,
+    );
+  }
+
+  // 根据车辆标签ID查询车辆信息
+  Future<Map<String, dynamic>> getCarByLable(String lable) async {
+    return _dioService.get(
+      '/manage-center/v2/carManage',
+      queryParameters: <String, String>{'lable': lable},
+    );
+  }
+
   ///查询押运员编号查询线路及线路涉及机构信息
   Future<Map<String, dynamic>> getLineByEscortNo(dynamic escortNo,
       {int? mode}) async {
     final Map<String, dynamic> body = <String, dynamic>{
       'escortNo': escortNo,
-      // 'handheldNo': _deviceInfo['deviceId'],
-      'handheldNo': 'c7aec416ab7f236a71495d2849a662229974bab16723e7a012e41d6998288001',
+      'handheldNo': _deviceInfo['deviceId'],
     };
     if (mode != null) {
       body['mode'] = mode;

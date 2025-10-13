@@ -9,6 +9,7 @@ import 'package:tj_tms_mobile/presentation/widgets/common/blue_polygon_backgroun
 import 'package:tj_tms_mobile/presentation/pages/outlets/box-scanning/box_scan_detail_page.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/page_scaffold.dart';
 import 'package:tj_tms_mobile/core/constants/constant.dart';
+import 'package:tj_tms_mobile/core/utils/util.dart';
 
 class BoxScanPage extends StatefulWidget {
   const BoxScanPage({super.key});
@@ -375,7 +376,7 @@ class _BoxScanPageState extends State<BoxScanPage> {
                               Expanded(
                                 flex: 1,
                                 child: Text(
-                                  route['carNo'].toString(),
+                                  getPlateNumber(route['carNo'].toString()),
                                   style: const TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
@@ -429,7 +430,7 @@ class _BoxScanPageState extends State<BoxScanPage> {
                               Expanded(
                                 flex: 1,
                                 child: Text(
-                                  route['carNo'].toString(),
+                                  getPlateNumber(route['carNo'].toString()),
                                   style: const TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,

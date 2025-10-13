@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:tj_tms_mobile/core/constants/constant.dart';
 import 'package:tj_tms_mobile/presentation/state/providers/face_login_provider.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/custom_text_field.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/face_scan_widget.dart';
+import 'package:tj_tms_mobile/presentation/widgets/common/logger.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/uhf_plugin_widget.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/uhf_scan_button.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:tj_tms_mobile/core/utils/util.dart' as app_utils;
+import 'package:tj_tms_mobile/data/datasources/api/api.dart';
+import 'package:tj_tms_mobile/core/utils/util.dart';
+import 'package:tj_tms_mobile/presentation/state/providers/line_info_provider.dart';
+import 'package:crypto/crypto.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'dart:convert';
 import 'dart:async';
 
@@ -92,6 +100,8 @@ class _AuthDialogState extends State<AuthDialog>
   final _passwordController1 = TextEditingController();
   final _usernameController2 = TextEditingController();
   final _passwordController2 = TextEditingController();
+  String? _username1 = null;
+  String? _username2 = null;
   final _picker = ImagePicker();
   String? _faceImageBase641;
   String? _faceImageBase642;
@@ -102,6 +112,7 @@ class _AuthDialogState extends State<AuthDialog>
 
   // 车辆核验相关
   String? _scannedVehicleRfid;
+  String? _vehiclePlateNumber; // 车牌号
   bool _isVehicleScanning = false;
 
   // 人员核验相关
@@ -111,6 +122,10 @@ class _AuthDialogState extends State<AuthDialog>
   // 状态管理
   bool _isLoading = false;
   String? _selectedMismatchReason;
+  
+  // API服务相关
+  Service18082? _loginService;
+  Map<String, dynamic> _deviceInfo = <String, dynamic>{};
   static const List<String> _mismatchReasons = <String>[
     '车辆标签损坏/无法读取',
     '车辆更换未同步',
@@ -124,6 +139,35 @@ class _AuthDialogState extends State<AuthDialog>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _pageController = PageController();
+    _initializeLoginService();
+    _loadDeviceInfo();
+    
+    // 为输入框添加监听器，实时更新按钮状态
+    _usernameController1.addListener(_onInputChanged);
+    _passwordController1.addListener(_onInputChanged);
+    _usernameController2.addListener(_onInputChanged);
+    _passwordController2.addListener(_onInputChanged);
+  }
+
+  /// 输入框内容变化时的回调
+  void _onInputChanged() {
+    setState(() {
+      // 触发重新构建，更新按钮状态
+    });
+  }
+
+  /// 初始化登录服务
+  Future<void> _initializeLoginService() async {
+    _loginService = await Service18082.create();
+  }
+
+  /// 加载设备信息
+  Future<void> _loadDeviceInfo() async {
+    final Map<String, dynamic> info = await app_utils.loadDeviceInfo();
+    if (!mounted) return;
+    setState(() {
+      _deviceInfo = info;
+    });
   }
 
   /// 根据原定与实际的比对结果返回颜色
@@ -135,22 +179,17 @@ class _AuthDialogState extends State<AuthDialog>
   Color _comparisonColor(String? expected, String? actual) {
     final String expectedTrimmed = (expected ?? '').trim();
     final String actualTrimmed = (actual ?? '').trim();
+    AppLogger.info('expectedTrimmed: $expectedTrimmed');
+    AppLogger.info('actualTrimmed: $actualTrimmed');
     if (actualTrimmed.isEmpty) {
-      return Colors.grey[600]!;
+      return Colors.red[700]!;
     }
     if (expectedTrimmed.isEmpty) {
-      return Colors.green[700]!;
+      return Colors.red[700]!;
     }
     return expectedTrimmed == actualTrimmed
         ? Colors.green[700]!
         : Colors.red[700]!;
-  }
-
-  bool _isEqual(String? expected, String? actual) {
-    final String expectedTrimmed = (expected ?? '').trim();
-    final String actualTrimmed = (actual ?? '').trim();
-    if (expectedTrimmed.isEmpty || actualTrimmed.isEmpty) return false;
-    return expectedTrimmed == actualTrimmed;
   }
 
   Color _badgeBackground(Color base) {
@@ -199,13 +238,7 @@ class _AuthDialogState extends State<AuthDialog>
     switch (_currentStep) {
       case AuthStep.login:
         if (_validateLoginStep()) {
-          setState(() {
-            _currentStep = AuthStep.vehicleVerify;
-          });
-          _pageController.nextPage(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-          );
+          _performLogin();
         }
         break;
       case AuthStep.vehicleVerify:
@@ -222,6 +255,80 @@ class _AuthDialogState extends State<AuthDialog>
       case AuthStep.confirmVerify:
         _completeAuth();
         break;
+    }
+  }
+
+  /// 执行登录操作
+  Future<void> _performLogin() async {
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      EasyLoading.show(
+        status: '校验中...',
+        maskType: EasyLoadingMaskType.black,
+      );
+
+      // 确保登录服务已初始化
+      if (_loginService == null) {
+        await _initializeLoginService();
+      }
+
+      // 准备登录参数
+      final loginParams = [
+        <String, dynamic>{
+          'username': _usernameController1.text,
+          'password': _usePassword1 && _passwordController1.text.isNotEmpty
+              ? md5.convert(utf8.encode(_passwordController1.text + 'messi')).toString()
+              : null,
+          'face': _faceImageBase641,
+          'handheldNo': 'c7aec416ab7f236a71495d2849a662229974bab16723e7a012e41d6998288001',
+          'isImport': true
+        },
+        <String, dynamic>{
+          'username': _usernameController2.text,
+          'password': _usePassword2 && _passwordController2.text.isNotEmpty
+              ? md5.convert(utf8.encode(_passwordController2.text + 'messi')).toString()
+              : null,
+          'face': _faceImageBase642,
+          'handheldNo': 'c7aec416ab7f236a71495d2849a662229974bab16723e7a012e41d6998288001',
+          'isImport': false
+        }
+      ];
+
+      final Map<String, dynamic> loginResult = await _loginService!.faceVerify(loginParams);
+
+      if (loginResult['retCode'] == HTTPCode.success.code) {
+        final List<dynamic>? userList = loginResult['retList'] as List<dynamic>?;
+        _username1 = userList?[0]['userName'] as String?;
+        _username2 = userList?[1]['userName'] as String?;
+        
+        AppLogger.info('登录成功 - 用户1: $_username1, 用户2: $_username2');
+        
+        EasyLoading.dismiss();
+        // 下一步
+        setState(() {
+          _currentStep = AuthStep.vehicleVerify;
+        });
+        _pageController.nextPage(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      } else {
+        // 登录失败
+        final String errorMessage = loginResult['message']?.toString() ?? '登录失败';
+        _showError(errorMessage);
+        EasyLoading.dismiss();
+      }
+    } catch (e) {
+      AppLogger.error('登录过程中发生错误', e);
+      _showError('登录失败: ${e.toString()}');
+      EasyLoading.dismiss();
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -299,28 +406,71 @@ class _AuthDialogState extends State<AuthDialog>
   /// 验证车辆核验步骤
   bool _validateVehicleStep() {
     if (_scannedVehicleRfid == null || _scannedVehicleRfid!.isEmpty) {
-      _showError('请扫描车辆RFID');
+      _showError('点击识别车辆');
       return false;
     }
     return true;
+  }
+
+  /// 判断当前步骤是否完成（不显示错误信息，仅用于按钮状态）
+  bool _isStepValid() {
+    switch (_currentStep) {
+      case AuthStep.login:
+        return _isLoginStepValid();
+      case AuthStep.vehicleVerify:
+        return _isVehicleStepValid();
+      case AuthStep.confirmVerify:
+        return true; // 确认步骤总是可以完成
+    }
+  }
+
+  /// 判断登录步骤是否完成
+  bool _isLoginStepValid() {
+    // 验证第一个人员
+    if (_usernameController1.text.isEmpty) {
+      return false;
+    }
+
+    // 验证第二个人员
+    if (_usernameController2.text.isEmpty) {
+      return false;
+    }
+
+    // 根据登录方式验证
+    if (_usePassword1) {
+      if (_passwordController1.text.isEmpty) {
+        return false;
+      }
+    } else {
+      if (_faceImageBase641 == null || _faceImageBase641!.isEmpty) {
+        return false;
+      }
+    }
+
+    if (_usePassword2) {
+      if (_passwordController2.text.isEmpty) {
+        return false;
+      }
+    } else {
+      if (_faceImageBase642 == null || _faceImageBase642!.isEmpty) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /// 判断车辆核验步骤是否完成
+  bool _isVehicleStepValid() {
+    return _scannedVehicleRfid != null && _scannedVehicleRfid!.isNotEmpty;
   }
 
   /// 完成认证
   void _completeAuth() {
     final result = AuthResult(
       success: true,
-      username: '${_usernameController1.text},${_usernameController2.text}',
-      password: _passwordController1.text.isNotEmpty ||
-              _passwordController2.text.isNotEmpty
-          ? '${_passwordController1.text},${_passwordController2.text}'
-          : null,
-      faceImage: _faceImageBase641 != null || _faceImageBase642 != null
-          ? '${_faceImageBase641 ?? ''},${_faceImageBase642 ?? ''}'
-          : null,
-      vehicleRfid: _scannedVehicleRfid,
-      personRfid: _scannedPersonRfid,
+      errorMessage: _selectedMismatchReason,
     );
-
     Navigator.of(context).pop(result);
     widget.onComplete?.call(result);
   }
@@ -366,19 +516,43 @@ class _AuthDialogState extends State<AuthDialog>
   }
 
   /// 处理车辆RFID扫描结果
-  void _onVehicleRfidScanned(String rfid) {
+  void _onVehicleRfidScanned(String rfid) async {
     setState(() {
       _scannedVehicleRfid = rfid;
       _isVehicleScanning = false;
+      _vehiclePlateNumber = null; // 重置车牌号
     });
-  }
 
-  /// 处理人员RFID扫描结果
-  void _onPersonRfidScanned(String rfid) {
-    setState(() {
-      _scannedPersonRfid = rfid;
-      _isPersonScanning = false;
-    });
+    // 调用接口查询车牌号
+    try {
+      if (_loginService != null) {
+        EasyLoading.show(
+          status: '车牌查询中...',
+          maskType: EasyLoadingMaskType.black,
+        );
+        final result = await _loginService!.getCarByLable(rfid);
+        if (result['retCode'] == HTTPCode.success.code) {
+          final List<dynamic>? carList = result['retList'] as List<dynamic>?;
+          if (carList != null && carList.isNotEmpty) {
+            final Map<String, dynamic> car = carList.first as Map<String, dynamic>;
+            final String plate = (car['plate'] ?? car['carNo'] ?? '').toString();
+            if (plate.isNotEmpty) {
+              setState(() {
+                _vehiclePlateNumber = plate;
+              });
+            }
+          } else {
+            AppLogger.warning('查询车牌号失败: 未返回车辆列表');
+          }
+        } else {
+          AppLogger.warning('查询车牌号失败: ${result['message']}');
+        }
+      }
+    } catch (e) {
+      AppLogger.error('查询车牌号时发生错误', e);
+    } finally {
+      EasyLoading.dismiss();
+    }
   }
 
   @override
@@ -612,21 +786,31 @@ class _AuthDialogState extends State<AuthDialog>
                   // 扫描按钮（居中显示）
                   Container(
                     padding: const EdgeInsets.only(left: 20),
-                    child: UHFScanButton(
-                      startText: '车辆RFID扫描',
-                      stopText: '车辆RFID停止',
-                      onTagScanned: (rfid) {
-                        _onVehicleRfidScanned(rfid);
-                        // 扫描到即自动停止
+                    child: MaterialButton(
+                      onPressed: () {
+                        final String rfid = "AB002912FFFFFFFFFFFFF69C";
+                        final String last4 = rfid.length >= 4 ? rfid.substring(rfid.length - 4) : rfid;
+                        _onVehicleRfidScanned(last4);
                         controller.stopScan();
                       },
-                      onScanStateChanged: (isScanning) {
-                        setState(() {
-                          _isVehicleScanning = isScanning;
-                        });
-                      },
-                      onError: _showError,
+                      child: const Text('车辆RFID扫描'),
                     ),
+                    // child: UHFScanButton(
+                    //   startText: '车辆RFID扫描',
+                    //   stopText: '车辆RFID停止',
+                    //   onTagScanned: (rfid) {
+                    //     final last4 = rfid.length >= 4 ? rfid.substring(rfid.length - 4) : rfid;
+                    //     _onVehicleRfidScanned(last4);
+                    //     // 扫描到即自动停止
+                    //     controller.stopScan();
+                    //   },
+                    //   onScanStateChanged: (isScanning) {
+                    //     setState(() {
+                    //       _isVehicleScanning = isScanning;
+                    //     });
+                    //   },
+                    //   onError: _showError,
+                    // ),
                   ),
                   const SizedBox(height: 16),
 
@@ -665,8 +849,7 @@ class _AuthDialogState extends State<AuthDialog>
                             ),
                             Expanded(
                               child: Text(
-                                // 暂以RFID替代
-                                _scannedVehicleRfid ?? '未扫描',
+                                _vehiclePlateNumber ?? '未查询到',
                                 style: const TextStyle(fontSize: 12),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -726,10 +909,10 @@ class _AuthDialogState extends State<AuthDialog>
                             ),
                             const SizedBox(width: 6),
                             GestureDetector(
-                              onTap: () => _showFullText('车辆原定', widget.vehicleRfidExpected),
+                              onTap: () => _showFullText('车辆原定', getPlateNumber(widget.vehicleRfidExpected ?? '')),
                               child: Text(
-                                _middleEllipsis(widget.vehicleRfidExpected, head: 6, tail: 6).isNotEmpty
-                                    ? _middleEllipsis(widget.vehicleRfidExpected, head: 6, tail: 6)
+                                _middleEllipsis(getPlateNumber(widget.vehicleRfidExpected ?? '').toString(), head: 6, tail: 6).isNotEmpty
+                                    ? _middleEllipsis(getPlateNumber(widget.vehicleRfidExpected ?? '').toString(), head: 6, tail: 6)
                                     : '无',
                                 style: const TextStyle(fontSize: 11, color: Colors.black87),
                               ),
@@ -751,30 +934,30 @@ class _AuthDialogState extends State<AuthDialog>
                             ),
                             const SizedBox(width: 6),
                             GestureDetector(
-                              onTap: () => _showFullText('车辆实际', _scannedVehicleRfid),
+                              onTap: () => _showFullText('车辆实际', _vehiclePlateNumber),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                                 decoration: BoxDecoration(
                                   color: _badgeBackground(
-                                    _comparisonColor(widget.vehicleRfidExpected, _scannedVehicleRfid),
+                                    _comparisonColor(getPlateNumber(widget.vehicleRfidExpected ?? '').toString(), _vehiclePlateNumber),
                                   ),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
                                     color: _comparisonColor(
-                                      widget.vehicleRfidExpected,
-                                      _scannedVehicleRfid,
+                                      getPlateNumber(widget.vehicleRfidExpected ?? '').toString(),
+                                      _vehiclePlateNumber,
                                     ).withOpacity(0.4),
                                   ),
                                 ),
                                 child: Text(
-                                  _middleEllipsis(_scannedVehicleRfid, head: 6, tail: 6).isNotEmpty
-                                      ? _middleEllipsis(_scannedVehicleRfid, head: 6, tail: 6)
-                                      : '未扫描',
+                                  _middleEllipsis(_vehiclePlateNumber, head: 6, tail: 6).isNotEmpty
+                                      ? _middleEllipsis(_vehiclePlateNumber, head: 6, tail: 6)
+                                      : '未查询到',
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: _comparisonColor(
-                                      widget.vehicleRfidExpected,
-                                      _scannedVehicleRfid,
+                                      getPlateNumber(widget.vehicleRfidExpected ?? '').toString(),
+                                      _vehiclePlateNumber,
                                     ),
                                   ),
                                 ),
@@ -790,23 +973,19 @@ class _AuthDialogState extends State<AuthDialog>
               const SizedBox(height: 8),
               // 人员
               Builder(builder: (context) {
-                final faceLoginProvider =
-                    Provider.of<FaceLoginProvider>(context, listen: false);
-                final expected1 = (faceLoginProvider.getUsername(1) ?? '').trim();
-                final expected2 = (faceLoginProvider.getUsername(2) ?? '').trim();
-                // 文本显示为 两人占位
-                final expectedDisplay =
-                    '${expected1.isNotEmpty ? expected1 : '未设置'} / ${expected2.isNotEmpty ? expected2 : '未设置'}';
-                // 比对仅在两人都存在时进行
-                final expectedForCompare =
-                    (expected1.isNotEmpty && expected2.isNotEmpty) ? '$expected1, $expected2' : '';
+                final lineInfoProvider = Provider.of<LineInfoProvider>(context, listen: false);
+                final escortName = (lineInfoProvider.escortName ?? '').trim();
+                // 线路上的 escortName
+                final expectedDisplay = escortName.isNotEmpty ? escortName : '空';
+                // 与实际两人合并后的字符串进行对比（用逗号间隔）
+                final expectedForCompare = escortName;
 
-                final actual1 = _usernameController1.text.trim();
-                final actual2 = _usernameController2.text.trim();
                 final actualDisplay =
-                    '${actual1.isNotEmpty ? actual1 : '未输入'} / ${actual2.isNotEmpty ? actual2 : '未输入'}';
+                    '${_username1?.isNotEmpty ?? false ? _username1 : '未输入'} / ${_username2?.isNotEmpty ?? false ? _username2 : '未输入'}';
                 final actualForCompare =
-                    (actual1.isNotEmpty && actual2.isNotEmpty) ? '$actual1, $actual2' : '';
+                    ((_username1?.isNotEmpty ?? false) && (_username2?.isNotEmpty ?? false))
+                        ? '$_username1/$_username2'
+                        : (_username1?.trim() ?? '') + (_username2?.trim() ?? '').trim();
                 final color = _comparisonColor(expectedForCompare, actualForCompare);
 
                 return Row(
@@ -923,15 +1102,18 @@ class _AuthDialogState extends State<AuthDialog>
 
   /// 构建底部按钮
   Widget _buildBottomButtons() {
+    final bool isStepValid = _isStepValid();
+    final bool isButtonEnabled = !_isLoading && isStepValid;
+    
     return Row(
       children: [
         Expanded(
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
+              backgroundColor: isButtonEnabled ? Colors.blue : Colors.grey,
               foregroundColor: Colors.white,
             ),
-            onPressed: _isLoading ? null : _nextStep,
+            onPressed: isButtonEnabled ? _nextStep : null,
             child: _isLoading
                 ? const SizedBox(
                     width: 20,

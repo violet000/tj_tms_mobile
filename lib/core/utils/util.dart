@@ -58,3 +58,43 @@ Future<String> getUdid() async {
     return 'unknown';
   }
 }
+
+/// 解析车牌号和车辆标签ID
+/// 
+/// 输入格式：苏A00001-XHJASVJHV
+/// 返回：{'plateNumber': '苏A00001', 'tagId': 'XHJASVJHV'}
+/// 
+/// [carNo] 车牌号字符串，格式为"车牌号-标签ID"
+/// 返回包含车牌号和标签ID的Map，如果解析失败则返回空字符串
+Map<String, String> parseCarNoAndTagId(String carNo) {
+  if (carNo.isEmpty) {
+    return {'plateNumber': '', 'tagId': ''};
+  }
+  
+  final parts = carNo.split('-');
+  if (parts.length != 2) {
+    // 如果没有'-'分隔符，整个字符串作为车牌号
+    return {'plateNumber': carNo, 'tagId': ''};
+  }
+  
+  return {
+    'plateNumber': parts[0].trim(),
+    'tagId': parts[1].trim(),
+  };
+}
+
+/// 获取车牌号（从完整字符串中提取）
+/// 
+/// [carNo] 车牌号字符串，格式为"车牌号-标签ID"
+/// 返回车牌号部分
+String getPlateNumber(String carNo) {
+  return parseCarNoAndTagId(carNo)['plateNumber'] ?? '';
+}
+
+/// 获取车辆标签ID（从完整字符串中提取）
+/// 
+/// [carNo] 车牌号字符串，格式为"车牌号-标签ID"
+/// 返回标签ID部分
+String getTagId(String carNo) {
+  return parseCarNoAndTagId(carNo)['tagId'] ?? '';
+}
