@@ -203,8 +203,7 @@ class LocationPollingManager {
         final dynamic longitude = location['longitude'];
         if (latitude != null && longitude != null) {
           await _service9087?.sendGpsInfo(<String, dynamic>{
-            // 'handheldNo': _deviceInfo['deviceId'],
-            'handheldNo': 'c7aec416ab7f236a71495d2849a662229974bab16723e7a012e41d6998288001',
+            'handheldNo': _deviceInfo['deviceId'],
             'x': latitude,
             'y': longitude,
             'timestamp': DateTime.now().millisecondsSinceEpoch,

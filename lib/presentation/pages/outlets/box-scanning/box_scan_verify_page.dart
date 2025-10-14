@@ -580,9 +580,7 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage>
               : md5.convert(utf8.encode(handerPassword + 'messi')).toString(),
           'face': handerFaceImage,
           'orgNo': _orgNo,
-          // 'handheldNo': _deviceInfo['deviceId'],
-          'handheldNo':
-              'c7aec416ab7f236a71495d2849a662229974bab16723e7a012e41d6998288001',
+          'handheldNo': _deviceInfo['deviceId'],
           'isImport': true
         });
       }
@@ -596,9 +594,7 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage>
               : md5.convert(utf8.encode(deliverPassword + 'messi')).toString(),
           'face': deliverFaceImage,
           'orgNo': _orgNo,
-          // 'handheldNo': _deviceInfo['deviceId'],
-          'handheldNo':
-              'c7aec416ab7f236a71495d2849a662229974bab16723e7a012e41d6998288001',
+          'handheldNo': _deviceInfo['deviceId'],
           'isImport': false
         });
       }

@@ -282,9 +282,7 @@ class _AuthDialogState extends State<AuthDialog>
                   .toString()
               : null,
           'face': _faceImageBase641,
-          // 'handheldNo': _deviceInfo['deviceId'] ?? '',
-          'handheldNo':
-              'c7aec416ab7f236a71495d2849a662229974bab16723e7a012e41d6998288001',
+          'handheldNo': _deviceInfo['deviceId'] ?? '',
           'isImport': true
         },
         <String, dynamic>{
@@ -295,9 +293,7 @@ class _AuthDialogState extends State<AuthDialog>
                   .toString()
               : null,
           'face': _faceImageBase642,
-          // 'handheldNo': _deviceInfo['deviceId'] ?? '',
-          'handheldNo':
-              'c7aec416ab7f236a71495d2849a662229974bab16723e7a012e41d6998288001',
+          'handheldNo': _deviceInfo['deviceId'] ?? '',
           'isImport': false
         }
       ];
@@ -796,34 +792,22 @@ class _AuthDialogState extends State<AuthDialog>
                   // 扫描按钮（居中显示）
                   Container(
                     padding: const EdgeInsets.only(left: 20),
-                    child: ElevatedButton(
-                      onPressed: () {
-                        final rfid = 'AB002912FFFFFFFFFFFFF69C';
-                        final last4 = rfid.length >= 4
-                            ? rfid.substring(rfid.length - 4)
-                            : rfid;
+                    child: UHFScanButton(
+                      startText: '点击识别车辆卡',
+                      onTagScanned: (rfid) {
+                        final last4 = rfid.length >= 4 ? rfid.substring(rfid.length - 4) : rfid;
                         _onVehicleRfidScanned(last4);
+                        // 扫描到即停止扫描
                         controller.stopScan();
                       },
-                      child: const Text('点击车辆卡识别'),
+                      onScanStateChanged: (isScanning) {
+                        setState(() {
+                          _isVehicleScanning = isScanning;
+                        });
+                      },
+                      onError: _showError,
                     ),
                   ),
-                  //   UHFScanButton(
-                  //     startText: '点击车辆卡识别',
-                  //     onTagScanned: (rfid) {
-                  //       final last4 = rfid.length >= 4 ? rfid.substring(rfid.length - 4) : rfid;
-                  //       _onVehicleRfidScanned(last4);
-                  //       // 扫描到即停止扫描
-                  //       controller.stopScan();
-                  //     },
-                  //     onScanStateChanged: (isScanning) {
-                  //       setState(() {
-                  //         _isVehicleScanning = isScanning;
-                  //       });
-                  //     },
-                  //     onError: _showError,
-                  //   ),
-                  // ),
                   const SizedBox(height: 16),
 
                   // 扫描结果信息（标签ID、车牌号）
