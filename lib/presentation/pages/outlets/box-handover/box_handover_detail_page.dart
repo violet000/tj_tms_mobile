@@ -9,6 +9,7 @@ import 'package:tj_tms_mobile/presentation/widgets/common/blank_item_card.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/page_scaffold.dart';
 import 'package:tj_tms_mobile/presentation/state/providers/line_info_provider.dart';
 import 'package:tj_tms_mobile/presentation/state/providers/box_handover_provider.dart';
+import 'package:tj_tms_mobile/presentation/widgets/common/auth_dialog.dart';
 import 'package:tj_tms_mobile/core/utils/cashbox_scan_utils.dart';
 
 class BoxHandoverDetailPage extends StatefulWidget {
@@ -37,8 +38,10 @@ class _BoxHandoverDetailPageState extends State<BoxHandoverDetailPage> {
   // 存储手工匹配弹窗中用户选中的款箱
   List<Map<String, dynamic>> _selectedManualBoxes = [];
 
-  // 不一致原因的输入控制器
-  TextEditingController _discrepancyInputController = TextEditingController();
+  // 认证相关
+  bool _isAuthenticated = false;
+  bool _isAuthDialogShown = false;
+  String? isConsistent = null;
 
   @override
   void initState() {
@@ -48,10 +51,48 @@ class _BoxHandoverDetailPageState extends State<BoxHandoverDetailPage> {
         Provider.of<BoxHandoverProvider>(context, listen: false);
     items = boxHandoverProvider.boxItems;
     selectedRoute = boxHandoverProvider.selectedRoute;
+
+    // 页面加载完成后显示认证弹框
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showAuthDialog();
+    });
   }
 
   Future<void> _initializeService() async {
     _service = await Service18082.create();
+  }
+
+  /// 显示认证弹框
+  void _showAuthDialog() {
+    if (_isAuthDialogShown) return;
+
+    _isAuthDialogShown = true;
+
+    // 获取线路信息
+    final expectedVehicleRfid = selectedRoute['carNo']?.toString();
+    final expectedPersonRfid = selectedRoute['escortName']?.toString();
+
+    AuthDialog.show(
+      context: context,
+      title: '身份认证',
+      vehicleRfidExpected: expectedVehicleRfid,
+      personRfidExpected: expectedPersonRfid,
+      onCancel: () {
+        // 认证取消，返回上一页
+        Navigator.of(context).pop();
+      },
+      onComplete: (result) {
+        if (result.success) {
+          setState(() {
+            _isAuthenticated = true;
+            isConsistent = result.errorMessage ?? '';
+          });
+        } else {
+          // 可以选择返回上一页或重新认证
+          Navigator.of(context).pop();
+        }
+      },
+    );
   }
 
   // 自定义内容体的头部 - 添加线路、车、押运员信息
@@ -979,11 +1020,21 @@ class _BoxHandoverDetailPageState extends State<BoxHandoverDetailPage> {
                     ),
                   );
                 } else {
+                  final boxHandoverProvider =
+                      Provider.of<BoxHandoverProvider>(context, listen: false);
+                  final List<Map<String, dynamic>> selectedPoints =
+                      boxHandoverProvider.selectedPoints;
+                  final List<String> orgNos = selectedPoints
+                      .map((p) => p['orgNo']?.toString())
+                      .whereType<String>()
+                      .toList();
+
                   Navigator.pushNamed(
                     context,
                     '/outlets/box-handover-verify',
                     arguments: <String, dynamic>{
-                      'isConsistent': '',
+                      'isConsistent': isConsistent,
+                      'orgNo': orgNos[0],
                     },
                   );
                 }
@@ -1075,6 +1126,47 @@ class _BoxHandoverDetailPageState extends State<BoxHandoverDetailPage> {
     CashBoxScanUtils.showUHFError(context, error);
   }
 
+  /// 构建认证等待状态的Widget
+  Widget _buildAuthPendingWidget() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.security,
+            size: 80,
+            color: Colors.blue,
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            '正在进行身份认证...',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey,
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            '请完成身份认证后继续操作',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey,
+            ),
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton(
+            onPressed: () {
+              _isAuthDialogShown = false;
+              _showAuthDialog();
+            },
+            child: const Text('重新认证'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<BoxHandoverProvider>(
@@ -1090,9 +1182,11 @@ class _BoxHandoverDetailPageState extends State<BoxHandoverDetailPage> {
             children: [
               customBodyHeader(items),
               Expanded(
-                child: cashBoxList(items),
+                child: _isAuthenticated
+                    ? cashBoxList(items)
+                    : _buildAuthPendingWidget(),
               ),
-              footerButton(items),
+              if (_isAuthenticated) footerButton(items),
             ],
           ),
         );
@@ -1102,7 +1196,6 @@ class _BoxHandoverDetailPageState extends State<BoxHandoverDetailPage> {
 
   @override
   void dispose() {
-    _discrepancyInputController.dispose();
     if (_isUHFScanning) {
       _isUHFScanning = false;
     }

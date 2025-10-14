@@ -57,12 +57,6 @@ class _BoxScanPageState extends State<BoxScanPage> {
       if (_service == null) {
         await _initializeService();
       }
-      // final String? username =
-      //     _verifyTokenProvider.getUserData()?['username'] as String?;
-      // if (username == null) {
-      //   AppLogger.warning('用户名为空，无法获取线路数据');
-      //   return;
-      // }
       final allNames = _verifyTokenProvider.getAllUsersData();
       final userName = allNames.map<String>((e) => e['username'].toString()).toList();
       EasyLoading.show(

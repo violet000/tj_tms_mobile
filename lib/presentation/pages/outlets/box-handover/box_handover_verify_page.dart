@@ -11,6 +11,7 @@ import 'package:tj_tms_mobile/presentation/state/providers/teller_verify_provide
 import 'package:tj_tms_mobile/presentation/state/providers/face_login_provider.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:tj_tms_mobile/presentation/state/providers/box_handover_provider.dart';
+import 'package:tj_tms_mobile/core/utils/util.dart' as app_utils;
 
 class BoxHandoverVerifyPage extends StatefulWidget {
   const BoxHandoverVerifyPage({super.key});
@@ -31,6 +32,8 @@ class _BoxHandoverVerifyPageState extends State<BoxHandoverVerifyPage>
   Map<String, dynamic> selectedRoute = <String, dynamic>{};
   final ScrollController _mainScrollController = ScrollController();
   final GlobalKey _inputAreaKey = GlobalKey();
+  String _orgNo = '';
+  Map<String, dynamic> _deviceInfo = <String, dynamic>{};
 
   @override
   void initState() {
@@ -52,11 +55,13 @@ class _BoxHandoverVerifyPageState extends State<BoxHandoverVerifyPage>
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     if (args != null) {
       _isConsistent = args['isConsistent']?.toString() ?? '';
+      _orgNo = args['orgNo']?.toString() ?? '';
     }
   }
 
   Future<void> _initializeService() async {
     _service = await Service18082.create();
+    await _loadDeviceInfo();
   }
 
   @override
@@ -64,6 +69,11 @@ class _BoxHandoverVerifyPageState extends State<BoxHandoverVerifyPage>
     _tabController.dispose();
     _mainScrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadDeviceInfo() async {
+    final info = await app_utils.loadDeviceInfo();
+    _deviceInfo = info;
   }
 
   // 自定义内容体的头部 - 添加线路、车、押运员信息
@@ -540,6 +550,8 @@ class _BoxHandoverVerifyPageState extends State<BoxHandoverVerifyPage>
           'password': (handerPassword == null || handerPassword.isEmpty)
               ? null
               : md5.convert(utf8.encode(handerPassword + 'messi')).toString(),
+          'orgNo': _orgNo,
+          'handheldNo': _deviceInfo['deviceId'],
           'face': handerFaceImage,
           'isImport': true
         });
@@ -552,6 +564,8 @@ class _BoxHandoverVerifyPageState extends State<BoxHandoverVerifyPage>
           'password': (deliverPassword == null || deliverPassword.isEmpty)
               ? null
               : md5.convert(utf8.encode(deliverPassword + 'messi')).toString(),
+          'orgNo': _orgNo,
+          'handheldNo': _deviceInfo['deviceId'],
           'face': deliverFaceImage,
           'isImport': false
         });

@@ -86,7 +86,7 @@ class Service18082 {
       {int? mode}) async {
     final Map<String, dynamic> body = <String, dynamic>{
       'escortNo': escortNo,
-      'handheldNo': _deviceInfo['deviceId'],
+      'handheldNo': _deviceInfo['deviceId'] ?? '',
     };
     if (mode != null) {
       body['mode'] = mode;

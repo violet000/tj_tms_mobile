@@ -166,8 +166,6 @@ class _BoxScanVerifySuccessPageState extends State<BoxScanVerifySuccessPage>
                           const SizedBox(height: 12),
                           Consumer<TellerVerifyProvider>(
                             builder: (context, tellerVerifyProvider, child) {
-                              AppLogger.info('tellerVerifyProvider.getUsername(0): ${tellerVerifyProvider.getUsername(0)}');
-                              AppLogger.info('tellerVerifyProvider.getUsername(1): ${tellerVerifyProvider.getUsername(1)}');
                               return _buildInfoRow('复核柜员',
                                   '${tellerVerifyProvider.getUsername(0) ?? ''}, ${tellerVerifyProvider.getUsername(1) ?? ''}');
                             },

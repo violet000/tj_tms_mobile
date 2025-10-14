@@ -21,9 +21,7 @@ class UHFPluginWidget extends StatefulWidget {
 }
 
 class _UHFPluginWidgetState extends State<UHFPluginWidget> {
-  final UHFController _controller = UHFController();
-  final MethodChannel _channel =
-      const MethodChannel('com.example.uhf_plugin/uhf');
+  final UHFController _controller = UHFController.instance;
   bool _isInitializing = true;
 
   @override
@@ -34,17 +32,14 @@ class _UHFPluginWidgetState extends State<UHFPluginWidget> {
 
   Future<void> _initializeUHF() async {
     try {
-      print('Starting UHF initialization...');
       await _controller.init();
       if (mounted) {
         setState(() {
           _isInitializing = false;
         });
       }
-      print('UHF initialized successfully');
       widget.onInitialized?.call();
     } catch (e) {
-      print('UHF initialization error: $e');
       widget.onError?.call(e.toString());
       if (mounted) {
         setState(() {
@@ -73,6 +68,15 @@ class _UHFPluginWidgetState extends State<UHFPluginWidget> {
 }
 
 class UHFController {
+  // 单例模式
+  static UHFController? _instance;
+  static UHFController get instance {
+    _instance ??= UHFController._internal();
+    return _instance!;
+  }
+  
+  UHFController._internal();
+  
   final MethodChannel _channel =
       const MethodChannel('com.example.uhf_plugin/uhf');
   final EventChannel _eventChannel =
@@ -85,6 +89,7 @@ class UHFController {
   final List<String> _scannedTags = [];
   String? _lastProcessedEpc;
   DateTime? _lastProcessedTime;
+  int _referenceCount = 0; // 引用计数，用于管理生命周期
 
   bool get isInitialized => _isInitialized;
   bool get isScanning => _isScanning;
@@ -92,12 +97,16 @@ class UHFController {
   List<String> get scannedTags => List.unmodifiable(_scannedTags);
 
   Future<void> init() async {
+    _referenceCount++;
+    if (_isInitialized) {
+      return;
+    }
+    
     try {
       final bool? result = await _channel.invokeMethod<bool>('init');
       if (result == true) {
         _isInitialized = true;
         _setupEventChannel();
-        print('UHF controller initialized');
       } else {
         throw Exception('Failed to initialize UHF device');
       }
@@ -107,27 +116,21 @@ class UHFController {
   }
 
   void _setupEventChannel() {
-    print('Setting up event channel');
     _eventSubscription?.cancel();
     _eventSubscription = _eventChannel.receiveBroadcastStream().listen(
       (dynamic event) {
-        print('Received raw event: $event');
         if (event is Map) {
           final Map<String, dynamic> tagData = Map<String, dynamic>.from(event);
-          print('Processing tag data: $tagData');
 
           if (tagData.containsKey('epc')) {
             final epc = tagData['epc'] as String?;
             if (epc != null && epc.isNotEmpty) {
               final shortEpc = epc.length > 8 ? epc.substring(0, 8) : epc;
               if (!_scannedTags.contains(shortEpc)) {
-                print(
-                    '----------------------------------------------------------------------epc: $shortEpc');
                 _scannedTags.insert(0, shortEpc);
                 if (_scannedTags.length > 100) {
                   _scannedTags.removeLast();
                 }
-                print('Added new tag to list: $shortEpc');
               }
               _tagController.add(tagData);
             }
@@ -135,7 +138,6 @@ class UHFController {
         }
       },
       onError: (Object error) {
-        print('Event channel error: $error');
         _tagController.addError(error);
       },
     );
@@ -162,12 +164,9 @@ class UHFController {
       _isScanning = true;
       _lastProcessedEpc = null;
       _lastProcessedTime = null;
-      print('Starting scan...');
       await _channel.invokeMethod<void>('startScan');
-      print('Scan started successfully');
     } catch (e) {
       _isScanning = false;
-      print('Error starting scan: $e');
       rethrow;
     }
   }
@@ -177,11 +176,8 @@ class UHFController {
       throw Exception('UHF device not initialized');
     }
     try {
-      print('Stopping scan...');
       await _channel.invokeMethod<void>('stopScan');
-      print('Scan stopped successfully');
     } catch (e) {
-      print('Error stopping scan: $e');
       rethrow;
     } finally {
       _isScanning = false;
@@ -228,7 +224,15 @@ class UHFController {
   }
 
   void dispose() {
-    _eventSubscription?.cancel();
-    _tagController.close();
+    _referenceCount--;
+    
+    if (_referenceCount <= 0) {
+      _eventSubscription?.cancel();
+      _tagController.close();
+      _isInitialized = false;
+      _isScanning = false;
+      _referenceCount = 0;
+      _instance = null; // 重置单例实例
+    }
   }
 }

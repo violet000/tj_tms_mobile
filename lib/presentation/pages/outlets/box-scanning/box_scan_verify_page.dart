@@ -25,8 +25,9 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage>
   late TabController _tabController;
   Service18082? _service;
   String _lineName = '';
-  String _items = '';
+  List<Map<String, dynamic>> _items = [];
   String _escortName = '';
+  String _orgNo = '';
   final ScrollController _mainScrollController = ScrollController();
   final GlobalKey _inputAreaKey = GlobalKey();
   
@@ -46,8 +47,9 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage>
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     if (args != null) {
       _lineName = args['lineName']?.toString() ?? '';
-      _items = (args['items'] as List?)?.length.toString() ?? '0';
+      _items = args['items'] as List<Map<String, dynamic>>;
       _escortName = args['escortName']?.toString() ?? '';
+      _orgNo = args['orgNo']?.toString() ?? '';
 
       // 设置 LineInfoProvider 的数据
       final lineInfoProvider =
@@ -69,6 +71,92 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage>
   Future<void> _loadDeviceInfo() async {
     final info = await app_utils.loadDeviceInfo();
     _deviceInfo = info;
+  }
+
+  // 显示款箱列表弹窗
+  void _showItemsDialog() {
+    if (_items.isEmpty) return;
+    
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              SvgPicture.asset(
+                'assets/icons/matbox.svg',
+                width: 24,
+                height: 24,
+                color: const Color(0xFF0279D4),
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                '款箱列表',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF333333),
+                ),
+              ),
+            ],
+          ),
+          content: Container(
+            width: double.maxFinite,
+            constraints: const BoxConstraints(
+              maxHeight: 400,
+              maxWidth: 300,
+            ),
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: _items.length,
+              itemBuilder: (context, index) {
+                final item = _items[index];
+                final boxCode = item['boxCode']?.toString() ?? 'null';
+                
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF7FAFF),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: const Color.fromARGB(255, 36, 167, 237),
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 2),
+                      Text(
+                        boxCode,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color.fromARGB(255, 243, 241, 241),
+                        ),
+                      )
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                '关闭',
+                style: TextStyle(
+                  color: Color(0xFF0279D4),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -248,14 +336,18 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage>
                                         ),
                                         const SizedBox(height: 2),
                                         Flexible(
-                                          child: Text(
-                                            '${_items.isEmpty ? '-' : _items} 个',
-                                            overflow: TextOverflow.ellipsis,
-                                            maxLines: 1, // 限制最大行数
-                                            style: const TextStyle(
-                                              fontSize: 13, // 稍微减小字体
-                                              color: Color(0xFF333333),
-                                              fontWeight: FontWeight.w500,
+                                          child: GestureDetector(
+                                            onTap: _items.isNotEmpty ? _showItemsDialog : null,
+                                            child: Text(
+                                              '${_items.isEmpty ? '-' : _items.length} 个',
+                                              overflow: TextOverflow.ellipsis,
+                                              maxLines: 1, // 限制最大行数
+                                              style: TextStyle(
+                                                fontSize: 13, // 稍微减小字体
+                                                color: _items.isNotEmpty ? const Color(0xFF0279D4) : const Color(0xFF333333),
+                                                fontWeight: FontWeight.w500,
+                                                decoration: _items.isNotEmpty ? TextDecoration.underline : TextDecoration.none,
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -551,6 +643,7 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage>
               ? null
               : md5.convert(utf8.encode(handerPassword + 'messi')).toString(),
           'face': handerFaceImage,
+          'orgNo': _orgNo,
           'handheldNo': _deviceInfo['deviceId'],
           'isImport': true
         });
@@ -564,6 +657,7 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage>
               ? null
               : md5.convert(utf8.encode(deliverPassword + 'messi')).toString(),
           'face': deliverFaceImage,
+          'orgNo': _orgNo,
           'handheldNo': _deviceInfo['deviceId'],
           'isImport': false
         });
@@ -576,6 +670,7 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage>
       if (faceLoginParams.isNotEmpty) {
         EasyLoading.show(status: '核验柜员身份中...');
         try {
+          print('faceLoginParams: $faceLoginParams');
           await _service?.accountLogin(faceLoginParams);
           faceLoginSuccess = true;
         } catch (e) {

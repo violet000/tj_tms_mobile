@@ -106,7 +106,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => VerifyTokenProvider(access_token: '')),
         ChangeNotifierProvider(create: (_) => LineInfoProvider()),
         ChangeNotifierProvider(create: (_) => TellerVerifyProvider()),
-        ChangeNotifierProvider(create: (_) => BoxHandoverProvider()),
+        ChangeNotifierProvider(create: (_) => BoxHandoverProvider())
       ],
       child: MaterialApp(
         title: Env.config.appName,

@@ -67,12 +67,6 @@ class _BoxHandoverPageState extends State<BoxHandoverPage> {
       if (_service == null) {
         await _initializeService();
       }
-      // final String? username =
-      //     _verifyTokenProvider.getUserData()?['username'] as String?;
-      // if (username == null) {
-      //   AppLogger.warning('用户名为空，无法获取线路数据');
-      //   return;
-      // }
       final allNames = _verifyTokenProvider.getAllUsersData();
       final userName = allNames.map<String>((e) => e['username'].toString()).toList();
       EasyLoading.show(
@@ -162,7 +156,7 @@ class _BoxHandoverPageState extends State<BoxHandoverPage> {
             deliverPointsMap[orgNo] = <String, dynamic>{
               ...org,
               'operationType': InOutStatus.outlet.code, // 标记为出库
-              // 补充网点显示所需的字段（如果原数据没有，避免UI报错）
+              // 补充网点显示所需的字段
               'pointName': org['orgName'] ?? '未知网点', // 适配UI中使用的pointName
               'address': org['address'] ?? '未知地址', // 适配UI中使用的address
               'implBoxDetail':

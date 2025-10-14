@@ -1072,6 +1072,7 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
                               widget.point['orgNo'].toString())!['escortName']
                           .toString(),
                       'items': items,
+                      'orgNo': widget.point['orgNo']?.toString() ?? '',
                       'orgName': widget.point['orgName']?.toString() ?? '',
                       'operationType': widget.operationType,
                       'implBoxDetail': widget.implBoxDetail,
