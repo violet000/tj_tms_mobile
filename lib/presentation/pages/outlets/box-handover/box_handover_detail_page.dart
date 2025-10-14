@@ -11,6 +11,7 @@ import 'package:tj_tms_mobile/presentation/state/providers/line_info_provider.da
 import 'package:tj_tms_mobile/presentation/state/providers/box_handover_provider.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/auth_dialog.dart';
 import 'package:tj_tms_mobile/core/utils/cashbox_scan_utils.dart';
+import 'package:tj_tms_mobile/presentation/widgets/common/confirm_dialog.dart';
 
 class BoxHandoverDetailPage extends StatefulWidget {
   const BoxHandoverDetailPage({super.key});
@@ -1171,12 +1172,48 @@ class _BoxHandoverDetailPageState extends State<BoxHandoverDetailPage> {
   Widget build(BuildContext context) {
     return Consumer<BoxHandoverProvider>(
       builder: (context, boxHandoverProvider, child) {
+        // 写入全局线路信息（与 box_scan_detail_page 保持一致）
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final lineInfoProvider =
+              Provider.of<LineInfoProvider>(context, listen: false);
+          final String lineName =
+              boxHandoverProvider.selectedRoute['lineName']?.toString() ?? '';
+          final String escortName =
+              boxHandoverProvider.selectedRoute['escortName']?.toString() ?? '';
+          final String carNo =
+              boxHandoverProvider.selectedRoute['carNo']?.toString() ?? '';
+          // 从选中的网点中取一个名称作为展示
+          final String orgName = (boxHandoverProvider.selectedPoints.isNotEmpty)
+              ? (boxHandoverProvider.selectedPoints.first['orgName']
+                      ?.toString() ??
+                  '')
+              : '';
+          // 写入全局线路信息
+          final Map<String, dynamic> lineInfo = <String, dynamic>{
+            'lineName': lineName,
+            'escortName': escortName,
+            'carNo': carNo,
+            'orgName': orgName,
+            'items': items,
+          };
+          lineInfoProvider.setLineInfo(lineInfo);
+        });
+
         return PageScaffold(
           title: boxHandoverProvider.selectedRoute['lineName'].toString() ??
               '暂无数据',
           showBackButton: true,
           onBackPressed: () {
-            Navigator.pop(context);
+            showDialog<void>(
+              context: context,
+              builder: (ctx) => ConfirmDialog(
+                title: '确认返回',
+                content: '是否返回上一步？',
+                onConfirm: () {
+                  Navigator.pop(context);
+                },
+              ),
+            );
           },
           child: Column(
             children: [

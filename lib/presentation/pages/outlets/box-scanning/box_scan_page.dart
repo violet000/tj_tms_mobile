@@ -194,6 +194,9 @@ class _BoxScanPageState extends State<BoxScanPage> {
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
+          if (point['status'] == true) {
+            return;
+          }
           // 提取款箱数据
           List<Map<String, dynamic>> boxItems = [];
           final List<dynamic>? implBoxDetail =

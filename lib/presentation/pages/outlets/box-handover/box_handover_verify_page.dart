@@ -12,6 +12,8 @@ import 'package:tj_tms_mobile/presentation/state/providers/face_login_provider.d
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:tj_tms_mobile/presentation/state/providers/box_handover_provider.dart';
 import 'package:tj_tms_mobile/core/utils/util.dart' as app_utils;
+import 'package:tj_tms_mobile/presentation/widgets/common/box_items_dialog.dart';
+import 'package:tj_tms_mobile/presentation/widgets/common/confirm_dialog.dart';
 
 class BoxHandoverVerifyPage extends StatefulWidget {
   const BoxHandoverVerifyPage({super.key});
@@ -246,14 +248,24 @@ class _BoxHandoverVerifyPageState extends State<BoxHandoverVerifyPage>
                                         ),
                                         const SizedBox(height: 2),
                                         Flexible(
-                                          child: Text(
-                                            '${items.length.toString() ?? '0'} 个',
-                                            overflow: TextOverflow.ellipsis,
-                                            maxLines: 1, // 限制最大行数
-                                            style: const TextStyle(
-                                              fontSize: 13, // 稍微减小字体
-                                              color: Color(0xFF333333),
-                                              fontWeight: FontWeight.w500,
+                                          child: GestureDetector(
+                                            onTap: items.isNotEmpty
+                                                ? _showItemsDialog
+                                                : null,
+                                            child: Text(
+                                              '${items.isEmpty ? '-' : items.length} 个',
+                                              overflow: TextOverflow.ellipsis,
+                                              maxLines: 1, // 限制最大行数
+                                              style: TextStyle(
+                                                fontSize: 13, // 稍微减小字体
+                                                color: items.isNotEmpty
+                                                    ? const Color(0xFF0279D4)
+                                                    : const Color(0xFF333333),
+                                                fontWeight: FontWeight.w500,
+                                                decoration: items.isNotEmpty
+                                                    ? TextDecoration.underline
+                                                    : TextDecoration.none,
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -273,6 +285,14 @@ class _BoxHandoverVerifyPageState extends State<BoxHandoverVerifyPage>
             )));
   }
 
+  void _showItemsDialog() {
+    if (items.isEmpty) return;
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext context) => BoxItemsDialog(items: items),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // 获取键盘高度来判断键盘是否弹起
@@ -282,18 +302,21 @@ class _BoxHandoverVerifyPageState extends State<BoxHandoverVerifyPage>
     // 键盘弹起时自动滚动到输入框区域
     if (isKeyboardVisible) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_mainScrollController.hasClients && _inputAreaKey.currentContext != null) {
+        if (_mainScrollController.hasClients &&
+            _inputAreaKey.currentContext != null) {
           // 计算更精确的滚动位置，确保输入框在键盘上方可见
-          final RenderBox? renderBox = _inputAreaKey.currentContext!.findRenderObject() as RenderBox?;
+          final RenderBox? renderBox =
+              _inputAreaKey.currentContext!.findRenderObject() as RenderBox?;
           if (renderBox != null) {
             final position = renderBox.localToGlobal(Offset.zero);
             final screenHeight = MediaQuery.of(context).size.height;
             final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
             final availableHeight = screenHeight - keyboardHeight;
-            
+
             // 如果输入框区域在键盘下方，则滚动到合适位置
             if (position.dy > availableHeight - 200) {
-              final scrollOffset = _mainScrollController.position.pixels + (position.dy - availableHeight + 200);
+              final scrollOffset = _mainScrollController.position.pixels +
+                  (position.dy - availableHeight + 200);
               _mainScrollController.animateTo(
                 scrollOffset,
                 duration: const Duration(milliseconds: 300),
@@ -309,10 +332,15 @@ class _BoxHandoverVerifyPageState extends State<BoxHandoverVerifyPage>
       title: '金库交接复核',
       showBackButton: true,
       onBackPressed: () {
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          '/home',
-          (route) => false,
+        showDialog<void>(
+          context: context,
+          builder: (ctx) => ConfirmDialog(
+            title: '确认返回',
+            content: '是否返回上一步？',
+            onConfirm: () {
+              Navigator.pop(context);
+            },
+          ),
         );
       },
       bottomWidget: null, // 移除PageScaffold的bottomWidget，避免重复显示按钮
@@ -551,7 +579,9 @@ class _BoxHandoverVerifyPageState extends State<BoxHandoverVerifyPage>
               ? null
               : md5.convert(utf8.encode(handerPassword + 'messi')).toString(),
           'orgNo': _orgNo,
-          'handheldNo': _deviceInfo['deviceId'],
+          // 'handheldNo': _deviceInfo['deviceId'],
+          'handheldNo':
+              'c7aec416ab7f236a71495d2849a662229974bab16723e7a012e41d6998288001',
           'face': handerFaceImage,
           'isImport': true
         });
@@ -565,7 +595,9 @@ class _BoxHandoverVerifyPageState extends State<BoxHandoverVerifyPage>
               ? null
               : md5.convert(utf8.encode(deliverPassword + 'messi')).toString(),
           'orgNo': _orgNo,
-          'handheldNo': _deviceInfo['deviceId'],
+          // 'handheldNo': _deviceInfo['deviceId'],
+          'handheldNo':
+              'c7aec416ab7f236a71495d2849a662229974bab16723e7a012e41d6998288001',
           'face': deliverFaceImage,
           'isImport': false
         });
@@ -578,7 +610,7 @@ class _BoxHandoverVerifyPageState extends State<BoxHandoverVerifyPage>
       if (faceLoginParams.isNotEmpty) {
         EasyLoading.show(status: '核验柜员身份中...');
         try {
-          await _service?.accountLogin(faceLoginParams);
+          await _service?.faceVerify(faceLoginParams);
           faceLoginSuccess = true;
         } catch (e) {
           faceLoginSuccess = false;

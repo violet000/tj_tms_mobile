@@ -155,9 +155,9 @@ class _PluginTestPageState extends State<PluginTestPage> {
             indicatorColor: Color(0xFF29A8FF),
             indicatorWeight: 3,
             tabs: [
-              Tab(text: 'AGPS定位'),
-              Tab(text: 'UHF扫描'),
-              Tab(text: '条码扫描'),
+            //   Tab(text: 'AGPS定位'),
+            //   Tab(text: 'UHF扫描'),
+            //   Tab(text: '条码扫描'),
               Tab(text: '活体检测'),
             ],
           ),
@@ -165,11 +165,11 @@ class _PluginTestPageState extends State<PluginTestPage> {
         body: TabBarView(
           children: [
             // AGPS定位页面
-            _buildLocationPage(),
-            // UHF扫描页面
-            _buildUHFPage(),
-            // 条码扫描页面
-            _buildBarcodePage(),
+            // _buildLocationPage(),
+            // // UHF扫描页面
+            // _buildUHFPage(),
+            // // 条码扫描页面
+            // _buildBarcodePage(),
             // 活体检测页面
             _buildLivenessDetectionPage(),
           ],

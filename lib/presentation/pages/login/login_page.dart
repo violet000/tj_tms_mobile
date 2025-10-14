@@ -190,7 +190,8 @@ class _LoginPageState extends State<LoginPage> {
               ? null
               : md5.convert(utf8.encode(password1 + 'messi')).toString(),
           'face': faceImage1,
-          'handheldNo': _deviceInfo['deviceId'] ?? '',
+          // 'handheldNo': _deviceInfo['deviceId'] ?? '',
+          'handheldNo': 'c7aec416ab7f236a71495d2849a662229974bab16723e7a012e41d6998288001',
           'isImport': true
         },
         <String, dynamic>{
@@ -199,7 +200,8 @@ class _LoginPageState extends State<LoginPage> {
               ? null
               : md5.convert(utf8.encode(password2 + 'messi')).toString(),
           'face': faceImage2,
-          'handheldNo': _deviceInfo['deviceId'] ?? '',
+          // 'handheldNo': _deviceInfo['deviceId'] ?? '',
+          'handheldNo': 'c7aec416ab7f236a71495d2849a662229974bab16723e7a012e41d6998288001',
           'isImport': false
         }
       ]);

@@ -204,17 +204,19 @@ class _BoxHandoverPageState extends State<BoxHandoverPage> {
     if (value == null) return;
 
     setState(() {
-      isDeliverAllSelected = value;
-
       if (value) {
         // 全选出库网点
         final groupedPoints = _getGroupedPoints();
         final deliverPoints = groupedPoints['出库网点'] ?? [];
-        selectedDeliverPoints = deliverPoints
+        final selectableDeliverOrgNos = deliverPoints
+            .where((point) => point['status'] != true)
             .map((point) => point['orgNo']?.toString())
             .where((orgNo) => orgNo != null && orgNo.isNotEmpty)
             .cast<String>()
             .toSet();
+        selectedDeliverPoints = selectableDeliverOrgNos;
+        isDeliverAllSelected =
+            selectedDeliverPoints.length == selectableDeliverOrgNos.length;
 
         // 禁用入库
         isReceiveEnabled = false;
@@ -223,6 +225,7 @@ class _BoxHandoverPageState extends State<BoxHandoverPage> {
       } else {
         // 取消全选出库网点
         selectedDeliverPoints.clear();
+        isDeliverAllSelected = false;
 
         // 启用入库
         isReceiveEnabled = true;
@@ -235,17 +238,19 @@ class _BoxHandoverPageState extends State<BoxHandoverPage> {
     if (value == null) return;
 
     setState(() {
-      isReceiveAllSelected = value;
-
       if (value) {
         // 全选入库网点
         final groupedPoints = _getGroupedPoints();
         final receivePoints = groupedPoints['入库网点'] ?? [];
-        selectedReceivePoints = receivePoints
+        final selectableReceiveOrgNos = receivePoints
+            .where((point) => point['status'] != true)
             .map((point) => point['orgNo']?.toString())
             .where((orgNo) => orgNo != null && orgNo.isNotEmpty)
             .cast<String>()
             .toSet();
+        selectedReceivePoints = selectableReceiveOrgNos;
+        isReceiveAllSelected =
+            selectedReceivePoints.length == selectableReceiveOrgNos.length;
 
         // 禁用出库
         isDeliverEnabled = false;
@@ -254,6 +259,7 @@ class _BoxHandoverPageState extends State<BoxHandoverPage> {
       } else {
         // 取消全选入库网点
         selectedReceivePoints.clear();
+        isReceiveAllSelected = false;
 
         // 启用出库
         isDeliverEnabled = true;
@@ -273,6 +279,7 @@ class _BoxHandoverPageState extends State<BoxHandoverPage> {
           final groupedPoints = _getGroupedPoints();
           final deliverPoints = groupedPoints['出库网点'] ?? [];
           final allDeliverOrgNos = deliverPoints
+              .where((point) => point['status'] != true)
               .map((point) => point['orgNo']?.toString())
               .where((orgNo) => orgNo != null && orgNo.isNotEmpty)
               .cast<String>()
@@ -300,6 +307,7 @@ class _BoxHandoverPageState extends State<BoxHandoverPage> {
           final groupedPoints = _getGroupedPoints();
           final receivePoints = groupedPoints['入库网点'] ?? [];
           final allReceiveOrgNos = receivePoints
+              .where((point) => point['status'] != true)
               .map((point) => point['orgNo']?.toString())
               .where((orgNo) => orgNo != null && orgNo.isNotEmpty)
               .cast<String>()
@@ -331,7 +339,9 @@ class _BoxHandoverPageState extends State<BoxHandoverPage> {
     final bool isSelected = isDeliver
         ? selectedDeliverPoints.contains(orgNo)
         : selectedReceivePoints.contains(orgNo);
-    final bool isEnabled = isDeliver ? isDeliverEnabled : isReceiveEnabled;
+    final bool isCompleted = point['status'] == true;
+    final bool isEnabled =
+        (isDeliver ? isDeliverEnabled : isReceiveEnabled) && !isCompleted;
 
     return Container(
       padding: const EdgeInsets.all(8),

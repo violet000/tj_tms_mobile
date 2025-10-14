@@ -11,6 +11,7 @@ import 'package:tj_tms_mobile/presentation/widgets/common/page_scaffold.dart';
 import 'package:tj_tms_mobile/presentation/state/providers/line_info_provider.dart';
 import 'package:tj_tms_mobile/core/utils/cashbox_scan_utils.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/auth_dialog.dart';
+import 'package:tj_tms_mobile/presentation/widgets/common/confirm_dialog.dart';
 
 class BoxScanDetailPage extends StatefulWidget {
   final Map<String, dynamic> point;
@@ -1259,22 +1260,12 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
               onBackPressed: () {
                 showDialog<void>(
                   context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: const Text('确认返回'),
-                    content: const Text('是否返回上一步？'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(ctx).pop(),
-                        child: const Text('取消'),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(ctx).pop();
-                          Navigator.pop(context);
-                        },
-                        child: const Text('确定'),
-                      ),
-                    ],
+                  builder: (ctx) => ConfirmDialog(
+                    title: '确认返回',
+                    content: '是否返回上一步？',
+                    onConfirm: () {
+                      Navigator.pop(context);
+                    },
                   ),
                 );
               },

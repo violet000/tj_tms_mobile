@@ -122,7 +122,7 @@ class _AuthDialogState extends State<AuthDialog>
   // 状态管理
   bool _isLoading = false;
   String? _selectedMismatchReason;
-  
+
   // API服务相关
   Service18082? _loginService;
   Map<String, dynamic> _deviceInfo = <String, dynamic>{};
@@ -139,7 +139,7 @@ class _AuthDialogState extends State<AuthDialog>
     _pageController = PageController();
     _initializeLoginService();
     _loadDeviceInfo();
-    
+
     // 为输入框添加监听器，实时更新按钮状态
     _usernameController1.addListener(_onInputChanged);
     _passwordController1.addListener(_onInputChanged);
@@ -207,7 +207,8 @@ class _AuthDialogState extends State<AuthDialog>
       context: context,
       builder: (_) => AlertDialog(
         title: Text(title, style: const TextStyle(fontSize: 14)),
-        content: SelectableText(text.isNotEmpty ? text : '无', style: const TextStyle(fontSize: 12)),
+        content: SelectableText(text.isNotEmpty ? text : '无',
+            style: const TextStyle(fontSize: 12)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -276,32 +277,42 @@ class _AuthDialogState extends State<AuthDialog>
         <String, dynamic>{
           'username': _usernameController1.text,
           'password': _usePassword1 && _passwordController1.text.isNotEmpty
-              ? md5.convert(utf8.encode(_passwordController1.text + 'messi')).toString()
+              ? md5
+                  .convert(utf8.encode(_passwordController1.text + 'messi'))
+                  .toString()
               : null,
           'face': _faceImageBase641,
-          'handheldNo': _deviceInfo['deviceId'] ?? '',
+          // 'handheldNo': _deviceInfo['deviceId'] ?? '',
+          'handheldNo':
+              'c7aec416ab7f236a71495d2849a662229974bab16723e7a012e41d6998288001',
           'isImport': true
         },
         <String, dynamic>{
           'username': _usernameController2.text,
           'password': _usePassword2 && _passwordController2.text.isNotEmpty
-              ? md5.convert(utf8.encode(_passwordController2.text + 'messi')).toString()
+              ? md5
+                  .convert(utf8.encode(_passwordController2.text + 'messi'))
+                  .toString()
               : null,
           'face': _faceImageBase642,
-          'handheldNo': _deviceInfo['deviceId'] ?? '',
+          // 'handheldNo': _deviceInfo['deviceId'] ?? '',
+          'handheldNo':
+              'c7aec416ab7f236a71495d2849a662229974bab16723e7a012e41d6998288001',
           'isImport': false
         }
       ];
 
-      final Map<String, dynamic> loginResult = await _loginService!.faceVerify(loginParams);
+      final Map<String, dynamic> loginResult =
+          await _loginService!.faceVerify(loginParams);
 
       if (loginResult['retCode'] == HTTPCode.success.code) {
-        final List<dynamic>? userList = loginResult['retList'] as List<dynamic>?;
+        final List<dynamic>? userList =
+            loginResult['retList'] as List<dynamic>?;
         _username1 = userList?[0]['userName'] as String?;
         _username2 = userList?[1]['userName'] as String?;
-        
+
         AppLogger.info('登录成功 - 用户1: $_username1, 用户2: $_username2');
-        
+
         EasyLoading.dismiss();
         // 下一步
         setState(() {
@@ -313,7 +324,8 @@ class _AuthDialogState extends State<AuthDialog>
         );
       } else {
         // 登录失败
-        final String errorMessage = loginResult['message']?.toString() ?? '登录失败';
+        final String errorMessage =
+            loginResult['message']?.toString() ?? '登录失败';
         _showError(errorMessage);
         EasyLoading.dismiss();
       }
@@ -530,8 +542,10 @@ class _AuthDialogState extends State<AuthDialog>
         if (result['retCode'] == HTTPCode.success.code) {
           final List<dynamic>? carList = result['retList'] as List<dynamic>?;
           if (carList != null && carList.isNotEmpty) {
-            final Map<String, dynamic> car = carList.first as Map<String, dynamic>;
-            final String plate = (car['plate'] ?? car['carNo'] ?? '').toString();
+            final Map<String, dynamic> car =
+                carList.first as Map<String, dynamic>;
+            final String plate =
+                (car['plate'] ?? car['carNo'] ?? '').toString();
             if (plate.isNotEmpty) {
               setState(() {
                 _vehiclePlateNumber = plate;
@@ -555,45 +569,45 @@ class _AuthDialogState extends State<AuthDialog>
   Widget build(BuildContext context) {
     final mq = MediaQuery.of(context);
     return MediaQuery(
-      data: mq.copyWith(viewInsets: EdgeInsets.zero),
-      child: Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Container(
-        width: MediaQuery.of(context).size.width * 0.9,
-        height: MediaQuery.of(context).size.height * 0.7,
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // 标题栏
-            _buildHeader(),
-            const SizedBox(height: 16),
+        data: mq.copyWith(viewInsets: EdgeInsets.zero),
+        child: Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.9,
+            height: MediaQuery.of(context).size.height * 0.7,
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                // 标题栏
+                _buildHeader(),
+                const SizedBox(height: 16),
 
-            // 内容区域
-            Expanded(
-              child: MediaQuery(
-                data: mq,
-                child: PageView(
-                  controller: _pageController,
-                  physics: const NeverScrollableScrollPhysics(),
-                  children: [
-                    _buildLoginStep(),
-                    _buildVehicleVerifyStep(),
-                    _buildConfirmVerifyStep(),
-                  ],
+                // 内容区域
+                Expanded(
+                  child: MediaQuery(
+                    data: mq,
+                    child: PageView(
+                      controller: _pageController,
+                      physics: const NeverScrollableScrollPhysics(),
+                      children: [
+                        _buildLoginStep(),
+                        _buildVehicleVerifyStep(),
+                        _buildConfirmVerifyStep(),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+
+                const SizedBox(height: 16),
+
+                // 底部按钮
+                _buildBottomButtons(),
+              ],
             ),
-
-            const SizedBox(height: 16),
-
-            // 底部按钮
-            _buildBottomButtons(),
-          ],
-        ),
-      ),
-    ));
+          ),
+        ));
   }
 
   /// 构建标题栏
@@ -782,28 +796,40 @@ class _AuthDialogState extends State<AuthDialog>
                   // 扫描按钮（居中显示）
                   Container(
                     padding: const EdgeInsets.only(left: 20),
-                    child: UHFScanButton(
-                      startText: '车辆RFID扫描',
-                      stopText: '车辆RFID停止',
-                      onTagScanned: (rfid) {
-                        final last4 = rfid.length >= 4 ? rfid.substring(rfid.length - 4) : rfid;
+                    child: ElevatedButton(
+                      onPressed: () {
+                        final rfid = 'AB002912FFFFFFFFFFFFF69C';
+                        final last4 = rfid.length >= 4
+                            ? rfid.substring(rfid.length - 4)
+                            : rfid;
                         _onVehicleRfidScanned(last4);
-                        // 扫描到即自动停止
                         controller.stopScan();
                       },
-                      onScanStateChanged: (isScanning) {
-                        setState(() {
-                          _isVehicleScanning = isScanning;
-                        });
-                      },
-                      onError: _showError,
+                      child: const Text('点击车辆卡识别'),
                     ),
                   ),
+                  //   UHFScanButton(
+                  //     startText: '点击车辆卡识别',
+                  //     onTagScanned: (rfid) {
+                  //       final last4 = rfid.length >= 4 ? rfid.substring(rfid.length - 4) : rfid;
+                  //       _onVehicleRfidScanned(last4);
+                  //       // 扫描到即停止扫描
+                  //       controller.stopScan();
+                  //     },
+                  //     onScanStateChanged: (isScanning) {
+                  //       setState(() {
+                  //         _isVehicleScanning = isScanning;
+                  //       });
+                  //     },
+                  //     onError: _showError,
+                  //   ),
+                  // ),
                   const SizedBox(height: 16),
 
                   // 扫描结果信息（标签ID、车牌号）
                   Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 12, horizontal: 16),
                     decoration: BoxDecoration(
                       color: Colors.grey[50],
                       border: Border.all(color: Colors.grey[300]!),
@@ -816,7 +842,8 @@ class _AuthDialogState extends State<AuthDialog>
                           children: [
                             const Text(
                               '标签ID：',
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                              style: TextStyle(
+                                  fontSize: 12, fontWeight: FontWeight.w600),
                             ),
                             Expanded(
                               child: Text(
@@ -832,7 +859,8 @@ class _AuthDialogState extends State<AuthDialog>
                           children: [
                             const Text(
                               '车牌号：',
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                              style: TextStyle(
+                                  fontSize: 12, fontWeight: FontWeight.w600),
                             ),
                             Expanded(
                               child: Text(
@@ -876,7 +904,9 @@ class _AuthDialogState extends State<AuthDialog>
                 children: [
                   const SizedBox(
                     width: 52,
-                    child: Text('车辆', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                    child: Text('车辆',
+                        style: TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.w500)),
                   ),
                   Expanded(
                     child: Column(
@@ -886,22 +916,42 @@ class _AuthDialogState extends State<AuthDialog>
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 6),
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 2, horizontal: 6),
                               decoration: BoxDecoration(
                                 color: Colors.grey[200],
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(color: Colors.grey[300]!),
                               ),
-                              child: const Text('原定', style: TextStyle(fontSize: 14, color: Colors.black54)),
+                              child: const Text('原定',
+                                  style: TextStyle(
+                                      fontSize: 14, color: Colors.black54)),
                             ),
                             const SizedBox(width: 6),
                             GestureDetector(
-                              onTap: () => _showFullText('车辆原定', getPlateNumber(widget.vehicleRfidExpected ?? '')),
+                              onTap: () => _showFullText(
+                                  '车辆原定',
+                                  getPlateNumber(
+                                      widget.vehicleRfidExpected ?? '')),
                               child: Text(
-                                _middleEllipsis(getPlateNumber(widget.vehicleRfidExpected ?? '').toString(), head: 6, tail: 6).isNotEmpty
-                                    ? _middleEllipsis(getPlateNumber(widget.vehicleRfidExpected ?? '').toString(), head: 6, tail: 6)
+                                _middleEllipsis(
+                                            getPlateNumber(widget
+                                                        .vehicleRfidExpected ??
+                                                    '')
+                                                .toString(),
+                                            head: 6,
+                                            tail: 6)
+                                        .isNotEmpty
+                                    ? _middleEllipsis(
+                                        getPlateNumber(
+                                                widget.vehicleRfidExpected ??
+                                                    '')
+                                            .toString(),
+                                        head: 6,
+                                        tail: 6)
                                     : 'null',
-                                style: const TextStyle(fontSize: 14, color: Colors.black87),
+                                style: const TextStyle(
+                                    fontSize: 14, color: Colors.black87),
                               ),
                             ),
                           ],
@@ -911,39 +961,56 @@ class _AuthDialogState extends State<AuthDialog>
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 6),
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 2, horizontal: 6),
                               decoration: BoxDecoration(
                                 color: Colors.blue[50],
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(color: Colors.blue[200]!),
                               ),
-                              child: const Text('实际', style: TextStyle(fontSize: 14, color: Colors.blue)),
+                              child: const Text('实际',
+                                  style: TextStyle(
+                                      fontSize: 14, color: Colors.blue)),
                             ),
                             const SizedBox(width: 6),
                             GestureDetector(
-                              onTap: () => _showFullText('车辆实际', _vehiclePlateNumber),
+                              onTap: () =>
+                                  _showFullText('车辆实际', _vehiclePlateNumber),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 4, horizontal: 8),
                                 decoration: BoxDecoration(
                                   color: _badgeBackground(
-                                    _comparisonColor(getPlateNumber(widget.vehicleRfidExpected ?? '').toString(), _vehiclePlateNumber),
+                                    _comparisonColor(
+                                        getPlateNumber(
+                                                widget.vehicleRfidExpected ??
+                                                    '')
+                                            .toString(),
+                                        _vehiclePlateNumber),
                                   ),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
                                     color: _comparisonColor(
-                                      getPlateNumber(widget.vehicleRfidExpected ?? '').toString(),
+                                      getPlateNumber(
+                                              widget.vehicleRfidExpected ?? '')
+                                          .toString(),
                                       _vehiclePlateNumber,
                                     ).withOpacity(0.4),
                                   ),
                                 ),
                                 child: Text(
-                                  _middleEllipsis(_vehiclePlateNumber, head: 6, tail: 6).isNotEmpty
-                                      ? _middleEllipsis(_vehiclePlateNumber, head: 6, tail: 6)
+                                  _middleEllipsis(_vehiclePlateNumber,
+                                              head: 6, tail: 6)
+                                          .isNotEmpty
+                                      ? _middleEllipsis(_vehiclePlateNumber,
+                                          head: 6, tail: 6)
                                       : 'null',
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: _comparisonColor(
-                                      getPlateNumber(widget.vehicleRfidExpected ?? '').toString(),
+                                      getPlateNumber(
+                                              widget.vehicleRfidExpected ?? '')
+                                          .toString(),
                                       _vehiclePlateNumber,
                                     ),
                                   ),
@@ -960,27 +1027,33 @@ class _AuthDialogState extends State<AuthDialog>
               const SizedBox(height: 8),
               // 人员
               Builder(builder: (context) {
-                final lineInfoProvider = Provider.of<LineInfoProvider>(context, listen: false);
+                final lineInfoProvider =
+                    Provider.of<LineInfoProvider>(context, listen: false);
                 final escortName = (lineInfoProvider.escortName ?? '').trim();
                 // 线路上的 escortName
-                final expectedDisplay = escortName.isNotEmpty ? escortName : '空';
+                final expectedDisplay =
+                    escortName.isNotEmpty ? escortName : '空';
                 // 与实际两人合并后的字符串进行对比（用逗号间隔）
                 final expectedForCompare = escortName;
 
                 final actualDisplay =
                     '${_username1?.isNotEmpty ?? false ? _username1 : '未输入'} / ${_username2?.isNotEmpty ?? false ? _username2 : '未输入'}';
-                final actualForCompare =
-                    ((_username1?.isNotEmpty ?? false) && (_username2?.isNotEmpty ?? false))
-                        ? '$_username1/$_username2'
-                        : (_username1?.trim() ?? '') + (_username2?.trim() ?? '').trim();
-                final color = _comparisonColor(expectedForCompare, actualForCompare);
+                final actualForCompare = ((_username1?.isNotEmpty ?? false) &&
+                        (_username2?.isNotEmpty ?? false))
+                    ? '$_username1/$_username2'
+                    : (_username1?.trim() ?? '') +
+                        (_username2?.trim() ?? '').trim();
+                final color =
+                    _comparisonColor(expectedForCompare, actualForCompare);
 
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(
                       width: 52,
-                      child: Text('人员', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                      child: Text('人员',
+                          style: TextStyle(
+                              fontSize: 14, fontWeight: FontWeight.w500)),
                     ),
                     Expanded(
                       child: Column(
@@ -990,20 +1063,26 @@ class _AuthDialogState extends State<AuthDialog>
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 6),
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 2, horizontal: 6),
                                 decoration: BoxDecoration(
                                   color: Colors.grey[200],
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(color: Colors.grey[300]!),
                                 ),
-                                child: const Text('原定', style: TextStyle(fontSize: 14, color: Colors.black54)),
+                                child: const Text('原定',
+                                    style: TextStyle(
+                                        fontSize: 14, color: Colors.black54)),
                               ),
                               const SizedBox(width: 6),
                               GestureDetector(
-                                onTap: () => _showFullText('人员原定', expectedDisplay),
+                                onTap: () =>
+                                    _showFullText('人员原定', expectedDisplay),
                                 child: Text(
-                                  _middleEllipsis(expectedDisplay, head: 6, tail: 6),
-                                  style: const TextStyle(fontSize: 14, color: Colors.black87),
+                                  _middleEllipsis(expectedDisplay,
+                                      head: 6, tail: 6),
+                                  style: const TextStyle(
+                                      fontSize: 14, color: Colors.black87),
                                 ),
                               ),
                             ],
@@ -1013,27 +1092,35 @@ class _AuthDialogState extends State<AuthDialog>
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 6),
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 2, horizontal: 6),
                                 decoration: BoxDecoration(
                                   color: Colors.blue[50],
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(color: Colors.blue[200]!),
                                 ),
-                                child: const Text('实际', style: TextStyle(fontSize: 10, color: Colors.blue)),
+                                child: const Text('实际',
+                                    style: TextStyle(
+                                        fontSize: 10, color: Colors.blue)),
                               ),
                               const SizedBox(width: 6),
                               GestureDetector(
-                                onTap: () => _showFullText('人员实际', actualDisplay),
+                                onTap: () =>
+                                    _showFullText('人员实际', actualDisplay),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 4, horizontal: 8),
                                   decoration: BoxDecoration(
                                     color: _badgeBackground(color),
                                     borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: color.withOpacity(0.4)),
+                                    border: Border.all(
+                                        color: color.withOpacity(0.4)),
                                   ),
                                   child: Text(
-                                    _middleEllipsis(actualDisplay, head: 6, tail: 6),
-                                    style: TextStyle(fontSize: 11, color: color),
+                                    _middleEllipsis(actualDisplay,
+                                        head: 6, tail: 6),
+                                    style:
+                                        TextStyle(fontSize: 11, color: color),
                                   ),
                                 ),
                               ),
@@ -1091,7 +1178,7 @@ class _AuthDialogState extends State<AuthDialog>
   Widget _buildBottomButtons() {
     final bool isStepValid = _isStepValid();
     final bool isButtonEnabled = !_isLoading && isStepValid;
-    
+
     return Row(
       children: [
         Expanded(

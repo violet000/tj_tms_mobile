@@ -6,6 +6,8 @@ import 'package:tj_tms_mobile/data/datasources/api/18082/service_18082.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/blue_polygon_background.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
+import 'package:tj_tms_mobile/presentation/widgets/common/box_items_dialog.dart';
+import 'package:tj_tms_mobile/presentation/widgets/common/confirm_dialog.dart';
 import 'package:tj_tms_mobile/presentation/pages/outlets/common/teller_face_login.dart';
 import 'package:tj_tms_mobile/presentation/state/providers/teller_verify_provider.dart';
 import 'package:tj_tms_mobile/presentation/state/providers/face_login_provider.dart';
@@ -30,7 +32,7 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage>
   String _orgNo = '';
   final ScrollController _mainScrollController = ScrollController();
   final GlobalKey _inputAreaKey = GlobalKey();
-  
+
   Map<String, dynamic> _deviceInfo = <String, dynamic>{};
 
   @override
@@ -76,86 +78,9 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage>
   // 显示款箱列表弹窗
   void _showItemsDialog() {
     if (_items.isEmpty) return;
-    
     showDialog<void>(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Row(
-            children: [
-              SvgPicture.asset(
-                'assets/icons/matbox.svg',
-                width: 24,
-                height: 24,
-                color: const Color(0xFF0279D4),
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                '款箱列表',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF333333),
-                ),
-              ),
-            ],
-          ),
-          content: Container(
-            width: double.maxFinite,
-            constraints: const BoxConstraints(
-              maxHeight: 400,
-              maxWidth: 300,
-            ),
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: _items.length,
-              itemBuilder: (context, index) {
-                final item = _items[index];
-                final boxCode = item['boxCode']?.toString() ?? 'null';
-                
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF7FAFF),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: const Color.fromARGB(255, 36, 167, 237),
-                      width: 1,
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 2),
-                      Text(
-                        boxCode,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Color.fromARGB(255, 243, 241, 241),
-                        ),
-                      )
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text(
-                '关闭',
-                style: TextStyle(
-                  color: Color(0xFF0279D4),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
+      builder: (BuildContext context) => BoxItemsDialog(items: _items),
     );
   }
 
@@ -337,16 +262,22 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage>
                                         const SizedBox(height: 2),
                                         Flexible(
                                           child: GestureDetector(
-                                            onTap: _items.isNotEmpty ? _showItemsDialog : null,
+                                            onTap: _items.isNotEmpty
+                                                ? _showItemsDialog
+                                                : null,
                                             child: Text(
                                               '${_items.isEmpty ? '-' : _items.length} 个',
                                               overflow: TextOverflow.ellipsis,
                                               maxLines: 1, // 限制最大行数
                                               style: TextStyle(
                                                 fontSize: 13, // 稍微减小字体
-                                                color: _items.isNotEmpty ? const Color(0xFF0279D4) : const Color(0xFF333333),
+                                                color: _items.isNotEmpty
+                                                    ? const Color(0xFF0279D4)
+                                                    : const Color(0xFF333333),
                                                 fontWeight: FontWeight.w500,
-                                                decoration: _items.isNotEmpty ? TextDecoration.underline : TextDecoration.none,
+                                                decoration: _items.isNotEmpty
+                                                    ? TextDecoration.underline
+                                                    : TextDecoration.none,
                                               ),
                                             ),
                                           ),
@@ -406,10 +337,15 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage>
       title: '网点交接复核',
       showBackButton: true,
       onBackPressed: () {
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          '/home',
-          (route) => false,
+        showDialog<void>(
+          context: context,
+          builder: (ctx) => ConfirmDialog(
+            title: '确认返回',
+            content: '是否返回上一步？',
+            onConfirm: () {
+              Navigator.pop(context);
+            },
+          ),
         );
       },
       bottomWidget: null, // 移除PageScaffold的bottomWidget，避免重复显示按钮
@@ -644,7 +580,9 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage>
               : md5.convert(utf8.encode(handerPassword + 'messi')).toString(),
           'face': handerFaceImage,
           'orgNo': _orgNo,
-          'handheldNo': _deviceInfo['deviceId'],
+          // 'handheldNo': _deviceInfo['deviceId'],
+          'handheldNo':
+              'c7aec416ab7f236a71495d2849a662229974bab16723e7a012e41d6998288001',
           'isImport': true
         });
       }
@@ -658,7 +596,9 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage>
               : md5.convert(utf8.encode(deliverPassword + 'messi')).toString(),
           'face': deliverFaceImage,
           'orgNo': _orgNo,
-          'handheldNo': _deviceInfo['deviceId'],
+          // 'handheldNo': _deviceInfo['deviceId'],
+          'handheldNo':
+              'c7aec416ab7f236a71495d2849a662229974bab16723e7a012e41d6998288001',
           'isImport': false
         });
       }
