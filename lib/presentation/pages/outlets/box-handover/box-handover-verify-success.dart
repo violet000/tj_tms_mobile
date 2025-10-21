@@ -244,12 +244,12 @@ class _BoxScanVerifySuccessPageState extends State<BoxHandoverVerifySuccessPage>
                               // 清除柜员人员信息
                               final tellerProvider = Provider.of<TellerVerifyProvider>(context, listen: false);
                               tellerProvider.clearAllData();               
-                              // 继续下一个交接
+                              // 继续下一个金库交接
                               Navigator.pushNamedAndRemoveUntil(
                                 context,
-                                '/outlets/box-scan',
+                                '/outlets/box-handover',
                                 (route) => false,
-                                arguments: <String, dynamic>{'mode': 0},
+                                arguments: <String, dynamic>{'mode': 1},
                               );
                             },
                             style: OutlinedButton.styleFrom(
