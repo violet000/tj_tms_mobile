@@ -14,6 +14,7 @@ import 'package:tj_tms_mobile/core/utils/util.dart' as app_utils;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tj_tms_mobile/core/config/env.dart';
 import 'package:tj_tms_mobile/data/datasources/interceptor/dio_service.dart';
+import 'package:tj_tms_mobile/services/battery_optimization_auto_dialog.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -38,6 +39,16 @@ class _LoginPageState extends State<LoginPage> {
     _initializeLoginService();
     _verifyTokenProvider =
         Provider.of<VerifyTokenProvider>(context, listen: false);
+
+    
+    // 延迟检查电池优化状态并弹框
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(seconds: 1), () {
+        if (mounted) {
+          BatteryOptimizationAutoDialog.checkAndShowDialog(context);
+        }
+      });
+    });
 
     // Prefill two users and ensure password mode
     // WidgetsBinding.instance.addPostFrameCallback((_) {

@@ -8,6 +8,7 @@ import 'package:tj_tms_mobile/services/location_polling_manager.dart';
 import 'package:tj_tms_mobile/core/config/location_polling_config.dart';
 import 'package:tj_tms_mobile/core/utils/util.dart' as app_utils;
 import 'package:tj_tms_mobile/core/config/env.dart';
+import 'package:tj_tms_mobile/services/battery_optimization_service.dart';
 
 class NetworkSettingsPage extends StatefulWidget {
   const NetworkSettingsPage({Key? key}) : super(key: key);
@@ -27,12 +28,17 @@ class _NetworkSettingsPageState extends State<NetworkSettingsPage> {
   static const String vmsKey = 'network_vms_ip';
   // static const String agpsIntervalKey = 'agps_interval_seconds';
   Map<String, dynamic> _deviceInfo = <String, dynamic>{};
+  
+  // 电池优化状态
+  bool _isIgnoringBatteryOptimizations = false;
+  bool _isCheckingBatteryOptimization = false;
 
   @override
   void initState() {
     super.initState();
     _loadConfig();
     _loadDeviceInfo();
+    // _checkBatteryOptimizationStatus();
   }
 
   Future<void> _loadDeviceInfo() async {
@@ -94,15 +100,6 @@ class _NetworkSettingsPageState extends State<NetworkSettingsPage> {
       // 同步写入 vpsKey
       await prefs.setString(vpsKey, normalized);
       await prefs.setString(vmsKey, normalizedVms);
-      // final int? savedInterval = prefs.getInt(agpsIntervalKey);
-      // if (savedInterval != null) {
-      //   await LocationPollingConfig.setPollingInterval(savedInterval);
-      //   // 让后台轮询立即生效
-      //   LocationPollingManager().setPollingInterval(savedInterval);
-      // }
-      // DioServiceManager().clearAllServices();
-      // // 刷新后台轮询使用的 Service 实例
-      // await LocationPollingManager().reloadService();
       Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('保存成功')),
@@ -173,79 +170,6 @@ class _NetworkSettingsPageState extends State<NetworkSettingsPage> {
                           return null;
                         },
                       ),
-                      // const SizedBox(height: 32),
-                      // TextFormField(
-                      //   controller: _agpsIntervalController,
-                      //   enabled: false,
-                      //   decoration: const InputDecoration(
-                      //     labelText: 'AGPS时间间隔（秒）',
-                      //     helperText: '此值由系统自动获取',
-                      //     helperStyle: TextStyle(
-                      //       color: Color.fromARGB(255, 191, 189, 189),
-                      //     ),
-                      //     border: OutlineInputBorder(),
-                      //     filled: true,
-                      //     fillColor: Color(0xFFF5F5F5),
-                      //   ),
-                      // ),
-                      const SizedBox(height: 32),
-                      TextFormField(
-                        controller: _deviceIdController,
-                        enabled: false,
-                        decoration: InputDecoration(
-                          labelText: '手持机设备ID',
-                          helperText: '点击右侧按钮复制手持机设备ID',
-                          helperStyle: const TextStyle(
-                            color: Color.fromARGB(255, 191, 189, 189),
-                          ),
-                          border: const OutlineInputBorder(),
-                          filled: true,
-                          fillColor: Colors.grey.shade50,
-                          suffixIcon: Container(
-                            padding: const EdgeInsets.only(right: 2),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: IconButton(
-                              onPressed: () {
-                                final deviceId = _deviceIdController.text;
-                                Clipboard.setData(
-                                    ClipboardData(text: deviceId));
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Row(
-                                      children: const [
-                                        Icon(
-                                          Icons.check_circle,
-                                          color: Colors.white,
-                                          size: 20,
-                                        ),
-                                        SizedBox(width: 8),
-                                        Text('设备ID已复制到剪贴板'),
-                                      ],
-                                    ),
-                                    backgroundColor: Colors.green.shade600,
-                                    duration: const Duration(seconds: 2),
-                                    behavior: SnackBarBehavior.floating,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                );
-                              },
-                              icon: Icon(
-                                Icons.copy,
-                                color: Theme.of(context).primaryColor,
-                                size: 22,
-                              ),
-                              tooltip: '复制设备ID',
-                              style: IconButton.styleFrom(
-                                padding: const EdgeInsets.all(12),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -277,9 +201,8 @@ class _NetworkSettingsPageState extends State<NetworkSettingsPage> {
 
   @override
   void dispose() {
-    // _vmsIpController.dispose();
+    _vmsIpController.dispose();
     _vpsIpController.dispose();
-    // _agpsIntervalController.dispose();
     _deviceIdController.dispose();
     super.dispose();
   }

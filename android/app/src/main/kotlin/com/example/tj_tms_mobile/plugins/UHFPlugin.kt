@@ -1,4 +1,4 @@
-package com.example.uhf_plugin
+package com.example.tj_tms_mobile.plugins
 
 import android.content.Context
 import android.os.Handler
@@ -14,6 +14,10 @@ import com.example.tj_tms_mobile.plugin.Plugin
 import com.rscja.deviceapi.interfaces.IUHF
 import java.util.Collections
 
+/**
+ * UHF RFID扫描插件
+ * 负责UHF RFID标签的扫描、写入、锁定、销毁等功能
+ */
 class UHFPlugin(private val context: Context, private val engine: FlutterEngine) : Plugin {
     private val TAG = "UHFPlugin"
     private var methodChannel: MethodChannel? = null
@@ -27,7 +31,7 @@ class UHFPlugin(private val context: Context, private val engine: FlutterEngine)
     private val pendingTags = mutableListOf<UHFTAGInfo>()
 
     override val pluginId: String
-        get() = "uhf_plugin"
+        get() = "uhf_scanner"
 
     override fun getName(): String {
         return "UHFPlugin"
@@ -47,7 +51,7 @@ class UHFPlugin(private val context: Context, private val engine: FlutterEngine)
             if (success) {
                 Log.d(TAG, "UHF reader initialized successfully")
                 try {
-                    Log.d(TAG, "Setting UHF reader power to 5")
+                    Log.d(TAG, "Setting UHF reader power to 30")
                     val powerSuccess = mReader?.setPower(30) ?: false
                     Log.d(TAG, "Power setting result: $powerSuccess")
                     if (!powerSuccess) {
@@ -87,7 +91,7 @@ class UHFPlugin(private val context: Context, private val engine: FlutterEngine)
 
     private fun setupChannels() {
         // Setup MethodChannel
-        methodChannel = MethodChannel(engine.dartExecutor.binaryMessenger, "com.example.uhf_plugin/uhf")
+        methodChannel = MethodChannel(engine.dartExecutor.binaryMessenger, "com.example.tj_tms_mobile/uhf_scanner")
         methodChannel?.setMethodCallHandler { call, result ->
             when (call.method) {
                 "init" -> {
@@ -240,7 +244,7 @@ class UHFPlugin(private val context: Context, private val engine: FlutterEngine)
         }
 
         // Setup EventChannel
-        eventChannel = EventChannel(engine.dartExecutor.binaryMessenger, "com.example.uhf_plugin/uhf_events")
+        eventChannel = EventChannel(engine.dartExecutor.binaryMessenger, "com.example.tj_tms_mobile/uhf_scanner_events")
         eventChannel?.setStreamHandler(object : EventChannel.StreamHandler {
             override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
                 Log.d(TAG, "EventChannel onListen called")

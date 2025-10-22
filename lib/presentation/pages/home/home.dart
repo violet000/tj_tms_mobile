@@ -145,6 +145,7 @@ class _HomePageState extends State<HomePage>
       
       // 在UI初始化完成后再启动AGPS服务
       _loadAGPSInterval();
+      
     }
   }
   

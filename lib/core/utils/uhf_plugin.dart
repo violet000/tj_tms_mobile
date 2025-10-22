@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 // 标签读取插件
 
 class UHFPlugin {
-  static const MethodChannel _channel = MethodChannel('com.example.uhf_plugin/uhf');
+  static const MethodChannel _channel = MethodChannel('com.example.tj_tms_mobile/uhf_scanner');
 
   static Future<bool> init() async {
     try {

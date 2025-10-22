@@ -78,9 +78,9 @@ class UHFController {
   UHFController._internal();
   
   final MethodChannel _channel =
-      const MethodChannel('com.example.uhf_plugin/uhf');
+      const MethodChannel('com.example.tj_tms_mobile/uhf_scanner');
   final EventChannel _eventChannel =
-      const EventChannel('com.example.uhf_plugin/uhf_events');
+      const EventChannel('com.example.tj_tms_mobile/uhf_scanner_events');
   final StreamController<Map<String, dynamic>> _tagController =
       StreamController<Map<String, dynamic>>.broadcast();
   bool _isInitialized = false;
