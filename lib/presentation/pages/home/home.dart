@@ -7,9 +7,10 @@ import 'package:tj_tms_mobile/presentation/widgets/common/page_scaffold.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/error_page.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/logger.dart';
 import 'package:tj_tms_mobile/presentation/pages/personal/personal_center_page.dart';
-import 'package:tj_tms_mobile/services/location_polling_manager.dart';
+// import 'package:tj_tms_mobile/services/location_polling_manager.dart';
 import 'package:tj_tms_mobile/data/datasources/api/18082/service_18082.dart';
 import 'package:tj_tms_mobile/services/interval_manager.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 
 class HomePage extends StatefulWidget {
   final Map<String, dynamic>? arguments;
@@ -29,10 +30,8 @@ class _HomePageState extends State<HomePage>
   bool _isInitialized = false; // 初始化状态
 
   // 位置轮询相关
-  final LocationPollingManager _locationPollingManager =
-      LocationPollingManager();
-  
-  // AGPS相关 - 使用IntervalManager统一管理
+  // final LocationPollingManager _locationPollingManager =
+  //     LocationPollingManager();
 
   @override
   void initState() {
@@ -72,66 +71,66 @@ class _HomePageState extends State<HomePage>
     return raw;
   }
 
-  Future<void> _loadAGPSInterval() async {
-    try {
-      AppLogger.info('开始加载AGPS间隔配置');
+  // Future<void> _loadAGPSInterval() async {
+  //   try {
+  //     AppLogger.info('开始加载AGPS间隔配置');
       
-      final service = await Service18082.create();
-      final result = await service.getAGPSParam(<String, dynamic>{
-        'catalog': '',
-        'paramName': 'GPS_SEND_TIME',
-        'statement': '',
-        'description': '',
-        'pageSize': 10,
-        'curRow': 1
-      });
+  //     final service = await Service18082.create();
+  //     final result = await service.getAGPSParam(<String, dynamic>{
+  //       'catalog': '',
+  //       'paramName': 'GPS_SEND_TIME',
+  //       'statement': '',
+  //       'description': '',
+  //       'pageSize': 10,
+  //       'curRow': 1
+  //     });
       
-      if ((result['retCode'] as String?) == '000000') {
-        final List<dynamic> dataList =
-            (result['retList'] as List<dynamic>?) ?? <dynamic>[];
-        if (dataList.isNotEmpty) {
-          final Map<String, dynamic> agpsData =
-              dataList.first as Map<String, dynamic>;
-          final String? paramValue = agpsData['paramValue']?.toString();
-          final String? statement = agpsData['statement']?.toString();
-          if (paramValue != null) {
-            final int interval = parseIntervalToSeconds(
-                paramValue: paramValue, statement: statement ?? '');
+  //     if ((result['retCode'] as String?) == '000000') {
+  //       final List<dynamic> dataList =
+  //           (result['retList'] as List<dynamic>?) ?? <dynamic>[];
+  //       if (dataList.isNotEmpty) {
+  //         final Map<String, dynamic> agpsData =
+  //             dataList.first as Map<String, dynamic>;
+  //         final String? paramValue = agpsData['paramValue']?.toString();
+  //         final String? statement = agpsData['statement']?.toString();
+  //         if (paramValue != null) {
+  //           final int interval = parseIntervalToSeconds(
+  //               paramValue: paramValue, statement: statement ?? '');
             
-            AppLogger.info('从服务器获取到AGPS间隔: ${interval}秒');
-            await IntervalManager.setBothIntervals(interval);
-            await _startLocationPolling();
-            return;
-          }
-        }
-      }
+  //           AppLogger.info('从服务器获取到AGPS间隔: ${interval}秒');
+  //           await IntervalManager.setBothIntervals(interval);
+  //           // await _startLocationPolling();
+  //           return;
+  //         }
+  //       }
+  //     }
       
-      // 如果服务器获取失败，使用本地保存的配置
-      AppLogger.info('服务器获取AGPS间隔失败，使用本地配置');
-      final saved = await IntervalManager.getAGPSInterval();
-      final current = saved ?? await IntervalManager.getDefaultInterval();
-      await IntervalManager.setCurrentInterval(current);
-      if (saved != null && saved > 0) {
-        await IntervalManager.updateLocationPollingConfig(saved);
-      }
-      await _startLocationPolling();
-    } catch (e) {
-      AppLogger.error('加载AGPS间隔配置失败: $e');
+  //     // 如果服务器获取失败，使用本地保存的配置
+  //     AppLogger.info('服务器获取AGPS间隔失败，使用本地配置');
+  //     final saved = await IntervalManager.getAGPSInterval();
+  //     final current = saved ?? await IntervalManager.getDefaultInterval();
+  //     await IntervalManager.setCurrentInterval(current);
+  //     if (saved != null && saved > 0) {
+  //       await IntervalManager.updateLocationPollingConfig(saved);
+  //     }
+  //     // await _startLocationPolling();
+  //   } catch (e) {
+  //     AppLogger.error('加载AGPS间隔配置失败: $e');
       
-      // 异常情况下使用默认配置
-      try {
-        final saved = await IntervalManager.getAGPSInterval();
-        final current = saved ?? await IntervalManager.getDefaultInterval();
-        await IntervalManager.setCurrentInterval(current);
-        if (saved != null && saved > 0) {
-          await IntervalManager.updateLocationPollingConfig(saved);
-        }
-        await _startLocationPolling();
-      } catch (innerError) {
-        AppLogger.error('启动位置轮询服务失败: $innerError');
-      }
-    }
-  }
+  //     // 异常情况下使用默认配置
+  //     try {
+  //       final saved = await IntervalManager.getAGPSInterval();
+  //       final current = saved ?? await IntervalManager.getDefaultInterval();
+  //       await IntervalManager.setCurrentInterval(current);
+  //       if (saved != null && saved > 0) {
+  //         await IntervalManager.updateLocationPollingConfig(saved);
+  //       }
+  //       // await _startLocationPolling();
+  //     } catch (innerError) {
+  //       AppLogger.error('启动位置轮询服务失败: $innerError');
+  //     }
+  //   }
+  // }
 
   // 异步初始化
   Future<void> _initializeAsync() async {
@@ -144,118 +143,121 @@ class _HomePageState extends State<HomePage>
       _animationController.forward();
       
       // 在UI初始化完成后再启动AGPS服务
-      _loadAGPSInterval();
+      // _loadAGPSInterval();
       
     }
   }
   
   // 页面恢复机制
-  void _restorePageState() {
-    if (mounted && _isInitialized) {
-      AppLogger.info('恢复页面状态');
-      
-      // 延迟执行，避免快速切换导致的问题
-      Future.delayed(const Duration(milliseconds: 100), () {
-        if (mounted) {
-          setState(() {
-            // 强制刷新UI
-          });
+  // void _restorePageState() {
+  //   if (mounted && _isInitialized) {
+  //     // 延迟执行，避免快速切换导致的问题
+  //     Future.delayed(const Duration(milliseconds: 100), () {
+  //       if (mounted) {
+  //         setState(() {
+  //         });
           
-          // 重新初始化页面
-          _initializePages();
+  //         _initializePages();
           
-          // 确保动画控制器状态正确
-          if (_animationController.status != AnimationStatus.completed) {
-            _animationController.forward();
-          }
-        }
-      });
-    }
-  }
+  //         if (_animationController.status != AnimationStatus.completed) {
+  //           _animationController.forward();
+  //         }
+  //       }
+  //     });
+  //   }
+  // }
 
   // 启动位置轮询服务
-  Future<void> _startLocationPolling() async {
-    try {
-      await _locationPollingManager.initialize();
-      _attachLocationCallbacks();
+  // Future<void> _startLocationPolling() async {
+  //   try {
+  //     await _locationPollingManager.initialize();
+  //     _attachLocationCallbacks();
       
-      // 使用IntervalManager获取有效的间隔值，添加错误处理
-      int effectiveInterval = 0;
-      try {
-        effectiveInterval = await IntervalManager.getEffectiveInterval();
-      } catch (e) {
-        AppLogger.error('获取AGPS间隔失败: $e');
-        effectiveInterval = 30; // 使用默认值
-      }
+  //     // 使用IntervalManager获取有效的间隔值，添加错误处理
+  //     int effectiveInterval = 0;
+  //     try {
+  //       effectiveInterval = await IntervalManager.getEffectiveInterval();
+  //     } catch (e) {
+  //       AppLogger.error('获取AGPS间隔失败: $e');
+  //       effectiveInterval = 30; // 使用默认值
+  //     }
       
-      if (effectiveInterval > 0) {
-        _locationPollingManager.setPollingInterval(effectiveInterval);
-      }
+  //     if (effectiveInterval > 0) {
+  //       _locationPollingManager.setPollingInterval(effectiveInterval);
+  //     }
       
-      // 启动位置轮询
-      _locationPollingManager.startPolling();
-    } catch (e) {
-      AppLogger.error('位置轮询服务初始化失败: $e');
-    }
-  }
+  //     // 启动位置轮询
+  //     _locationPollingManager.startPolling();
+  //   } catch (e) {
+  //     AppLogger.error('位置轮询服务初始化失败: $e');
+  //   }
+  // }
 
   // 绑定位置更新与错误回调（前台时启用）
-  void _attachLocationCallbacks() {
-    _locationPollingManager.setCallbacks(
-      onLocationUpdate: (location) {
-        if (!mounted) return;
-        setState(() {});
-      },
-      onError: (error) {
-        AppLogger.error('错误: $error');
-      },
-    );
-  }
+  // void _attachLocationCallbacks() {
+  //   _locationPollingManager.setCallbacks(
+  //     onLocationUpdate: (location) {
+  //       if (!mounted) return;
+  //       setState(() {});
+  //     },
+  //     onError: (error) {
+  //       AppLogger.error('错误: $error');
+  //     },
+  //   );
+  // }
 
   // 解绑回调（后台时避免触发UI）
-  void _detachLocationCallbacks() {
-    _locationPollingManager.setCallbacks(onLocationUpdate: null, onError: null);
-  }
+  // void _detachLocationCallbacks() {
+  //   _locationPollingManager.setCallbacks(onLocationUpdate: null, onError: null);
+  // }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    AppLogger.info('应用生命周期状态变化: $state');
+  // @override
+  // void didChangeAppLifecycleState(AppLifecycleState state) {
+  //   AppLogger.info('应用生命周期状态变化: $state');
 
-    // 前台：恢复回调并确保轮询运行；后台：仅解绑回调，确保轮询继续运行
-    switch (state) {
-      case AppLifecycleState.resumed:
-        AppLogger.info('应用恢复前台，重新绑定回调并确保轮询运行');
-        // 确保UI状态正确恢复
-        if (mounted) {
-          setState(() {
-          });
-        }
-        // 调用页面恢复机制
-        _restorePageState();
-        _attachLocationCallbacks();
-        if (!_locationPollingManager.isPolling) {
-          _locationPollingManager.startPolling();
-        }
-        break;
-      case AppLifecycleState.inactive:
-        AppLogger.info('应用进入非活动状态，保持回调并确保轮询运行');
-        _attachLocationCallbacks();
-        if (!_locationPollingManager.isPolling) {
-          _locationPollingManager.startPolling();
-        }
-        break;
-      case AppLifecycleState.paused: // 息屏待机
-        AppLogger.info('应用进入后台（息屏待机），解绑回调但保持轮询运行');
-        _detachLocationCallbacks();
-        // 确保轮询继续运行，不受息屏影响
-        if (!_locationPollingManager.isPolling) {
-          _locationPollingManager.startPolling();
-        }
-        break;
-      case AppLifecycleState.detached: // 退出
-        break;
-    }
-  }
+  //   // 前台：恢复回调并确保轮询运行；后台：仅解绑回调，确保轮询继续运行
+  //   switch (state) {
+  //     case AppLifecycleState.resumed:
+  //       AppLogger.info('应用恢复前台，重新绑定回调并确保轮询运行');
+        
+  //       // 强制清理可能残留的Loading遮罩
+  //       try {
+  //         EasyLoading.dismiss();
+  //       } catch (e) {
+  //         AppLogger.error('清理Loading遮罩失败: $e');
+  //       }
+        
+  //       // 确保UI状态正确恢复
+  //       if (mounted) {
+  //         setState(() {
+  //         });
+  //       }
+  //       // 调用页面恢复机制
+  //       _restorePageState();
+  //       _attachLocationCallbacks();
+  //       if (!_locationPollingManager.isPolling) {
+  //         _locationPollingManager.startPolling();
+  //       }
+  //       break;
+  //     case AppLifecycleState.inactive:
+  //       AppLogger.info('应用进入非活动状态，保持回调并确保轮询运行');
+  //       _attachLocationCallbacks();
+  //       if (!_locationPollingManager.isPolling) {
+  //         _locationPollingManager.startPolling();
+  //       }
+  //       break;
+  //     case AppLifecycleState.paused: // 息屏待机
+  //       AppLogger.info('应用进入后台（息屏待机），解绑回调但保持轮询运行');
+  //       _detachLocationCallbacks();
+  //       // 确保轮询继续运行，不受息屏影响
+  //       if (!_locationPollingManager.isPolling) {
+  //         _locationPollingManager.startPolling();
+  //       }
+  //       break;
+  //     case AppLifecycleState.detached: // 退出
+  //       break;
+  //   }
+  // }
 
   // 初始化
   void _initializeBasicUI() {
@@ -312,7 +314,7 @@ class _HomePageState extends State<HomePage>
     _animationController.dispose();
     
     // 清空回调，避免已销毁页面触发UI更新
-    _locationPollingManager.setCallbacks(onLocationUpdate: null, onError: null);
+    // _locationPollingManager.setCallbacks(onLocationUpdate: null, onError: null);
     
     super.dispose();
   }

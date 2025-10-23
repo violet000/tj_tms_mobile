@@ -60,6 +60,7 @@ class LocationService {
 
   // 获取单次位置
   Future<Map<String, dynamic>?> getSingleLocation() async {
+    Completer<Map<String, dynamic>?>? completer;
     try {
       // 设置定位参数
       final androidOptions = LocationConfig.getAndroidOptions();
@@ -67,12 +68,14 @@ class LocationService {
       await _locationPlugin.prepareLoc(androidOptions.getMap(), iosOptions.getMap());
 
       // 创建一个Completer来等待位置结果
-      final completer = Completer<Map<String, dynamic>?>();
+      completer = Completer<Map<String, dynamic>?>();
 
       if (Platform.isIOS) {
         // 设置单次定位回调
         _locationPlugin.singleLocationCallback(callback: (BaiduLocation result) {
-          completer.complete(Map<String, dynamic>.from(result.getMap()));
+          if (!completer!.isCompleted) {
+            completer.complete(Map<String, dynamic>.from(result.getMap()));
+          }
         });
 
         // 开始单次定位
@@ -81,18 +84,20 @@ class LocationService {
           'isNetworkState': true
         });
 
-        if (!success) {
+        if (!success && !completer.isCompleted) {
           completer.complete(null);
         }
       } else {
         // Android需要先设置连续定位回调，然后启动定位
         _locationPlugin.seriesLocationCallback(callback: (BaiduLocation result) {
-          completer.complete(Map<String, dynamic>.from(result.getMap()));
-          _locationPlugin.stopLocation(); // 获取到位置后停止定位
+          if (!completer!.isCompleted) {
+            completer.complete(Map<String, dynamic>.from(result.getMap()));
+            _locationPlugin.stopLocation(); // 获取到位置后停止定位
+          }
         });
 
         final success = await _locationPlugin.startLocation();
-        if (!success) {
+        if (!success && !completer.isCompleted) {
           completer.complete(null);
         }
       }
@@ -102,11 +107,19 @@ class LocationService {
         const Duration(seconds: 10),
         onTimeout: () {
           _locationPlugin.stopLocation();
+          // 确保Completer被完成，避免内存泄漏
+          if (!completer!.isCompleted) {
+            completer.complete(null);
+          }
           return null;
         },
       );
     } catch (e) {
       print('Error getting single location: $e');
+      // 确保Completer被完成，避免内存泄漏
+      if (completer != null && !completer.isCompleted) {
+        completer.complete(null);
+      }
       return null;
     }
   }

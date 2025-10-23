@@ -167,6 +167,7 @@ class LocationPollingManager {
         _uploadHeartbeat();
       }
     } catch (e) {
+      AppLogger.error('获取位置失败: $e');
       _onError?.call('获取位置失败: $e');
       // 发生异常时也上传心跳包
       _uploadHeartbeat();

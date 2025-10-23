@@ -51,23 +51,23 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     // Prefill two users and ensure password mode
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   final faceLoginProvider =
-    //       Provider.of<FaceLoginProvider>(context, listen: false);
-    //   // 用于快速测试，自动填入账号与密码
-    //   faceLoginProvider.setUsername(0, '00000001');
-    //   faceLoginProvider.setPassword(0, 'Aa123789!');
-    //   faceLoginProvider.setUsername(1, '00000002');
-    //   faceLoginProvider.setPassword(1, 'Aa123789!');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final faceLoginProvider =
+          Provider.of<FaceLoginProvider>(context, listen: false);
+      // 用于快速测试，自动填入账号与密码
+      faceLoginProvider.setUsername(0, '00000001');
+      faceLoginProvider.setPassword(0, 'Aa123789!');
+      faceLoginProvider.setUsername(1, '00000002');
+      faceLoginProvider.setPassword(1, 'Aa123789!');
 
-    //   // 切换为账号密码登录模式（如果当前为人脸模式）
-    //   if (faceLoginProvider.isFaceLogin(0)) {
-    //     faceLoginProvider.toggleLoginMode(0);
-    //   }
-    //   if (faceLoginProvider.isFaceLogin(1)) {
-    //     faceLoginProvider.toggleLoginMode(1);
-    //   }
-    // });
+      // 切换为账号密码登录模式（如果当前为人脸模式）
+      if (faceLoginProvider.isFaceLogin(0)) {
+        faceLoginProvider.toggleLoginMode(0);
+      }
+      if (faceLoginProvider.isFaceLogin(1)) {
+        faceLoginProvider.toggleLoginMode(1);
+      }
+    });
   }
 
   Future<void> _initializeLoginService() async {
