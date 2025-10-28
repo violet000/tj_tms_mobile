@@ -7,6 +7,7 @@ import 'package:tj_tms_mobile/presentation/widgets/common/face_scan_widget.dart'
 import 'package:tj_tms_mobile/presentation/widgets/common/logger.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/uhf_plugin_widget.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/uhf_scan_button.dart';
+// UHFController 类型已通过 uhf_plugin_widget.dart 导入
 import 'package:image_picker/image_picker.dart';
 import 'package:tj_tms_mobile/core/utils/util.dart' as app_utils;
 import 'package:tj_tms_mobile/data/datasources/api/api.dart';
@@ -114,6 +115,7 @@ class _AuthDialogState extends State<AuthDialog>
   String? _scannedVehicleRfid;
   String? _vehiclePlateNumber; // 车牌号
   bool _isVehicleScanning = false;
+  UHFController? _vehicleScanController; // 车辆扫描控制器
 
   // 人员核验相关
   String? _scannedPersonRfid;
@@ -227,6 +229,7 @@ class _AuthDialogState extends State<AuthDialog>
     _passwordController1.dispose();
     _usernameController2.dispose();
     _passwordController2.dispose();
+    _vehicleScanController = null; // 清理 controller 引用
     super.dispose();
   }
 
@@ -786,6 +789,11 @@ class _AuthDialogState extends State<AuthDialog>
         Expanded(
           child: UHFPluginWidget(
             builder: (context, controller) {
+              // 保存 controller 的引用
+              if (_vehicleScanController == null) {
+                _vehicleScanController = controller;
+              }
+
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -795,7 +803,10 @@ class _AuthDialogState extends State<AuthDialog>
                     child: UHFScanButton(
                       startText: '点击识别车辆卡',
                       onTagScanned: (rfid) {
-                        final last4 = rfid.length >= 4 ? rfid.substring(rfid.length - 4) : rfid;
+                        // 允许重新扫描，覆盖已有结果
+                        final last4 = rfid.length >= 4
+                            ? rfid.substring(rfid.length - 4)
+                            : rfid;
                         _onVehicleRfidScanned(last4);
                         // 扫描到即停止扫描
                         controller.stopScan();
@@ -836,6 +847,62 @@ class _AuthDialogState extends State<AuthDialog>
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
+                            // 重新扫描按钮
+                            if (_scannedVehicleRfid != null &&
+                                _scannedVehicleRfid!.isNotEmpty)
+                              InkWell(
+                                onTap: () async {
+                                  setState(() {
+                                    _scannedVehicleRfid = null;
+                                    _vehiclePlateNumber = null;
+                                    _isVehicleScanning = false;
+                                  });
+                                  // 停止当前扫描
+                                  try {
+                                    await controller.stopScan();
+                                  } catch (e) {
+                                    // 忽略错误
+                                  }
+                                  // 等待一小段时间后自动开始新的扫描
+                                  await Future<void>.delayed(const Duration(milliseconds: 100));
+                                  try {
+                                    await controller.startScan();
+                                    if (mounted) {
+                                      setState(() {
+                                        _isVehicleScanning = true;
+                                      });
+                                    }
+                                  } catch (e) {
+                                    // 忽略错误
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue[50],
+                                    borderRadius: BorderRadius.circular(4),
+                                    border:
+                                        Border.all(color: Colors.blue[300]!),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: const [
+                                      Icon(
+                                        Icons.refresh,
+                                        size: 14,
+                                        color: Colors.blue,
+                                      ),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        '重新扫描',
+                                        style: TextStyle(
+                                            fontSize: 11, color: Colors.blue),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
                           ],
                         ),
                         const SizedBox(height: 8),

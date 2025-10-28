@@ -38,27 +38,27 @@ void main() async {
       overlays: [],
     );
     
-    // 延迟再次设置，确保生效
-    Future.delayed(const Duration(milliseconds: 100), () {
-      SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
-        systemNavigationBarColor: Colors.transparent,
-        systemNavigationBarIconBrightness: Brightness.dark,
-      ));
-    });
+    // // 延迟再次设置，确保生效
+    // Future.delayed(const Duration(milliseconds: 100), () {
+    //   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    //     statusBarColor: Colors.transparent,
+    //     statusBarIconBrightness: Brightness.light,
+    //     systemNavigationBarColor: Colors.transparent,
+    //     systemNavigationBarIconBrightness: Brightness.dark,
+    //   ));
+    // });
     
-    // 多次设置，确保生效
-    for (int i = 0; i < 5; i++) {
-      Future.delayed(Duration(milliseconds: 200 * (i + 1)), () {
-        SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.light,
-          systemNavigationBarColor: Colors.transparent,
-          systemNavigationBarIconBrightness: Brightness.dark,
-        ));
-      });
-    }
+    // // 多次设置，确保生效
+    // for (int i = 0; i < 5; i++) {
+    //   Future.delayed(Duration(milliseconds: 200 * (i + 1)), () {
+    //     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    //       statusBarColor: Colors.transparent,
+    //       statusBarIconBrightness: Brightness.light,
+    //       systemNavigationBarColor: Colors.transparent,
+    //       systemNavigationBarIconBrightness: Brightness.dark,
+    //     ));
+    //   });
+    // }
     
     // 监听系统UI变化，保持透明
     SystemChrome.setSystemUIChangeCallback((systemOverlaysAreVisible) async {
