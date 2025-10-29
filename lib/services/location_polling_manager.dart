@@ -5,6 +5,7 @@ import 'package:tj_tms_mobile/presentation/widgets/common/logger.dart';
 import 'package:tj_tms_mobile/data/datasources/api/9087/service_9087.dart';
 import 'package:tj_tms_mobile/core/utils/util.dart' as app_utils;
 import 'package:tj_tms_mobile/services/foreground_service_manager.dart';
+ 
 
 class LocationPollingManager {
   static final LocationPollingManager _instance =
@@ -202,12 +203,15 @@ class LocationPollingManager {
       try {
         final dynamic latitude = location['latitude'];
         final dynamic longitude = location['longitude'];
+        final date = DateTime.now();
+        final formattedDateTime = _formatDateTime(date);
         if (latitude != null && longitude != null) {
           await _service9087?.sendGpsInfo(<String, dynamic>{
             'handheldNo': _deviceInfo['deviceId'],
             'x': latitude,
             'y': longitude,
-            'timestamp': DateTime.now().millisecondsSinceEpoch,
+            'timestamp': date.millisecondsSinceEpoch,
+            'dateTime': formattedDateTime,
             'status':
                 (latitude != null && longitude != null) ? 'valid' : 'invalid'
           });
@@ -243,5 +247,11 @@ class LocationPollingManager {
     stopPolling();
     _onLocationUpdate = null;
     _onError = null;
+  }
+
+  // yyyy-MM-dd HH:mm:ss 格式化
+  String _formatDateTime(DateTime date) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${date.year}-${two(date.month)}-${two(date.day)} ${two(date.hour)}:${two(date.minute)}:${two(date.second)}';
   }
 }
