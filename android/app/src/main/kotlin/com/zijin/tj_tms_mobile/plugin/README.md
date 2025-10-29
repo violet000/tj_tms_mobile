@@ -109,9 +109,9 @@ data class PluginConfig(
 在 `plugins/` 目录下创建新的插件类，实现 `Plugin` 接口：
 
 ```kotlin
-package com.example.tj_tms_mobile.plugins
+package com.zijin.tj_tms_mobile.plugins
 
-import com.example.tj_tms_mobile.plugin.Plugin
+import com.zijin.tj_tms_mobile.plugin.Plugin
 
 class MyPlugin(private val context: Context, private val engine: FlutterEngine) : Plugin {
     override val pluginId: String = "my_plugin"
@@ -145,7 +145,7 @@ fun getAllPluginConfigs(): List<PluginConfig> {
         // ...现有插件配置
         PluginConfig(
             pluginId = "my_plugin",
-            className = "com.example.tj_tms_mobile.plugins.MyPlugin",
+            className = "com.zijin.tj_tms_mobile.plugins.MyPlugin",
             enabled = true,
             priority = 3
         )

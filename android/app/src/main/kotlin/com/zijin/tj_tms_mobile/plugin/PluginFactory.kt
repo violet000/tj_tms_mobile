@@ -1,11 +1,11 @@
-package com.example.tj_tms_mobile.plugin
+package com.zijin.tj_tms_mobile.plugin
 
 import android.content.Context
 import android.util.Log
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
-import com.example.tj_tms_mobile.plugins.BarcodeScannerPlugin
-import com.example.tj_tms_mobile.plugins.UHFPlugin
+import com.zijin.tj_tms_mobile.plugins.BarcodeScannerPlugin
+import com.zijin.tj_tms_mobile.plugins.UHFPlugin
 
 /**
  * 插件工厂
@@ -44,7 +44,7 @@ class PluginFactory(private val context: Context, private val engine: FlutterEng
      * 设置条形码扫描插件的事件通道
      */
     fun setupBarcodeScannerEventChannel(plugin: BarcodeScannerPlugin): EventChannel {
-        val eventChannel = createEventChannel("com.example.tj_tms_mobile/barcode_events")
+        val eventChannel = createEventChannel("com.zijin.tj_tms_mobile/barcode_events")
         plugin.setEventChannel(eventChannel)
         
         eventChannel.setStreamHandler(object : EventChannel.StreamHandler {
@@ -68,7 +68,7 @@ class PluginFactory(private val context: Context, private val engine: FlutterEng
      * 设置UHF插件的事件通道
      */
     fun setupUHFEventChannel(plugin: UHFPlugin): EventChannel {
-        val eventChannel = createEventChannel("com.example.tj_tms_mobile/uhf_scanner_events")
+        val eventChannel = createEventChannel("com.zijin.tj_tms_mobile/uhf_scanner_events")
         plugin.setEventChannel(eventChannel)
         
         eventChannel.setStreamHandler(object : EventChannel.StreamHandler {

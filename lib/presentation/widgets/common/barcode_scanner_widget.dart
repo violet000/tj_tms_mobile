@@ -45,8 +45,8 @@ class BarcodeScannerWidget extends StatefulWidget {
 }
 
 class _BarcodeScannerWidgetState extends State<BarcodeScannerWidget> {
-  static const platform = MethodChannel('com.example.tj_tms_mobile/barcode_scanner');
-  static const eventChannel = EventChannel('com.example.tj_tms_mobile/barcode_events');
+  static const platform = MethodChannel('com.zijin.tj_tms_mobile/barcode_scanner');
+  static const eventChannel = EventChannel('com.zijin.tj_tms_mobile/barcode_events');
   
   String _scanResult = '未扫描';
   bool _isScanning = false;

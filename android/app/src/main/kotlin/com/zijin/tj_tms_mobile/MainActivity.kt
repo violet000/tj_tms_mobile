@@ -1,4 +1,4 @@
-package com.example.tj_tms_mobile
+package com.zijin.tj_tms_mobile
 
 import android.content.Intent
 import android.net.Uri
@@ -12,9 +12,9 @@ import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
-import com.example.tj_tms_mobile.plugin.PluginFactory
-import com.example.tj_tms_mobile.plugin.PluginManager
-import com.example.tj_tms_mobile.LocationServicePlugin
+import com.zijin.tj_tms_mobile.plugin.PluginFactory
+import com.zijin.tj_tms_mobile.plugin.PluginManager
+import com.zijin.tj_tms_mobile.LocationServicePlugin
 
 /**
  * 主Activity
@@ -99,7 +99,7 @@ class MainActivity : FlutterActivity() {
         // 设置电池优化MethodChannel
         batteryOptimizationChannel = MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
-            "com.example.tj_tms_mobile/battery_optimization"
+            "com.zijin.tj_tms_mobile/battery_optimization"
         )
         batteryOptimizationChannel.setMethodCallHandler { call, result ->
             when (call.method) {
@@ -119,7 +119,7 @@ class MainActivity : FlutterActivity() {
         // 设置应用保活MethodChannel
         appKeepAliveChannel = MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
-            "com.example.tj_tms_mobile/app_keep_alive"
+            "com.zijin.tj_tms_mobile/app_keep_alive"
         )
         appKeepAliveChannel.setMethodCallHandler { call, result ->
             when (call.method) {

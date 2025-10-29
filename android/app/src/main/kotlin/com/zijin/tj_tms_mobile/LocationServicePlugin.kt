@@ -1,4 +1,4 @@
-package com.example.tj_tms_mobile
+package com.zijin.tj_tms_mobile
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
