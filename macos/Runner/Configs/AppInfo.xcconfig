@@ -8,7 +8,7 @@
 PRODUCT_NAME = barcode_2d_scanner
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.example.barcode2dScanner
+PRODUCT_BUNDLE_IDENTIFIER = com.zijin.tj_tms_mobile
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2025 com.example. All rights reserved.

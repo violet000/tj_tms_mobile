@@ -36,8 +36,6 @@ dependencies:
   flutter_bmflocation:
     path: ../flutter_bmflocation/
 
-
-
 dev_dependencies:
   flutter_test:
     sdk: flutter

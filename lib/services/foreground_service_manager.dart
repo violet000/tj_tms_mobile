@@ -11,18 +11,18 @@ class ForegroundServiceManager {
       final bool result = await _channel.invokeMethod<bool>('startForegroundService') ?? false;
       if (result) _started = true;
       return result;
-    } on PlatformException catch (e) {
+    } catch (_) {
       return false;
     }
   }
-  
+
   /// 停止前台服务
   static Future<bool> stopForegroundService() async {
     try {
       final bool result = await _channel.invokeMethod<bool>('stopForegroundService') ?? false;
       if (result) _started = false;
       return result;
-    } on PlatformException catch (e) {
+    } catch (_) {
       return false;
     }
   }
