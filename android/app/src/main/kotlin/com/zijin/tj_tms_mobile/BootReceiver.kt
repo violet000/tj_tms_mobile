@@ -1,4 +1,4 @@
-package com.example.tj_tms_mobile
+package com.zijin.tj_tms_mobile
 
 import android.content.BroadcastReceiver
 import android.content.Context

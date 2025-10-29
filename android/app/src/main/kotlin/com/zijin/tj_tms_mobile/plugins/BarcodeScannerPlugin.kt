@@ -1,4 +1,4 @@
-package com.example.tj_tms_mobile.plugins
+package com.zijin.tj_tms_mobile.plugins
 
 import android.content.Context
 import android.util.Log
@@ -9,7 +9,7 @@ import com.rscja.barcode.BarcodeDecoder
 import com.rscja.barcode.BarcodeFactory
 import com.rscja.barcode.BarcodeUtility
 import com.rscja.deviceapi.entity.BarcodeEntity
-import com.example.tj_tms_mobile.plugin.Plugin
+import com.zijin.tj_tms_mobile.plugin.Plugin
 
 /**
  * 条形码扫描插件
@@ -79,7 +79,7 @@ class BarcodeScannerPlugin(private val context: Context, private val engine: Flu
             
             // 5. 输出模式配置
             utility.setOutputMode(context, 2)
-            utility.setScanResultBroadcast(context, "com.example.tj_tms_mobile.SCAN_RESULT", "barcode")
+            utility.setScanResultBroadcast(context, "com.zijin.tj_tms_mobile.SCAN_RESULT", "barcode")
             utility.setScanFailureBroadcast(context, true)
             Log.d(TAG, "输出模式配置完成")
             
@@ -151,7 +151,7 @@ class BarcodeScannerPlugin(private val context: Context, private val engine: Flu
     }
 
     private fun setupMethodChannel() {
-        methodChannel = MethodChannel(engine.dartExecutor.binaryMessenger, "com.example.tj_tms_mobile/barcode_scanner")
+        methodChannel = MethodChannel(engine.dartExecutor.binaryMessenger, "com.zijin.tj_tms_mobile/barcode_scanner")
         methodChannel?.setMethodCallHandler { call, result ->
             when (call.method) {
                 "startScan" -> {

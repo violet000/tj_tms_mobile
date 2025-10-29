@@ -1,4 +1,4 @@
-package com.example.tj_tms_mobile
+package com.zijin.tj_tms_mobile
 
 import android.app.*
 import android.content.Intent

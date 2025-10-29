@@ -30,7 +30,7 @@ def keystoreProperties = new Properties()
 keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 
 android {
-    namespace "com.example.tj_tms_mobile"
+    namespace "com.zijin.tj_tms_mobile"
     compileSdkVersion 35
     ndkVersion flutter.ndkVersion
 
@@ -83,7 +83,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.example.tj_tms_mobile"
+        applicationId "com.zijin.tj_tms_mobile"
         minSdkVersion 26
         targetSdkVersion 35
         versionCode flutterVersionCode.toInteger()

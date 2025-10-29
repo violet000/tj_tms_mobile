@@ -27,7 +27,7 @@ module:
   android: true
   ios: true
   module:
-    androidPackage: com.example.tj_tms_mobile
+    androidPackage: com.zijin.tj_tms_mobile
     moduleName: tj_tms_mobile
     androidX: true
     android: true

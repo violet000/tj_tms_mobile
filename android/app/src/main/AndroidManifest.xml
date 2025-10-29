@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.tj_tms_mobile">
+    package="com.zijin.tj_tms_mobile">
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.CAMERA" />
@@ -58,7 +58,7 @@
             android:value="oAtAn0OepgKc4P4Uu8U8MPeauZbmIi9g" />
             
         <activity
-            android:name=".MainActivity"
+            android:name="com.zijin.tj_tms_mobile.MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
             android:theme="@style/LaunchTheme"
@@ -87,32 +87,32 @@
             
         <!-- 前台服务声明 -->
         <service
-            android:name=".LocationForegroundService"
+            android:name="com.zijin.tj_tms_mobile.LocationForegroundService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="location" />
             
         <!-- JobScheduler保活服务 -->
         <service
-            android:name=".KeepAliveJobService"
+            android:name="com.zijin.tj_tms_mobile.KeepAliveJobService"
             android:permission="android.permission.BIND_JOB_SERVICE"
             android:exported="true" />
             
         <!-- AlarmManager保活接收器 -->
         <receiver
-            android:name=".KeepAliveReceiver"
+            android:name="com.zijin.tj_tms_mobile.KeepAliveReceiver"
             android:enabled="true"
             android:exported="true" />
             
         <!-- 进程守护服务 -->
         <service
-            android:name=".ProcessGuardService"
+            android:name="com.zijin.tj_tms_mobile.ProcessGuardService"
             android:enabled="true"
             android:exported="false" />
             
         <!-- 开机自启动接收器 -->
         <receiver
-            android:name=".BootReceiver"
+            android:name="com.zijin.tj_tms_mobile.BootReceiver"
             android:enabled="true"
             android:exported="true">
             <intent-filter android:priority="1000">

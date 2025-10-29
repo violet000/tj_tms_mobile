@@ -4,7 +4,7 @@ import 'battery_optimization_service.dart';
 /// 应用保活服务
 /// 用于引导用户设置各种保活权限
 class AppKeepAliveService {
-  static const MethodChannel _channel = MethodChannel('com.example.tj_tms_mobile/app_keep_alive');
+  static const MethodChannel _channel = MethodChannel('com.zijin.tj_tms_mobile/app_keep_alive');
   
   /// 检查自启动权限
   static Future<bool> isAutoStartEnabled() async {

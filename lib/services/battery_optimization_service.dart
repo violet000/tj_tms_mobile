@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 /// 电池优化服务
 /// 用于检查和管理应用的电池优化状态
 class BatteryOptimizationService {
-  static const MethodChannel _channel = MethodChannel('com.example.tj_tms_mobile/battery_optimization');
+  static const MethodChannel _channel = MethodChannel('com.zijin.tj_tms_mobile/battery_optimization');
   
   /// 检查是否已忽略电池优化
   static Future<bool> isIgnoringBatteryOptimizations() async {

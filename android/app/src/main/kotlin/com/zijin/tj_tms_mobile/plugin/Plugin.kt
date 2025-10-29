@@ -1,4 +1,4 @@
-package com.example.tj_tms_mobile.plugin
+package com.zijin.tj_tms_mobile.plugin
 
 interface Plugin {
     val pluginId: String

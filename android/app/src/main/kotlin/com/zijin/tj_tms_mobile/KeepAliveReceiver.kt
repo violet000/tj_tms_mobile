@@ -1,4 +1,4 @@
-package com.example.tj_tms_mobile
+package com.zijin.tj_tms_mobile
 
 import android.app.AlarmManager
 import android.app.PendingIntent
@@ -12,7 +12,7 @@ class KeepAliveReceiver : BroadcastReceiver() {
     
     companion object {
         private const val TAG = "KeepAliveReceiver"
-        private const val ACTION_KEEP_ALIVE = "com.example.tj_tms_mobile.KEEP_ALIVE"
+        private const val ACTION_KEEP_ALIVE = "com.zijin.tj_tms_mobile.KEEP_ALIVE"
         private const val REQUEST_CODE = 1001
         
         fun scheduleAlarm(context: Context) {

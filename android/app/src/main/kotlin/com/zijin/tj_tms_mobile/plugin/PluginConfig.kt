@@ -1,4 +1,4 @@
-package com.example.tj_tms_mobile.plugin
+package com.zijin.tj_tms_mobile.plugin
 
 /**
  * 插件配置信息
@@ -24,13 +24,13 @@ object PluginConfigManager {
         return listOf(
             PluginConfig(
                 pluginId = "barcode_scanner",
-                className = "com.example.tj_tms_mobile.plugins.BarcodeScannerPlugin",
+                className = "com.zijin.tj_tms_mobile.plugins.BarcodeScannerPlugin",
                 enabled = true,
                 priority = 1
             ),
             PluginConfig(
                 pluginId = "uhf_scanner",
-                className = "com.example.tj_tms_mobile.plugins.UHFPlugin",
+                className = "com.zijin.tj_tms_mobile.plugins.UHFPlugin",
                 enabled = true,
                 priority = 2
             )

@@ -1,4 +1,4 @@
-package com.example.tj_tms_mobile.plugins
+package com.zijin.tj_tms_mobile.plugins
 
 import android.content.Context
 import android.os.Handler
@@ -10,7 +10,7 @@ import io.flutter.plugin.common.EventChannel
 import com.rscja.deviceapi.RFIDWithUHFUART
 import com.rscja.deviceapi.entity.UHFTAGInfo
 import com.rscja.deviceapi.interfaces.IUHFInventoryCallback
-import com.example.tj_tms_mobile.plugin.Plugin
+import com.zijin.tj_tms_mobile.plugin.Plugin
 import com.rscja.deviceapi.interfaces.IUHF
 import java.util.Collections
 
@@ -91,7 +91,7 @@ class UHFPlugin(private val context: Context, private val engine: FlutterEngine)
 
     private fun setupChannels() {
         // Setup MethodChannel
-        methodChannel = MethodChannel(engine.dartExecutor.binaryMessenger, "com.example.tj_tms_mobile/uhf_scanner")
+        methodChannel = MethodChannel(engine.dartExecutor.binaryMessenger, "com.zijin.tj_tms_mobile/uhf_scanner")
         methodChannel?.setMethodCallHandler { call, result ->
             when (call.method) {
                 "init" -> {
@@ -244,7 +244,7 @@ class UHFPlugin(private val context: Context, private val engine: FlutterEngine)
         }
 
         // Setup EventChannel
-        eventChannel = EventChannel(engine.dartExecutor.binaryMessenger, "com.example.tj_tms_mobile/uhf_scanner_events")
+        eventChannel = EventChannel(engine.dartExecutor.binaryMessenger, "com.zijin.tj_tms_mobile/uhf_scanner_events")
         eventChannel?.setStreamHandler(object : EventChannel.StreamHandler {
             override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
                 Log.d(TAG, "EventChannel onListen called")
