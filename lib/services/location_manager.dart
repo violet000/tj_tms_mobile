@@ -11,6 +11,9 @@ class LocationManager {
   final LocationService _locationService = LocationService();
   bool _isContinuousLocationActive = false;
   StreamController<Map<String, dynamic>>? _locationStreamController;
+  Timer? _continuousTimer;
+  bool _pollingInProgress = false;
+  static const Duration _pollingInterval = Duration(seconds: 10);
 
   // 初始化位置服务
   Future<void> initialize() async {
@@ -33,11 +36,19 @@ class LocationManager {
     _locationStreamController = StreamController<Map<String, dynamic>>();
     _isContinuousLocationActive = true;
 
-    _locationService.startLocationUpdates(
-      onLocationUpdate: (location) {
-        _locationStreamController?.add(location);
-      },
-    );
+    // 使用单次定位定时轮询，避免依赖插件的连续定位参数
+    _continuousTimer = Timer.periodic(_pollingInterval, (_) async {
+      if (_pollingInProgress) return;
+      _pollingInProgress = true;
+      try {
+        final location = await _locationService.getSingleLocation();
+        if (location != null) {
+          _locationStreamController?.add(location);
+        }
+      } finally {
+        _pollingInProgress = false;
+      }
+    });
 
     return _locationStreamController!.stream;
   }
@@ -45,7 +56,9 @@ class LocationManager {
   // 停止连续位置更新
   void stopContinuousLocation() {
     if (_isContinuousLocationActive) {
-      _locationService.stopLocationUpdates();
+      _continuousTimer?.cancel();
+      _continuousTimer = null;
+      _pollingInProgress = false;
       _locationStreamController?.close();
       _locationStreamController = null;
       _isContinuousLocationActive = false;

@@ -102,9 +102,9 @@ class LocationService {
         }
       }
 
-      // 等待位置结果，设置超时时间为10秒
+      // 等待位置结果，设置超时时间为20秒（弱网/室内首次定位更稳）
       return await completer.future.timeout(
-        const Duration(seconds: 10),
+        const Duration(seconds: 20),
         onTimeout: () {
           _locationPlugin.stopLocation();
           // 确保Completer被完成，避免内存泄漏
@@ -133,10 +133,12 @@ class LocationService {
     final iosOptions = LocationConfig.getIOSOptions();
     _locationPlugin.prepareLoc(androidOptions.getMap(), iosOptions.getMap());
 
-    _locationPlugin.startLocation();
+    // 先注册回调，避免丢失首次回调
     _locationPlugin.seriesLocationCallback(callback: (result) {
       onLocationUpdate(Map<String, dynamic>.from(result.getMap()));
     });
+
+    _locationPlugin.startLocation();
   }
 
   // 停止连续位置更新
