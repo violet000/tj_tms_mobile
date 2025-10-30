@@ -6,6 +6,8 @@ import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
 import androidx.core.app.NotificationCompat
+import androidx.core.app.ServiceCompat
+import android.content.pm.ServiceInfo
 import android.content.Context
 
 class LocationForegroundService : Service() {
@@ -56,7 +58,18 @@ class LocationForegroundService : Service() {
         // 提前在 onCreate 即前台化，避免主线程在 onStartCommand 调度前被阻塞导致超时
         try {
             val notification = createNotification()
-            startForeground(NOTIFICATION_ID, notification)
+            // 使用兼容API在支持的平台上显式声明前台服务类型（位置）
+            val typeFlag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+            } else {
+                0
+            }
+            ServiceCompat.startForeground(
+                this,
+                NOTIFICATION_ID,
+                notification,
+                typeFlag
+            )
         } catch (_: Exception) {
             // 忽略，onStartCommand 中还有一次兜底
         }
@@ -66,7 +79,17 @@ class LocationForegroundService : Service() {
         try {
             val notification = createNotification()
             // 确保在最早时机前台化，避免 5 秒超时崩溃
-            startForeground(NOTIFICATION_ID, notification)
+            val typeFlag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+            } else {
+                0
+            }
+            ServiceCompat.startForeground(
+                this,
+                NOTIFICATION_ID,
+                notification,
+                typeFlag
+            )
         } catch (e: Exception) {
             // 安全停止，避免系统抛异常
             stopSelf()
@@ -95,12 +118,14 @@ class LocationForegroundService : Service() {
             val channel = NotificationChannel(
                 CHANNEL_ID,
                 CHANNEL_NAME,
-                NotificationManager.IMPORTANCE_LOW
+                // 使用 DEFAULT 提升显示优先级，确保息屏时可见
+                NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
                 description = "用于保持位置服务在后台运行"
                 setShowBadge(false)
+                lockscreenVisibility = Notification.VISIBILITY_PUBLIC
             }
-            
+
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
         }
@@ -117,12 +142,16 @@ class LocationForegroundService : Service() {
         )
         
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("位置服务运行中")
-            .setContentText("正在后台获取位置信息")
+            // 标题使用应用名称
+            .setContentTitle("天津银行外勤配送系统")
+            .setContentText("正在后台运行（定位服务中）")
+            .setSubText("持续定位用于天津银行外勤配送系统")
             .setSmallIcon(android.R.drawable.ic_menu_mylocation)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .build()
     }
     
