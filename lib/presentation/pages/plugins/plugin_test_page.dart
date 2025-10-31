@@ -19,6 +19,9 @@ class _PluginTestPageState extends State<PluginTestPage> {
   Map<String, dynamic>? _locationResult;
   bool _isLocationLoading = false;
   StreamSubscription<Map<String, dynamic>>? _locationSubscription;
+  ContinuousLocationResult? _continuousHandle;
+  int _callbackCount = 0;
+  DateTime? _lastCallbackAt;
 
   // UHF扫描相关
   final List<String> _uhfScannedTags = [];
@@ -76,17 +79,37 @@ class _PluginTestPageState extends State<PluginTestPage> {
 
   void _toggleContinuousLocation() {
     if (_locationSubscription == null) {
-      final tracking = _locationHelper.startTracking();
-      _locationSubscription = tracking.stream.listen((location) {
+      _continuousHandle = _locationHelper.startTracking();
+      _locationSubscription = _continuousHandle!.stream.listen((location) {
+        // ignore: avoid_print
+        print('[PluginTestPage] 收到定位: ${location['latitude']}, ${location['longitude']}');
         if (mounted) {
           setState(() {
             _locationResult = location;
+            _callbackCount += 1;
+            _lastCallbackAt = DateTime.now();
           });
         }
       });
+      if (mounted) {
+        setState(() {});
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('已开启持续定位')),
+        );
+      }
     } else {
       _locationSubscription?.cancel();
       _locationSubscription = null;
+      _continuousHandle?.stopTracking();
+      _continuousHandle = null;
+      _callbackCount = 0;
+      _lastCallbackAt = null;
+      if (mounted) {
+        setState(() {});
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('已停止持续定位')),
+        );
+      }
     }
   }
 
@@ -137,7 +160,7 @@ class _PluginTestPageState extends State<PluginTestPage> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 4,
+      length: 1,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('插件测试'),
@@ -155,26 +178,19 @@ class _PluginTestPageState extends State<PluginTestPage> {
             indicatorColor: Color(0xFF29A8FF),
             indicatorWeight: 3,
             tabs: [
-            //   Tab(text: 'AGPS定位'),
-            //   Tab(text: 'UHF扫描'),
-            //   Tab(text: '条码扫描'),
+              Tab(text: 'AGPS定位'),
             ],
           ),
         ),
         body: TabBarView(
           children: [
-            // AGPS定位页面
-            // _buildLocationPage(),
-            // // UHF扫描页面
-            // _buildUHFPage(),
-            // // 条码扫描页面
-            // _buildBarcodePage(),
+            _buildLocationPage(),
           ],
         ),
       ),
     );
   }
-
+  
   Widget _buildLocationPage() {
     return Column(
       children: [
@@ -184,13 +200,29 @@ class _PluginTestPageState extends State<PluginTestPage> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               ElevatedButton(
-                onPressed: _isLocationLoading ? null : _getSingleLocation,
-                child: Text(_isLocationLoading ? '定位中...' : '单次定位'),
+                onPressed: (_isLocationLoading || _locationSubscription != null)
+                    ? null
+                    : _getSingleLocation,
+                child: Text(
+                  _locationSubscription != null
+                      ? '单次定位(禁用)'
+                      : (_isLocationLoading ? '定位中...' : '单次定位'),
+                ),
               ),
               ElevatedButton(
                 onPressed: _toggleContinuousLocation,
                 child: Text(_locationSubscription == null ? '持续定位' : '停止定位'),
               ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('累计回调: $_callbackCount'),
+              Text('最近: ${_lastCallbackAt != null ? _formatTime(_lastCallbackAt!) : '-'}'),
             ],
           ),
         ),
@@ -218,6 +250,11 @@ class _PluginTestPageState extends State<PluginTestPage> {
         ),
       ],
     );
+  }
+
+  String _formatTime(DateTime dt) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${two(dt.hour)}:${two(dt.minute)}:${two(dt.second)}';
   }
 
   Widget _buildLocationItem(String label, dynamic value) {

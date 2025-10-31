@@ -1,10 +1,11 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_baidu_mapapi_base/flutter_baidu_mapapi_base.dart';
 import 'package:flutter_bmflocation/flutter_bmflocation.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:tj_tms_mobile/services/foreground_service_manager.dart';
 import 'location_config.dart';
-import 'dart:async';
 
 class LocationService {
   static final LocationService _instance = LocationService._internal();
@@ -23,121 +24,121 @@ class LocationService {
       return;
     }
 
-    // 请求设备权限
+    // 权限与隐私
     await requestLocationPermission();
-
-    // 设置隐私政策同意
     _locationPlugin.setAgreePrivacy(true);
     BMFMapSDK.setAgreePrivacy(true);
 
     if (Platform.isIOS) {
-      // 设置iOS AK
       _locationPlugin.authAK('YOUR_IOS_AK');
-      BMFMapSDK.setApiKeyAndCoordType('YOUR_IOS_AK', BMF_COORD_TYPE.BD09LL);
     } else if (Platform.isAndroid) {
-      // 设置Android AK
       BMFMapSDK.setCoordType(BMF_COORD_TYPE.BD09LL);
     }
-
-    _locationPlugin.getApiKeyCallback(callback: (String result) {
-      print('鉴权结果：' + result);
-    });
 
     _isInitialized = true;
   }
 
   Future<bool> requestLocationPermission() async {
-    if (kIsWeb) return true;  // 判断是否是web平台, 如果是web平台，不执行权限检查
-    
+    if (kIsWeb) return true;  // web 不检查
+
+    // 前台定位
     var status = await Permission.location.status;
-    if (status == PermissionStatus.granted) {
-      return true;
-    } else {
+    if (status != PermissionStatus.granted) {
       status = await Permission.location.request();
-      return status == PermissionStatus.granted;
+      if (status != PermissionStatus.granted) return false;
     }
+
+    // Android 10+ 后台定位 & Android 13+ 通知
+    if (Platform.isAndroid) {
+      final bg = await Permission.locationAlways.status;
+      if (bg != PermissionStatus.granted) {
+        await Permission.locationAlways.request();
+      }
+      final notify = await Permission.notification.status;
+      if (notify != PermissionStatus.granted) {
+        await Permission.notification.request();
+      }
+    }
+
+    return true;
   }
 
-  // 获取单次位置
+  // 获取单次位置（flutter_bmflocation）
   Future<Map<String, dynamic>?> getSingleLocation() async {
-    Completer<Map<String, dynamic>?>? completer;
+    Completer<Map<String, dynamic>>? completer;
     try {
-      // 设置定位参数
       final androidOptions = LocationConfig.getAndroidOptions();
       final iosOptions = LocationConfig.getIOSOptions();
       await _locationPlugin.prepareLoc(androidOptions.getMap(), iosOptions.getMap());
 
-      // 创建一个Completer来等待位置结果
-      completer = Completer<Map<String, dynamic>?>();
+      completer = Completer<Map<String, dynamic>>();
 
       if (Platform.isIOS) {
-        // 设置单次定位回调
         _locationPlugin.singleLocationCallback(callback: (BaiduLocation result) {
           if (!completer!.isCompleted) {
             completer.complete(Map<String, dynamic>.from(result.getMap()));
           }
         });
-
-        // 开始单次定位
         final success = await _locationPlugin.singleLocation(<String, dynamic>{
           'isReGeocode': true,
           'isNetworkState': true
         });
-
         if (!success && !completer.isCompleted) {
-          completer.complete(null);
+          return null;
         }
       } else {
-        // Android需要先设置连续定位回调，然后启动定位
         _locationPlugin.seriesLocationCallback(callback: (BaiduLocation result) {
           if (!completer!.isCompleted) {
             completer.complete(Map<String, dynamic>.from(result.getMap()));
-            _locationPlugin.stopLocation(); // 获取到位置后停止定位
+            _locationPlugin.stopLocation();
           }
         });
-
         final success = await _locationPlugin.startLocation();
-        if (!success && !completer.isCompleted) {
-          completer.complete(null);
-        }
+        if (!success) return null;
       }
 
-      // 等待位置结果，设置超时时间为20秒（弱网/室内首次定位更稳）
       return await completer.future.timeout(
         const Duration(seconds: 20),
         onTimeout: () {
           _locationPlugin.stopLocation();
-          // 确保Completer被完成，避免内存泄漏
-          if (!completer!.isCompleted) {
-            completer.complete(null);
-          }
-          return null;
+          return <String, dynamic>{};
         },
       );
     } catch (e) {
+      // ignore: avoid_print
       print('Error getting single location: $e');
-      // 确保Completer被完成，避免内存泄漏
-      if (completer != null && !completer.isCompleted) {
-        completer.complete(null);
-      }
       return null;
     }
   }
 
-  // 开始连续位置更新
+  // 开始连续位置更新（flutter_bmflocation）
   void startLocationUpdates({
     required Function(Map<String, dynamic>) onLocationUpdate,
   }) {
-    // 设置定位参数
-    final androidOptions = LocationConfig.getAndroidOptions();
-    final iosOptions = LocationConfig.getIOSOptions();
-    _locationPlugin.prepareLoc(androidOptions.getMap(), iosOptions.getMap());
-
-    // 先注册回调，避免丢失首次回调
-    _locationPlugin.seriesLocationCallback(callback: (result) {
+    // 先注册回调
+    _locationPlugin.seriesLocationCallback(callback: (BaiduLocation result) {
+      // ignore: avoid_print
+      print('[LocationService] 收到连续定位回调');
       onLocationUpdate(Map<String, dynamic>.from(result.getMap()));
     });
 
+    // 准备参数
+    final androidOptions = LocationConfig.getAndroidOptions();
+    final iosOptions = LocationConfig.getIOSOptions();
+    final Map<String, dynamic> androidMap = androidOptions.getMap();
+    androidMap['scanSpan'] = 3000; // 连续模式
+    androidMap['isOnceLocation'] = false;
+    androidMap['openGps'] = true;
+    androidMap['locationNotify'] = true;
+    androidMap['isLocationCacheEnable'] = false;
+    androidMap.remove('locationPurpose');
+
+    // 启动前台服务以提高保活
+    try {
+      ForegroundServiceManager.startForegroundService();
+    } catch (_) {}
+
+    _locationPlugin.prepareLoc(androidMap, iosOptions.getMap());
     _locationPlugin.startLocation();
   }
 
@@ -145,4 +146,4 @@ class LocationService {
   void stopLocationUpdates() {
     _locationPlugin.stopLocation();
   }
-} 
+}

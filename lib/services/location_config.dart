@@ -14,7 +14,6 @@ class LocationConfig {
       isNeedNewVersionRgc: false,
       isNeedLocationDescribe: false,
       openGps: true,
-      locationPurpose: BMFLocationPurpose.sport,
       coordType: BMFLocationCoordType.bd09ll
     );
   }

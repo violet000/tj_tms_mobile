@@ -12,6 +12,7 @@ import 'package:tj_tms_mobile/presentation/pages/outlets/box-handover/box_handov
 import 'package:tj_tms_mobile/presentation/pages/outlets/box-handover/box-handover-verify-success.dart';
 import 'package:tj_tms_mobile/presentation/pages/setting/network_settings_page.dart';
 import 'package:tj_tms_mobile/presentation/pages/personal/personal_detail_page.dart';
+import 'package:tj_tms_mobile/presentation/pages/plugins/plugin_test_page.dart';
 
 class AppRoutes {
   static const String login = '/login';

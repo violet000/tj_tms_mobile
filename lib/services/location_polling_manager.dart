@@ -14,12 +14,14 @@ class LocationPollingManager {
   LocationPollingManager._internal();
 
   final LocationManager _locationManager = LocationManager();
-  Timer? _locationTimer;
+  Timer? _locationTimer; // 不再使用周期性单次定位；保留字段以兼容停止逻辑
+  StreamSubscription<Map<String, dynamic>>? _locationSubscription;
   Map<String, dynamic>? _currentLocation;
   bool _isPolling = false;
   int _pollingInterval = LocationPollingConfig.defaultPollingInterval;
   Service9087? _service9087;
   Map<String, dynamic> _deviceInfo = <String, dynamic>{};
+  DateTime? _lastUploadAt;
 
   Function(Map<String, dynamic>)? _onLocationUpdate;
   Function(String)? _onError;
@@ -37,6 +39,11 @@ class LocationPollingManager {
       try {
         final int saved = await LocationPollingConfig.getSavedPollingInterval();
         _pollingInterval = saved;
+        // 若历史配置过大，自动降到30秒，贴合插件 scanSpan=30s
+        if (_pollingInterval > 60) {
+          _pollingInterval = 30;
+          await LocationPollingConfig.setPollingInterval(_pollingInterval);
+        }
       } catch (_) {}
       _loadDeviceInfo();
       _service9087 = await Service9087.create();
@@ -50,7 +57,6 @@ class LocationPollingManager {
   Future<void> reloadService() async {
     try {
       _service9087 = await Service9087.create();
-      AppLogger.info('LocationPollingManager 已重新加载 Service9087');
     } catch (e) {
       AppLogger.error('重新加载 Service9087 失败: $e');
     }
@@ -73,7 +79,6 @@ class LocationPollingManager {
   // 启动位置轮询
   void startPolling() {
     if (_isPolling) {
-      AppLogger.info('位置轮询已在运行中，跳过启动');
       return;
     }
 
@@ -83,31 +88,30 @@ class LocationPollingManager {
     }
 
     _isPolling = true;
-    AppLogger.info('开始位置轮询，间隔: ${_pollingInterval}秒');
-
     // 启动前台服务以保持后台运行
     _startForegroundService();
-
-    // 获取一次位置
-    _getCurrentLocation();
-
-    // 设置定时器
-    _locationTimer =
-        Timer.periodic(Duration(seconds: _pollingInterval), (timer) {
-      AppLogger.info('定时器触发，获取位置信息');
-      _getCurrentLocation();
+    // 切换为插件级连续定位：订阅持续回调，按间隔做节流上送
+    _locationSubscription = _locationManager
+        .startContinuousLocation()
+        .listen((location) {
+      _currentLocation = location;
+      final now = DateTime.now();
+      if (_lastUploadAt == null ||
+          now.difference(_lastUploadAt!).inSeconds >= _pollingInterval) {
+        _lastUploadAt = now;
+        _processLocationData(location);
+        _onLocationUpdate?.call(location);
+      }
+    }, onError: (Object e) {
+      AppLogger.error('连续定位回调异常: $e');
+      _onError?.call('连续定位回调异常: $e');
     });
   }
 
   // 启动前台服务
   Future<void> _startForegroundService() async {
     try {
-      final success = await ForegroundServiceManager.startForegroundService();
-      if (success) {
-        AppLogger.info('前台服务启动成功');
-      } else {
-        AppLogger.warning('前台服务启动失败');
-      }
+      await ForegroundServiceManager.startForegroundService();
     } catch (e) {
       AppLogger.error('启动前台服务异常: $e');
     }
@@ -116,14 +120,14 @@ class LocationPollingManager {
   // 停止位置轮询
   void stopPolling() {
     if (!_isPolling) {
-      AppLogger.info('位置轮询未在运行，无需停止');
       return;
     }
     _locationTimer?.cancel();
     _locationTimer = null;
+    _locationSubscription?.cancel();
+    _locationSubscription = null;
+    _locationManager.stopContinuousLocation();
     _isPolling = false;
-    AppLogger.info('位置轮询已停止');
-
     // 停止前台服务
     _stopForegroundService();
   }
@@ -142,45 +146,11 @@ class LocationPollingManager {
     try {
       await LocationPollingConfig.setPollingInterval(seconds);
       _pollingInterval = seconds;
-      if (_isPolling) {
-        // 正在轮询时仅重置定时器，避免前台服务的重复 stop/start 造成竞态
-        _locationTimer?.cancel();
-        _locationTimer = Timer.periodic(Duration(seconds: _pollingInterval), (timer) {
-          AppLogger.info('定时器触发，获取位置信息');
-          _getCurrentLocation();
-        });
-      }
+      // 连续定位场景仅更新节流门限时间点
+      _lastUploadAt = null;
     } catch (e) {
       AppLogger.error('设置轮询间隔失败: $e');
       _onError?.call('设置轮询间隔失败: $e');
-    }
-  }
-
-  // 获取当前位置
-  Future<void> _getCurrentLocation() async {
-    try {
-      final location = await _locationManager.getSingleLocation();
-      if (location != null) {
-        _currentLocation = location;
-        _processLocationData(location);
-        _onLocationUpdate?.call(location);
-      } else {
-        _uploadHeartbeat();
-      }
-    } catch (e) {
-      AppLogger.error('获取位置失败: $e');
-      _onError?.call('获取位置失败: $e');
-      // 发生异常时也上传心跳包
-      _uploadHeartbeat();
-    }
-  }
-
-  // 上传心跳包
-  Future<void> _uploadHeartbeat() async {
-    try {
-      AppLogger.info('上传心跳包');
-    } catch (e) {
-      AppLogger.error('心跳包上传失败: $e');
     }
   }
 
@@ -219,12 +189,7 @@ class LocationPollingManager {
         }
       } catch (e) {
         retryCount++;
-        if (retryCount >= maxRetries) {
-          _onError?.call('位置数据上传失败: $e');
-        } else {
-          final delaySeconds = retryCount * 3;
-          await Future<void>.delayed(Duration(seconds: delaySeconds));
-        }
+        AppLogger.error('上送失败(retry=$retryCount): $e');
       }
     }
   }

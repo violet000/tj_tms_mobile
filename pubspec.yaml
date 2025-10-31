@@ -32,9 +32,8 @@ dependencies:
   syncfusion_flutter_datagrid: ^20.2.49
   flutter_easyloading: ^3.0.5
   shared_preferences: ^2.0.15
-  
-  flutter_bmflocation:
-    path: ../flutter_bmflocation/
+  geolocator: ^10.1.0
+  flutter_bmflocation: 3.1.0+1
 
 dev_dependencies:
   flutter_test:

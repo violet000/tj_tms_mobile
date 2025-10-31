@@ -296,10 +296,10 @@ packages:
   flutter_bmflocation:
     dependency: "direct main"
     description:
-      path: "../flutter_bmflocation"
-      relative: true
-    source: path
-    version: "3.2.0"
+      name: flutter_bmflocation
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "3.1.0+1"
   flutter_easyloading:
     dependency: "direct main"
     description:
@@ -380,6 +380,48 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "3.2.0"
+  geolocator:
+    dependency: "direct main"
+    description:
+      name: geolocator
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "10.1.1"
+  geolocator_android:
+    dependency: transitive
+    description:
+      name: geolocator_android
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "4.4.1"
+  geolocator_apple:
+    dependency: transitive
+    description:
+      name: geolocator_apple
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "2.3.9"
+  geolocator_platform_interface:
+    dependency: transitive
+    description:
+      name: geolocator_platform_interface
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "4.1.0"
+  geolocator_web:
+    dependency: transitive
+    description:
+      name: geolocator_web
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "2.2.1"
+  geolocator_windows:
+    dependency: transitive
+    description:
+      name: geolocator_windows
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.2.3"
   glob:
     dependency: transitive
     description:
@@ -784,6 +826,13 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.9.1"
+  sprintf:
+    dependency: transitive
+    description:
+      name: sprintf
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "7.0.0"
   stack_trace:
     dependency: transitive
     description:
@@ -861,6 +910,13 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "2.2.0"
+  uuid:
+    dependency: transitive
+    description:
+      name: uuid
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "4.1.0"
   vector_math:
     dependency: transitive
     description:

@@ -33,6 +33,7 @@ class MainActivity : FlutterActivity() {
     // 系统服务通道
     private lateinit var batteryOptimizationChannel: MethodChannel
     private lateinit var appKeepAliveChannel: MethodChannel
+    private lateinit var foregroundLocationChannel: MethodChannel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -136,6 +137,26 @@ class MainActivity : FlutterActivity() {
                 "isNotificationEnabled" -> result.success(isNotificationEnabled())
                 "openNotificationSettings" -> {
                     openNotificationSettings()
+                    result.success(null)
+                }
+                else -> result.notImplemented()
+            }
+        }
+
+        // 前台定位服务MethodChannel
+        foregroundLocationChannel = MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "com.zijin.tj_tms_mobile/foreground_location"
+        )
+        foregroundLocationChannel.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "startForegroundService" -> {
+                    // title/content 当前版本前台服务内部固定文案，如需定制可在服务内扩展
+                    LocationForegroundService.startService(this)
+                    result.success(null)
+                }
+                "stopForegroundService" -> {
+                    LocationForegroundService.stopService(this)
                     result.success(null)
                 }
                 else -> result.notImplemented()
