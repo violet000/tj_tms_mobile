@@ -143,9 +143,11 @@ class BatteryOptimizationAutoDialog {
   
   /// 请求电池优化设置
   static Future<void> _requestBatteryOptimization(BuildContext context) async {
+    // 预先获取 ScaffoldMessenger，避免在异步回调中进行祖先查找
+    final messenger = ScaffoldMessenger.of(context);
     try {
       // 显示加载提示
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(
           content: Row(
             children: [
@@ -169,7 +171,7 @@ class BatteryOptimizationAutoDialog {
       Future.delayed(const Duration(seconds: 3), () async {
         final bool isIgnoring = await BatteryOptimizationService.isIgnoringBatteryOptimizations();
         if (isIgnoring) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          messenger.showSnackBar(
             SnackBar(
               content: Row(
                 children: [
@@ -183,7 +185,7 @@ class BatteryOptimizationAutoDialog {
             ),
           );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
+          messenger.showSnackBar(
             SnackBar(
               content: Row(
                 children: [
@@ -200,7 +202,7 @@ class BatteryOptimizationAutoDialog {
       });
       
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(
           content: Text('设置失败: $e'),
           backgroundColor: Colors.red,
