@@ -25,7 +25,10 @@ class LocationService {
     }
 
     // 权限与隐私
-    await requestLocationPermission();
+    final bool granted = await requestLocationPermission();
+    if (!granted) {
+      return;
+    }
     _locationPlugin.setAgreePrivacy(true);
     BMFMapSDK.setAgreePrivacy(true);
 
@@ -48,16 +51,18 @@ class LocationService {
       if (status != PermissionStatus.granted) return false;
     }
 
-    // Android 10+ 后台定位 & Android 13+ 通知
-    if (Platform.isAndroid) {
-      final bg = await Permission.locationAlways.status;
-      if (bg != PermissionStatus.granted) {
-        await Permission.locationAlways.request();
-      }
-      final notify = await Permission.notification.status;
-      if (notify != PermissionStatus.granted) {
-        await Permission.notification.request();
-      }
+    // 后台定位
+    status = await Permission.locationAlways.status;
+    if (status != PermissionStatus.granted) {
+      status = await Permission.locationAlways.request();
+      if (status != PermissionStatus.granted) return false;
+    }
+
+    // 通知权限
+    status = await Permission.notification.status;
+    if (status != PermissionStatus.granted) {
+      status = await Permission.notification.request();
+      if (status != PermissionStatus.granted) return false;
     }
 
     return true;

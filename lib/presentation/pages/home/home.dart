@@ -7,7 +7,6 @@ import 'package:tj_tms_mobile/presentation/widgets/common/page_scaffold.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/error_page.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/logger.dart';
 import 'package:tj_tms_mobile/presentation/pages/personal/personal_center_page.dart';
-// import 'package:tj_tms_mobile/services/location_polling_manager.dart';
 import 'package:tj_tms_mobile/data/datasources/api/18082/service_18082.dart';
 import 'package:tj_tms_mobile/services/interval_manager.dart';
 import 'package:tj_tms_mobile/core/utils/location_helper.dart';
@@ -32,10 +31,6 @@ class _HomePageState extends State<HomePage>
   List<MenuItem> menus = [];
   bool _isInitialized = false; // 初始化状态
 
-  // 位置轮询相关
-  // final LocationPollingManager _locationPollingManager =
-  //     LocationPollingManager();
-
   // 持续定位相关
   final LocationHelper _locationHelper = LocationHelper();
   StreamSubscription<Map<String, dynamic>>? _locationSubscription;
@@ -43,13 +38,13 @@ class _HomePageState extends State<HomePage>
   Service9087? _service9087;
   Map<String, dynamic> _deviceInfo = <String, dynamic>{};
   DateTime? _lastUploadAt;
-  int _uploadInterval = 60; // 默认上传间隔30秒
+  int _uploadInterval = 60; // 默认上送间隔
 
   @override
   void initState() {
     super.initState();
+    AppLogger.info('HomePage initState');
 
-    // 注册应用生命周期监听
     WidgetsBinding.instance.addObserver(this);
 
     _animationController = AnimationController(
@@ -59,7 +54,6 @@ class _HomePageState extends State<HomePage>
     _fadeAnimation =
         Tween<double>(begin: 0.0, end: 1.0).animate(_animationController);
 
-    // 检查是否有传入的tab索引参数
     if (widget.arguments != null && widget.arguments!['selectedTab'] != null) {
       _selectedIndex = widget.arguments!['selectedTab'] as int;
     }
@@ -104,10 +98,13 @@ class _HomePageState extends State<HomePage>
           final String? paramValue = agpsData['paramValue']?.toString();
           final String? statement = agpsData['statement']?.toString();
           if (paramValue != null) {
-            final int interval = parseIntervalToSeconds(
+            int interval = parseIntervalToSeconds(
                 paramValue: paramValue, statement: statement ?? '');
+            interval = interval ~/ 2; // 基于该时间除以2
+            if (interval < 1) interval = 1; // 最小1秒
             await IntervalManager.setBothIntervals(interval);
             _uploadInterval = interval;
+            _lastUploadAt = null;
             // 同步设置看门狗间隔，使重启仅在需要上送的节奏附近发生
             LocationManager().setWatchdogIntervalSeconds(_uploadInterval);
             // await _startLocationPolling();
@@ -121,20 +118,18 @@ class _HomePageState extends State<HomePage>
       final current = saved ?? await IntervalManager.getDefaultInterval();
       await IntervalManager.setCurrentInterval(current);
       _uploadInterval = current;
+      _lastUploadAt = null;
       LocationManager().setWatchdogIntervalSeconds(_uploadInterval);
       if (saved != null && saved > 0) {
         await IntervalManager.updateLocationPollingConfig(saved);
       }
-      // await _startLocationPolling();
     } catch (e) {
-      AppLogger.error('加载AGPS间隔配置失败: $e');
-
-      // 异常情况下使用默认配置
       try {
         final saved = await IntervalManager.getAGPSInterval();
         final current = saved ?? await IntervalManager.getDefaultInterval();
         await IntervalManager.setCurrentInterval(current);
         _uploadInterval = current;
+        _lastUploadAt = null;
         LocationManager().setWatchdogIntervalSeconds(_uploadInterval);
         if (saved != null && saved > 0) {
           await IntervalManager.updateLocationPollingConfig(saved);
@@ -156,8 +151,8 @@ class _HomePageState extends State<HomePage>
       });
       _animationController.forward();
 
-      // 在UI初始化完成后再启动AGPS服务
-      _loadAGPSInterval();
+      // 在UI初始化完成后再启动AGPS服务（等待加载完成，确保间隔及时生效）
+      await _loadAGPSInterval();
 
       // 初始化定位服务
       await _initializeLocationService();
