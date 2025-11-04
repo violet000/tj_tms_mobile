@@ -34,6 +34,7 @@ class FaceLoginProvider extends ChangeNotifier {
   void clearData(int index) {
     _faceImages.remove(index);
     _usernames.remove(index);
+    _passwords.remove(index);
     _isFaceLogin.remove(index);
     notifyListeners();
   }

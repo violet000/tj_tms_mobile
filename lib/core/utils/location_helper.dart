@@ -35,20 +35,6 @@ class LocationHelper {
     }
   }
 
-  /// 返回包含位置信息和状态的 LocationResult 对象
-  Future<LocationResult> getLocation() async {
-    try {
-      if (!_isInitialized) {
-        await initialize();
-      }
-
-      final location = await _locationManager.getSingleLocation();
-      return LocationResult(location: location);
-    } catch (e) {
-      return LocationResult(error: e.toString());
-    }
-  }
-
   /// 返回包含位置流和停止方法的 ContinuousLocationResult 对象
   ContinuousLocationResult startTracking() {
     _locationSubscription?.cancel();

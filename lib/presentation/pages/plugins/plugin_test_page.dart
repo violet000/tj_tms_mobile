@@ -49,34 +49,6 @@ class _PluginTestPageState extends State<PluginTestPage> {
     await _locationHelper.initialize();
   }
 
-  Future<void> _getSingleLocation() async {
-    setState(() {
-      _isLocationLoading = true;
-      _locationResult = null;
-    });
-
-    try {
-      final result = await _locationHelper.getLocation();
-      setState(() {
-        _locationResult = result.location;
-        _isLocationLoading = false;
-      });
-
-      if (result.error != null && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('定位错误: ${result.error}')),
-        );
-      }
-    } catch (e) {
-      setState(() => _isLocationLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('定位异常: $e')),
-        );
-      }
-    }
-  }
-
   void _toggleContinuousLocation() {
     if (_locationSubscription == null) {
       _continuousHandle = _locationHelper.startTracking();
@@ -200,9 +172,7 @@ class _PluginTestPageState extends State<PluginTestPage> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               ElevatedButton(
-                onPressed: (_isLocationLoading || _locationSubscription != null)
-                    ? null
-                    : _getSingleLocation,
+                onPressed: null,
                 child: Text(
                   _locationSubscription != null
                       ? '单次定位(禁用)'

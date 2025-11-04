@@ -6,6 +6,7 @@ import 'package:flutter_bmflocation/flutter_bmflocation.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:tj_tms_mobile/services/foreground_service_manager.dart';
 import 'location_config.dart';
+import 'package:tj_tms_mobile/presentation/widgets/common/logger.dart';
 
 class LocationService {
   static final LocationService _instance = LocationService._internal();
@@ -29,6 +30,7 @@ class LocationService {
     if (!granted) {
       return;
     }
+    AppLogger.debug("----------------请求了位置权限");
     _locationPlugin.setAgreePrivacy(true);
     BMFMapSDK.setAgreePrivacy(true);
 
@@ -68,54 +70,6 @@ class LocationService {
     return true;
   }
 
-  // 获取单次位置（flutter_bmflocation）
-  Future<Map<String, dynamic>?> getSingleLocation() async {
-    Completer<Map<String, dynamic>>? completer;
-    try {
-      final androidOptions = LocationConfig.getAndroidOptions();
-      final iosOptions = LocationConfig.getIOSOptions();
-      await _locationPlugin.prepareLoc(androidOptions.getMap(), iosOptions.getMap());
-
-      completer = Completer<Map<String, dynamic>>();
-
-      if (Platform.isIOS) {
-        _locationPlugin.singleLocationCallback(callback: (BaiduLocation result) {
-          if (!completer!.isCompleted) {
-            completer.complete(Map<String, dynamic>.from(result.getMap()));
-          }
-        });
-        final success = await _locationPlugin.singleLocation(<String, dynamic>{
-          'isReGeocode': true,
-          'isNetworkState': true
-        });
-        if (!success && !completer.isCompleted) {
-          return null;
-        }
-      } else {
-        _locationPlugin.seriesLocationCallback(callback: (BaiduLocation result) {
-          if (!completer!.isCompleted) {
-            completer.complete(Map<String, dynamic>.from(result.getMap()));
-            _locationPlugin.stopLocation();
-          }
-        });
-        final success = await _locationPlugin.startLocation();
-        if (!success) return null;
-      }
-
-      return await completer.future.timeout(
-        const Duration(seconds: 20),
-        onTimeout: () {
-          _locationPlugin.stopLocation();
-          return <String, dynamic>{};
-        },
-      );
-    } catch (e) {
-      // ignore: avoid_print
-      print('Error getting single location: $e');
-      return null;
-    }
-  }
-
   // 开始连续位置更新（flutter_bmflocation）
   void startLocationUpdates({
     required Function(Map<String, dynamic>) onLocationUpdate,
@@ -132,10 +86,10 @@ class LocationService {
     final iosOptions = LocationConfig.getIOSOptions();
     final Map<String, dynamic> androidMap = androidOptions.getMap();
     androidMap['scanSpan'] = 3000; // 连续模式
-    androidMap['isOnceLocation'] = false;
+    androidMap['isOnceLocation'] = false; 
     androidMap['openGps'] = true;
-    androidMap['locationNotify'] = true;
-    androidMap['isLocationCacheEnable'] = false;
+    androidMap['locationNotify'] = true; 
+    androidMap['isLocationCacheEnable'] = false; 
     androidMap.remove('locationPurpose');
 
     // 启动前台服务以提高保活

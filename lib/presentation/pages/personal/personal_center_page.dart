@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/page_scaffold.dart';
 import 'package:tj_tms_mobile/presentation/state/providers/verify_token_provider.dart';
+import 'package:tj_tms_mobile/presentation/state/providers/face_login_provider.dart';
 import 'package:flutter/services.dart';
 import 'dart:io';
 import 'package:tj_tms_mobile/core/utils/util.dart' as app_utils;
 import 'package:tj_tms_mobile/services/interval_manager.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tj_tms_mobile/data/datasources/interceptor/dio_service.dart';
 
 class PersonalCenterPage extends StatefulWidget {
   const PersonalCenterPage({super.key});
@@ -178,14 +181,50 @@ class _PersonalCenterPageState extends State<PersonalCenterPage> {
             borderRadius: BorderRadius.circular(28),
           ),
         ),
-        onPressed: () {
-          SystemNavigator.pop(); // 退出APP
+        onPressed: () async {
+          await _handleLogout();
         },
         child: const Text('退出登录',
             style: TextStyle(
                 fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1)),
       ),
     );
+  }
+
+  /// 退出登录并清除所有数据
+  Future<void> _handleLogout() async {
+    try {
+      // 1. 清除 SharedPreferences 中的用户数据
+      final prefs = await SharedPreferences.getInstance();
+      
+      // 清除 token
+      await prefs.remove('access_token');
+      
+      // 清除间隔配置
+      await prefs.remove('agps_interval_seconds');
+      await prefs.remove('current_interval_seconds');
+      await prefs.remove('location_polling_interval_secs');
+      
+      // 2. 清除 VerifyTokenProvider 中的数据
+      final verifyTokenProvider =
+          Provider.of<VerifyTokenProvider>(context, listen: false);
+      verifyTokenProvider.clearToken();
+      
+      // 3. 清除 FaceLoginProvider 中的数据
+      final faceLoginProvider =
+          Provider.of<FaceLoginProvider>(context, listen: false);
+      faceLoginProvider.clearData(0);
+      faceLoginProvider.clearData(1);
+      
+      // 4. 清除所有 DioService 的 token
+      DioServiceManager().clearAccessTokenForAll();
+      
+      // 5. 退出APP
+      SystemNavigator.pop();
+    } catch (e) {
+      // 如果清除数据失败，仍然退出APP
+      SystemNavigator.pop();
+    }
   }
 
   Future<Widget> _buildDeviceInfoSection() async {
@@ -228,28 +267,6 @@ class _PersonalCenterPageState extends State<PersonalCenterPage> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   ),
                 )
-                             else if (_deviceInfo.isEmpty)
-                 Column(
-                   children: [
-                     FutureBuilder<int>(
-                       future: _getAGPSInterval(),
-                       builder: (context, snapshot) {
-                         if (snapshot.connectionState == ConnectionState.waiting) {
-                           return const Text('AGPS时间间隔：加载中...');
-                         }
-                         return Text('AGPS时间间隔：${snapshot.data ?? 0}秒');
-                       },
-                     ),
-                     const SizedBox(height: 10),
-                     Text(
-                       '无法获取设备信息',
-                       style: TextStyle(
-                         fontSize: 12,
-                         color: Colors.grey[500],
-                       ),
-                     )
-                   ],
-                 )
               else
                 ...await _buildDeviceInfoItems(),
             ],
@@ -257,14 +274,6 @@ class _PersonalCenterPageState extends State<PersonalCenterPage> {
         ),
       ),
     );
-  }
-
-  Future<int> _getAGPSInterval() async {
-    try {
-      return await IntervalManager.getEffectiveInterval();
-    } catch (e) {
-      return 0;
-    }
   }
 
   Future<List<Widget>> _buildDeviceInfoItems() async {

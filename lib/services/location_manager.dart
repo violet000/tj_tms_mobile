@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:tj_tms_mobile/presentation/widgets/common/logger.dart';
+
 import 'location_service.dart';
 
-// 提供高级位置操作的类
 class LocationManager {
   static final LocationManager _instance = LocationManager._internal();
   factory LocationManager() => _instance;
@@ -18,12 +18,6 @@ class LocationManager {
   // 初始化位置服务
   Future<void> initialize() async {
     await _locationService.initialize();
-  }
-
-  // 获取单次位置更新
-  // 返回一个Futur
-  Future<Map<String, dynamic>?> getSingleLocation() async {
-    return await _locationService.getSingleLocation();
   }
 
   // 开始连续位置更新

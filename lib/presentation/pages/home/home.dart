@@ -98,16 +98,14 @@ class _HomePageState extends State<HomePage>
           final String? paramValue = agpsData['paramValue']?.toString();
           final String? statement = agpsData['statement']?.toString();
           if (paramValue != null) {
-            int interval = parseIntervalToSeconds(
+            int initInterval = parseIntervalToSeconds(
                 paramValue: paramValue, statement: statement ?? '');
-            interval = interval ~/ 2; // 基于该时间除以2
+            int interval = initInterval ~/ 2; // 基于该时间除以2
             if (interval < 1) interval = 1; // 最小1秒
-            await IntervalManager.setBothIntervals(interval);
+            await IntervalManager.setBothIntervals(initInterval);
             _uploadInterval = interval;
             _lastUploadAt = null;
-            // 同步设置看门狗间隔，使重启仅在需要上送的节奏附近发生
             LocationManager().setWatchdogIntervalSeconds(_uploadInterval);
-            // await _startLocationPolling();
             return;
           }
         }
@@ -134,7 +132,6 @@ class _HomePageState extends State<HomePage>
         if (saved != null && saved > 0) {
           await IntervalManager.updateLocationPollingConfig(saved);
         }
-        // await _startLocationPolling();
       } catch (innerError) {
         AppLogger.error('启动位置轮询服务失败: $innerError');
       }
