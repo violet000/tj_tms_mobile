@@ -102,7 +102,8 @@ class _HomePageState extends State<HomePage>
                 paramValue: paramValue, statement: statement ?? '');
             int interval = initInterval ~/ 2; // 基于该时间除以2
             if (interval < 1) interval = 1; // 最小1秒
-            await IntervalManager.setBothIntervals(initInterval);
+            await IntervalManager.setBothIntervals(interval);
+            await IntervalManager.setInterfaceInterval(initInterval);
             _uploadInterval = interval;
             _lastUploadAt = null;
             LocationManager().setWatchdogIntervalSeconds(_uploadInterval);

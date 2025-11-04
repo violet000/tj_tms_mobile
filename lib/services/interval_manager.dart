@@ -6,6 +6,7 @@ import 'package:tj_tms_mobile/core/config/location_polling_config.dart';
 class IntervalManager {
   // 常量定义
   static const String agpsIntervalKey = 'agps_interval_seconds';
+  static const String interfaceIntervalKey = 'interface_interval_seconds';
   static const String currentIntervalKey = 'current_interval_seconds';
 
   /// 获取AGPS间隔值（从接口获取的值）
@@ -31,17 +32,28 @@ class IntervalManager {
     }
   }
 
+  /// 获取接口的间隔值
+  static Future<int?> getInterfaceInterval() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final interval = prefs.getInt(interfaceIntervalKey);
+      return interval;
+    } catch (e) {
+      return null;
+    }
+  }
+
   /// 获取有效的间隔值（优先使用AGPS值，否则使用当前值）
   static Future<int> getEffectiveInterval() async {
     try {
-      final agpsInterval = await getAGPSInterval();
+      final agpsInterval = await getInterfaceInterval();
       final currentInterval = await getCurrentInterval();
-      
+
       // 优先使用AGPS间隔值
       if (agpsInterval != null && agpsInterval > 0) {
         return agpsInterval;
       }
-      
+
       // 否则使用当前间隔值
       if (currentInterval != null && currentInterval > 0) {
         return currentInterval;
@@ -72,6 +84,16 @@ class IntervalManager {
     }
   }
 
+  // 设置接口的间隔值
+  static Future<void> setInterfaceInterval(int interval) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(interfaceIntervalKey, interval);
+    } catch (e) {
+      AppLogger.error('设置当前间隔值失败: $e');
+    }
+  }
+
   /// 同时设置AGPS和当前间隔值
   static Future<void> setBothIntervals(int interval) async {
     try {
@@ -87,7 +109,8 @@ class IntervalManager {
   /// 获取默认间隔值（从LocationPollingConfig）
   static Future<int> getDefaultInterval() async {
     try {
-      final defaultInterval = await LocationPollingConfig.getSavedPollingInterval();
+      final defaultInterval =
+          await LocationPollingConfig.getSavedPollingInterval();
       return defaultInterval as int;
     } catch (e) {
       AppLogger.error('获取默认间隔值失败: $e');
@@ -139,4 +162,4 @@ class IntervalManager {
       };
     }
   }
-} 
+}
