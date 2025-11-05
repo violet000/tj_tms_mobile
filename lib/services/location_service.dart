@@ -30,14 +30,13 @@ class LocationService {
     if (!granted) {
       return;
     }
-    AppLogger.debug("----------------请求了位置权限");
     _locationPlugin.setAgreePrivacy(true);
     BMFMapSDK.setAgreePrivacy(true);
 
     if (Platform.isIOS) {
-      _locationPlugin.authAK('YOUR_IOS_AK');
+      // 添加iOS的AK
     } else if (Platform.isAndroid) {
-      BMFMapSDK.setCoordType(BMF_COORD_TYPE.BD09LL);
+      BMFMapSDK.setCoordType(BMF_COORD_TYPE.COMMON);
     }
 
     _isInitialized = true;

@@ -39,8 +39,12 @@ class _PluginTestPageState extends State<PluginTestPage> {
 
   @override
   void dispose() {
+    // 只取消本页面的订阅，不释放 LocationHelper（单例，由应用生命周期管理）
     _locationSubscription?.cancel();
-    _locationHelper.dispose();
+    _locationSubscription = null;
+    _continuousHandle?.stopTracking();
+    _continuousHandle = null;
+    // 不调用 _locationHelper.dispose()，因为 LocationManager 是单例，可能被其他组件使用
     super.dispose();
   }
 

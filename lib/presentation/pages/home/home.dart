@@ -300,21 +300,17 @@ class _HomePageState extends State<HomePage>
 
   @override
   void dispose() {
-    // 移除应用生命周期监听
     WidgetsBinding.instance.removeObserver(this);
 
-    // 确保动画控制器正确释放
     if (_animationController.isAnimating) {
       _animationController.stop();
     }
     _animationController.dispose();
 
-    // 停止持续定位并清理资源
     _locationSubscription?.cancel();
     _locationSubscription = null;
     _continuousHandle?.stopTracking();
     _continuousHandle = null;
-    _locationHelper.dispose();
 
     super.dispose();
   }
@@ -326,7 +322,6 @@ class _HomePageState extends State<HomePage>
         if (menu.children != null) {
           _pages.add(_buildSubMenuPage(menu));
         } else if (menu.route != null) {
-          // TODO: 这里需要优化，如果路由是/personal_center_page，则直接跳转到PersonalCenterPage，否则跳转到buildPlaceholderPage
           if (menu.route == '/personal_center_page') {
             _pages.add(const PersonalCenterPage());
           } else {
