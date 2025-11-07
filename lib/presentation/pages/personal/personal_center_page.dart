@@ -8,6 +8,8 @@ import 'dart:io';
 import 'package:tj_tms_mobile/core/utils/util.dart' as app_utils;
 import 'package:tj_tms_mobile/services/interval_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tj_tms_mobile/core/utils/location_helper.dart';
+import 'package:tj_tms_mobile/services/foreground_service_manager.dart';
 import 'package:tj_tms_mobile/data/datasources/interceptor/dio_service.dart';
 
 class PersonalCenterPage extends StatefulWidget {
@@ -194,32 +196,17 @@ class _PersonalCenterPageState extends State<PersonalCenterPage> {
   /// 退出登录并清除所有数据
   Future<void> _handleLogout() async {
     try {
-      // 1. 清除 SharedPreferences 中的用户数据
       final prefs = await SharedPreferences.getInstance();
-      
-      // 清除 token
       await prefs.remove('access_token');
-      
-      // 清除间隔配置
       await prefs.remove('agps_interval_seconds');
       await prefs.remove('current_interval_seconds');
       await prefs.remove('location_polling_interval_secs');
-      
-      // 2. 清除 VerifyTokenProvider 中的数据
-      final verifyTokenProvider =
-          Provider.of<VerifyTokenProvider>(context, listen: false);
+      final verifyTokenProvider = Provider.of<VerifyTokenProvider>(context, listen: false);
       verifyTokenProvider.clearToken();
-      
-      // 3. 清除 FaceLoginProvider 中的数据
-      final faceLoginProvider =
-          Provider.of<FaceLoginProvider>(context, listen: false);
+      final faceLoginProvider = Provider.of<FaceLoginProvider>(context, listen: false);
       faceLoginProvider.clearData(0);
       faceLoginProvider.clearData(1);
-      
-      // 4. 清除所有 DioService 的 token
       DioServiceManager().clearAccessTokenForAll();
-      
-      // 5. 退出APP
       SystemNavigator.pop();
     } catch (e) {
       // 如果清除数据失败，仍然退出APP

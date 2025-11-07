@@ -161,8 +161,8 @@ class _BoxScanVerifySuccessPageState extends State<BoxScanVerifySuccessPage>
                           _buildInfoRow('交接时间', _getCurrentTime()),
                           const SizedBox(height: 12),
                           _buildInfoRow('交接状态', '已完成'),
-                          const SizedBox(height: 12),
-                          _buildInfoRow('验证方式', '人脸识别/密码验证'),
+                          // const SizedBox(height: 12),
+                          // _buildInfoRow('验证方式', '人脸识别/密码验证'),
                           const SizedBox(height: 12),
                           Consumer<TellerVerifyProvider>(
                             builder: (context, tellerVerifyProvider, child) {

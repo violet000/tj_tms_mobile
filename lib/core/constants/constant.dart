@@ -17,6 +17,15 @@ enum InOutStatus {
   }
 }
 
+/// 网点类型枚举
+enum PointType {
+  deliverPoint('交出机构'),
+  receivePoint('交入机构');
+
+  const PointType(this.displayName);
+  final String displayName;
+}
+
 // 任务状态枚举
 /// 状态码：1-未执行，2-执行中，3-执行完成，4-已取消，5-作业异常
 enum JobStatus {

@@ -81,7 +81,6 @@ class DioService {
           
           // 处理401认证失败，自动跳转到登录页面
           if (error.response?.statusCode == 401) {
-            AppLogger.info('检测到401认证失败，准备跳转到登录页面');
             _handleAuthFailure();
           }
           
@@ -94,13 +93,11 @@ class DioService {
   /// 设置 access_token
   void setAccessToken(String? token) {
     _accessToken = token;
-    AppLogger.info('设置 access_token: ${token != null ? '${token.substring(0, 10)}...' : 'null'}');
   }
 
   /// 清除 access_token
   void clearAccessToken() {
     _accessToken = null;
-    AppLogger.info('清除 access_token');
   }
 
   /// 获取当前的 access_token
@@ -118,7 +115,6 @@ class DioService {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('access_token');
-      AppLogger.info('已清除SharedPreferences中的token');
     } catch (e) {
       AppLogger.error('清除SharedPreferences中的token失败: $e');
     }
@@ -129,21 +125,12 @@ class DioService {
     // 使用全局导航器跳转到登录页面
     GlobalNavigator.navigateToLogin();
     
-    AppLogger.info('已清除token并跳转到登录页面，AGPS服务继续运行');
   }
 
   /// 确保位置轮询服务在认证失效时继续运行
   void _ensureLocationPollingContinues() {
     try {
       final locationPollingManager = LocationPollingManager();
-      
-      // 如果位置轮询服务正在运行，确保它继续运行
-      if (locationPollingManager.isPolling) {
-        AppLogger.info('AGPS位置轮询服务正在运行，确保继续运行');
-      } else {
-        // 如果位置轮询服务未运行，不自动启动，保持当前状态
-        AppLogger.info('AGPS位置轮询服务未运行，保持当前状态');
-      }
     } catch (e) {
       AppLogger.error('确保AGPS位置轮询服务继续运行时出错: $e');
     }
@@ -323,7 +310,6 @@ class DioServiceManager {
     for (var service in _services.values) {
       service.setAccessToken(token);
     }
-    AppLogger.info('为所有 DioService 设置 access_token');
   }
 
   /// 清除所有服务的 access_token
@@ -331,7 +317,6 @@ class DioServiceManager {
     for (var service in _services.values) {
       service.clearAccessToken();
     }
-    AppLogger.info('清除所有 DioService 的 access_token');
   }
 
   /// 获取所有服务实例
@@ -342,6 +327,5 @@ class DioServiceManager {
   /// 清除所有服务实例
   void clearAllServices() {
     _services.clear();
-    AppLogger.info('清除所有 DioService 实例');
   }
 }

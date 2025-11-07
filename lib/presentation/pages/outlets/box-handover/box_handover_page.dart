@@ -9,6 +9,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/blue_polygon_background.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/page_scaffold.dart';
 import 'package:tj_tms_mobile/core/constants/constant.dart';
+import 'package:tj_tms_mobile/core/utils/util.dart';
 
 class BoxHandoverPage extends StatefulWidget {
   const BoxHandoverPage({super.key});
@@ -27,13 +28,6 @@ class _BoxHandoverPageState extends State<BoxHandoverPage> {
   Future<List<Map<String, dynamic>>>? _linesFuture;
   int? _mode;
 
-  // 添加选中状态管理
-  Set<String> selectedDeliverPoints = {}; // 选中的出库网点 orgNo
-  Set<String> selectedReceivePoints = {}; // 选中的入库网点 orgNo
-  bool isDeliverAllSelected = false; // 出库全选状态
-  bool isReceiveAllSelected = false; // 入库全选状态
-  bool isDeliverEnabled = true; // 出库是否可用
-  bool isReceiveEnabled = true; // 入库是否可用
 
   @override
   void initState() {
@@ -122,15 +116,17 @@ class _BoxHandoverPageState extends State<BoxHandoverPage> {
   }
 
   // 获取分组后的网点列表
-  Map<String, List<Map<String, dynamic>>> _getGroupedPoints() {
+  Map<PointType, List<Map<String, dynamic>>> _getGroupedPoints() {
     if (selectedRoute == null) return {};
 
     // 安全获取 planDTOS 列表
     final List<dynamic>? planDTOS =
         selectedRoute!['planDTOS'] as List<dynamic>?;
     if (planDTOS == null || planDTOS.isEmpty) {
-      AppLogger.warning('selectedRoute 中的 planDTOS 为空');
-      return {'出库网点': [], '入库网点': []};
+      return {
+        PointType.deliverPoint: [],
+        PointType.receivePoint: [],
+      };
     }
 
     // 用 Map 存储网点，key 为 orgNo（唯一标识），避免重复
@@ -194,160 +190,27 @@ class _BoxHandoverPageState extends State<BoxHandoverPage> {
 
     // 将去重后的 Map 转为 List
     return {
-      '出库网点': deliverPointsMap.values.toList(),
-      '入库网点': receivePointsMap.values.toList(),
+      PointType.deliverPoint: deliverPointsMap.values.toList(),
+      PointType.receivePoint: receivePointsMap.values.toList(),
     };
   }
 
-  // 处理出库全选
-  void _handleDeliverAllSelected(bool? value) {
-    if (value == null) return;
-
-    setState(() {
-      if (value) {
-        // 全选出库网点
-        final groupedPoints = _getGroupedPoints();
-        final deliverPoints = groupedPoints['出库网点'] ?? [];
-        final selectableDeliverOrgNos = deliverPoints
-            .where((point) => point['status'] != true)
-            .map((point) => point['orgNo']?.toString())
-            .where((orgNo) => orgNo != null && orgNo.isNotEmpty)
-            .cast<String>()
-            .toSet();
-        selectedDeliverPoints = selectableDeliverOrgNos;
-        isDeliverAllSelected =
-            selectedDeliverPoints.length == selectableDeliverOrgNos.length;
-
-        // 禁用入库
-        isReceiveEnabled = false;
-        isReceiveAllSelected = false;
-        selectedReceivePoints.clear();
-      } else {
-        // 取消全选出库网点
-        selectedDeliverPoints.clear();
-        isDeliverAllSelected = false;
-
-        // 启用入库
-        isReceiveEnabled = true;
-      }
-    });
-  }
-
-  // 处理入库全选
-  void _handleReceiveAllSelected(bool? value) {
-    if (value == null) return;
-
-    setState(() {
-      if (value) {
-        // 全选入库网点
-        final groupedPoints = _getGroupedPoints();
-        final receivePoints = groupedPoints['入库网点'] ?? [];
-        final selectableReceiveOrgNos = receivePoints
-            .where((point) => point['status'] != true)
-            .map((point) => point['orgNo']?.toString())
-            .where((orgNo) => orgNo != null && orgNo.isNotEmpty)
-            .cast<String>()
-            .toSet();
-        selectedReceivePoints = selectableReceiveOrgNos;
-        isReceiveAllSelected =
-            selectedReceivePoints.length == selectableReceiveOrgNos.length;
-
-        // 禁用出库
-        isDeliverEnabled = false;
-        isDeliverAllSelected = false;
-        selectedDeliverPoints.clear();
-      } else {
-        // 取消全选入库网点
-        selectedReceivePoints.clear();
-        isReceiveAllSelected = false;
-
-        // 启用出库
-        isDeliverEnabled = true;
-      }
-    });
-  }
-
-  // 处理单个网点选中
-  void _handlePointSelected(String orgNo, bool isDeliver, bool? value) {
-    if (value == null) return;
-
-    setState(() {
-      if (isDeliver) {
-        if (value) {
-          selectedDeliverPoints.add(orgNo);
-          // 检查是否全选
-          final groupedPoints = _getGroupedPoints();
-          final deliverPoints = groupedPoints['出库网点'] ?? [];
-          final allDeliverOrgNos = deliverPoints
-              .where((point) => point['status'] != true)
-              .map((point) => point['orgNo']?.toString())
-              .where((orgNo) => orgNo != null && orgNo.isNotEmpty)
-              .cast<String>()
-              .toSet();
-          isDeliverAllSelected =
-              selectedDeliverPoints.length == allDeliverOrgNos.length;
-
-          // 禁用入库
-          isReceiveEnabled = false;
-          isReceiveAllSelected = false;
-          selectedReceivePoints.clear();
-        } else {
-          selectedDeliverPoints.remove(orgNo);
-          isDeliverAllSelected = false;
-
-          // 如果没有选中的出库网点，启用入库
-          if (selectedDeliverPoints.isEmpty) {
-            isReceiveEnabled = true;
-          }
-        }
-      } else {
-        if (value) {
-          selectedReceivePoints.add(orgNo);
-          // 检查是否全选
-          final groupedPoints = _getGroupedPoints();
-          final receivePoints = groupedPoints['入库网点'] ?? [];
-          final allReceiveOrgNos = receivePoints
-              .where((point) => point['status'] != true)
-              .map((point) => point['orgNo']?.toString())
-              .where((orgNo) => orgNo != null && orgNo.isNotEmpty)
-              .cast<String>()
-              .toSet();
-          isReceiveAllSelected =
-              selectedReceivePoints.length == allReceiveOrgNos.length;
-
-          // 禁用出库
-          isDeliverEnabled = false;
-          isDeliverAllSelected = false;
-          selectedDeliverPoints.clear();
-        } else {
-          selectedReceivePoints.remove(orgNo);
-          isReceiveAllSelected = false;
-
-          // 如果没有选中的入库网点，启用出库
-          if (selectedReceivePoints.isEmpty) {
-            isDeliverEnabled = true;
-          }
-        }
-      }
-    });
-  }
 
   // 构建网点项
   Widget _buildPointItem(Map<String, dynamic> point) {
-    final String? orgNo = point['orgNo']?.toString();
-    final bool isDeliver = point['operationType'] == InOutStatus.outlet.code;
-    final bool isSelected = isDeliver
-        ? selectedDeliverPoints.contains(orgNo)
-        : selectedReceivePoints.contains(orgNo);
     final bool isCompleted = point['status'] == true;
-    final bool isEnabled =
-        (isDeliver ? isDeliverEnabled : isReceiveEnabled) && !isCompleted;
 
     return Container(
       padding: const EdgeInsets.all(8),
       color: Colors.transparent,
       child: InkWell(
-        onTap: () {},
+        onTap: () {
+          if (isCompleted) {
+            return;
+          }
+          // 处理单个网点数据
+          _handlePointClick(point);
+        },
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -358,60 +221,7 @@ class _BoxHandoverPageState extends State<BoxHandoverPage> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // 网点复选框
-              if (orgNo != null && orgNo.isNotEmpty)
-                MouseRegion(
-                  cursor: isEnabled
-                      ? SystemMouseCursors.click
-                      : SystemMouseCursors.basic,
-                  child: GestureDetector(
-                    onTap: isEnabled
-                        ? () =>
-                            _handlePointSelected(orgNo, isDeliver, !isSelected)
-                        : null,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      width: 18,
-                      height: 18,
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? const Color(0xFF29A8FF)
-                            : Colors.transparent,
-                        border: Border.all(
-                          color: isEnabled
-                              ? (isSelected
-                                  ? const Color(0xFF29A8FF)
-                                  : const Color(0xFFCCCCCC))
-                              : const Color(0xFFCCCCCC).withOpacity(0.3),
-                          width: 1.5,
-                        ),
-                        borderRadius: BorderRadius.circular(3),
-                        boxShadow: isSelected
-                            ? [
-                                BoxShadow(
-                                  color:
-                                      const Color(0xFF29A8FF).withOpacity(0.3),
-                                  blurRadius: 3,
-                                  offset: const Offset(0, 1),
-                                ),
-                              ]
-                            : null,
-                      ),
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 150),
-                        child: isSelected
-                            ? const Icon(
-                                Icons.check,
-                                key: ValueKey('checked'),
-                                size: 12,
-                                color: Colors.white,
-                              )
-                            : const SizedBox.shrink(key: ValueKey('unchecked')),
-                      ),
-                    ),
-                  ),
-                ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 12),
               Container(
                 width: 15,
                 height: 15,
@@ -434,10 +244,10 @@ class _BoxHandoverPageState extends State<BoxHandoverPage> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: isEnabled
+                        color: isCompleted
                             ? const Color.fromARGB(255, 69, 68, 68)
-                            : const Color.fromARGB(255, 69, 68, 68)
-                                .withOpacity(0.5),
+                                .withOpacity(0.5)
+                            : const Color.fromARGB(255, 69, 68, 68),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -445,10 +255,10 @@ class _BoxHandoverPageState extends State<BoxHandoverPage> {
                       point['address'].toString(),
                       style: TextStyle(
                         fontSize: 12,
-                        color: isEnabled
+                        color: isCompleted
                             ? const Color.fromARGB(255, 121, 120, 120)
-                            : const Color.fromARGB(255, 121, 120, 120)
-                                .withOpacity(0.5),
+                                .withOpacity(0.5)
+                            : const Color.fromARGB(255, 121, 120, 120),
                       ),
                     ),
                   ],
@@ -481,6 +291,39 @@ class _BoxHandoverPageState extends State<BoxHandoverPage> {
         ),
       ),
     );
+  }
+
+  // 处理网点点击
+  void _handlePointClick(Map<String, dynamic> point) async {
+    try {
+      EasyLoading.show(
+        status: '处理中...',
+        maskType: EasyLoadingMaskType.black,
+      );
+      final boxItems = await _processPointsData([point]);
+      // 将数据存入provider
+      _boxHandoverProvider.setBoxHandoverData(boxItems);
+      _boxHandoverProvider.setSelectedPoints([point]);
+      _boxHandoverProvider.setSelectedRoute(selectedRoute as Map<String, dynamic>);
+      _boxHandoverProvider.setOperationType(point['operationType'].toString());
+      if (boxItems['boxItems'] != null && (boxItems['boxItems'] as List).isNotEmpty) {
+        Navigator.pushNamed(context, '/outlets/box-handover-detail');
+      } else {
+        EasyLoading.showError('该网点没有款箱数据');
+      }
+    } catch (e) {
+      _boxHandoverProvider.setErrorMessage(e.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('数据处理失败：${e.toString()}'),
+          duration: const Duration(seconds: 3),
+          backgroundColor: const Color.fromARGB(255, 219, 3, 3),
+        ),
+      );
+    } finally {
+      _boxHandoverProvider.setProcessing(false);
+      EasyLoading.dismiss();
+    }
   }
 
   // 自定义header
@@ -521,12 +364,11 @@ class _BoxHandoverPageState extends State<BoxHandoverPage> {
                     isExpanded: true,
                     dropdownColor: Colors.white,
                     underline: const SizedBox(),
-                    icon:
-                        const Icon(Icons.arrow_drop_down, color: Colors.white),
+                    icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
                     selectedItemBuilder: (BuildContext context) {
                       return lines.map<Widget>((Map<String, dynamic> route) {
                         return Container(
-                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          padding: const EdgeInsets.symmetric(vertical: 2.0),
                           child: Row(
                             children: [
                               Expanded(
@@ -546,7 +388,7 @@ class _BoxHandoverPageState extends State<BoxHandoverPage> {
                               Expanded(
                                 flex: 1,
                                 child: Text(
-                                  route['carNo'].toString(),
+                                  getPlateNumber(route['carNo'].toString()),
                                   style: const TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
@@ -577,52 +419,81 @@ class _BoxHandoverPageState extends State<BoxHandoverPage> {
                       }).toList();
                     },
                     items: lines.map((Map<String, dynamic> route) {
+                      // 计算每个文本的长度，用于动态分配空间
+                      final lineNameLength = route['lineName'].toString().length;
+                      final carNoLength = getPlateNumber(route['carNo'].toString()).length;
+                      final escortNameLength = route['escortName'].toString().length;
+                      
+                      // 计算总长度
+                      final totalLength = lineNameLength + carNoLength + escortNameLength;
+                      
+                      // 根据文本长度按比例分配 flex 值，最小值为 1，确保每个区域都有空间
+                      final lineNameFlex = totalLength > 0 
+                          ? (lineNameLength * 20 / totalLength).ceil().clamp(1, 10) 
+                          : 1;
+                      final carNoFlex = totalLength > 0 
+                          ? (carNoLength * 20 / totalLength).ceil().clamp(1, 10) 
+                          : 1;
+                      final escortNameFlex = totalLength > 0 
+                          ? (escortNameLength * 20 / totalLength).ceil().clamp(1, 10) 
+                          : 1;
+                      
                       return DropdownMenuItem<Map<String, dynamic>>(
                         value: route,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 4.0),
+                          width: double.infinity,
                           child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Expanded(
-                                flex: 1,
-                                child: Text(
-                                  route['lineName'].toString(),
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.black87,
+                                flex: lineNameFlex,
+                                child: Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(2.0),
+                                  child: Text(
+                                    route['lineName'].toString(),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.black87,
+                                    ),
+                                    textAlign: TextAlign.left,
                                   ),
-                                  textAlign: TextAlign.left,
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
                                 ),
                               ),
+                              const SizedBox(width: 4),
                               Expanded(
-                                flex: 1,
-                                child: Text(
-                                  route['carNo'].toString(),
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.black87,
+                                flex: carNoFlex,
+                                child: Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(2.0),
+                                  child: Text(
+                                    getPlateNumber(route['carNo'].toString()),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.black87,
+                                    ),
+                                    textAlign: TextAlign.center,
                                   ),
-                                  textAlign: TextAlign.center,
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
                                 ),
                               ),
+                              const SizedBox(width: 4),
                               Expanded(
-                                flex: 2,
-                                child: Text(
-                                  route['escortName'].toString(),
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.black87,
+                                flex: escortNameFlex,
+                                child: Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(2.0),
+                                  child: Text(
+                                    route['escortName'].toString(),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.black87,
+                                    ),
+                                    textAlign: TextAlign.right,
                                   ),
-                                  textAlign: TextAlign.right,
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
                                 ),
                               ),
                             ],
@@ -633,13 +504,6 @@ class _BoxHandoverPageState extends State<BoxHandoverPage> {
                     onChanged: (Map<String, dynamic>? newValue) {
                       setState(() {
                         selectedRoute = newValue;
-                        // 重置选中状态
-                        selectedDeliverPoints.clear();
-                        selectedReceivePoints.clear();
-                        isDeliverAllSelected = false;
-                        isReceiveAllSelected = false;
-                        isDeliverEnabled = true;
-                        isReceiveEnabled = true;
                       });
                     },
                   ),
@@ -693,7 +557,7 @@ class _BoxHandoverPageState extends State<BoxHandoverPage> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildGroupHeader(entry.key, entry.value.length),
+              _buildGroupHeader(entry.key.displayName, entry.value.length),
               ...entry.value.map<Widget>((point) => _buildPointItem(point)),
             ],
           );
@@ -704,11 +568,6 @@ class _BoxHandoverPageState extends State<BoxHandoverPage> {
 
   // 构建标题(出入库网点)
   Widget _buildGroupHeader(String title, int count) {
-    final bool isDeliver = title == '出库网点';
-    final bool isAllSelected =
-        isDeliver ? isDeliverAllSelected : isReceiveAllSelected;
-    final bool isEnabled = isDeliver ? isDeliverEnabled : isReceiveEnabled;
-
     return Container(
       color: const Color(0xFFF5F5F5),
       child: Flex(
@@ -723,81 +582,21 @@ class _BoxHandoverPageState extends State<BoxHandoverPage> {
                 borderRadius: BorderRadius.circular(8)),
             child: Row(
               children: [
-                // 全选复选框
-                MouseRegion(
-                  cursor: isEnabled
-                      ? SystemMouseCursors.click
-                      : SystemMouseCursors.basic,
-                  child: GestureDetector(
-                    onTap: isEnabled
-                        ? () {
-                            if (isDeliver) {
-                              _handleDeliverAllSelected(!isAllSelected);
-                            } else {
-                              _handleReceiveAllSelected(!isAllSelected);
-                            }
-                          }
-                        : null,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      width: 20,
-                      height: 20,
-                      decoration: BoxDecoration(
-                        color:
-                            isAllSelected ? Colors.white : Colors.transparent,
-                        border: Border.all(
-                          color: isEnabled
-                              ? Colors.white
-                              : Colors.white.withOpacity(0.3),
-                          width: 2,
-                        ),
-                        borderRadius: BorderRadius.circular(4),
-                        boxShadow: isAllSelected
-                            ? [
-                                BoxShadow(
-                                  color: Colors.white.withOpacity(0.3),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ]
-                            : null,
-                      ),
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 150),
-                        child: isAllSelected
-                            ? const Icon(
-                                Icons.check,
-                                key: ValueKey('checked'),
-                                size: 14,
-                                color: Color(0xffB8C8E0),
-                              )
-                            : const SizedBox.shrink(key: ValueKey('unchecked')),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 4),
                 Text(
                   '$title:',
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: isEnabled
-                        ? const Color.fromARGB(255, 255, 255, 255)
-                        : const Color.fromARGB(255, 255, 255, 255)
-                            .withOpacity(0.5),
+                    color: Color.fromARGB(255, 255, 255, 255),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Text(
                   '$count个',
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: isEnabled
-                        ? const Color.fromARGB(255, 255, 255, 255)
-                        : const Color.fromARGB(255, 255, 255, 255)
-                            .withOpacity(0.5),
+                    color: Color.fromARGB(255, 255, 255, 255),
                   ),
                 )
               ],
@@ -806,72 +605,6 @@ class _BoxHandoverPageState extends State<BoxHandoverPage> {
         ],
       ),
     );
-  }
-
-  // 获取选中的网点数据
-  List<Map<String, dynamic>> _getSelectedPointsData() {
-    final groupedPoints = _getGroupedPoints();
-    final List<Map<String, dynamic>> selectedPoints = <Map<String, dynamic>>[];
-
-    // 获取选中的出库网点
-    for (final point in groupedPoints['出库网点'] ?? <Map<String, dynamic>>[]) {
-      if (point is Map<String, dynamic>) {
-        final String? orgNo = point['orgNo']?.toString();
-        if (orgNo != null && selectedDeliverPoints.contains(orgNo)) {
-          selectedPoints.add(point);
-        }
-      }
-    }
-
-    // 获取选中的入库网点
-    for (final point in groupedPoints['入库网点'] ?? <Map<String, dynamic>>[]) {
-      if (point is Map<String, dynamic>) {
-        final String? orgNo = point['orgNo']?.toString();
-        if (orgNo != null && selectedReceivePoints.contains(orgNo)) {
-          selectedPoints.add(point);
-        }
-      }
-    }
-
-    return selectedPoints;
-  }
-
-  // 处理选中的网点数据
-  void _processSelectedPoints() {
-    final selectedPoints = _getSelectedPointsData();
-    _executeProcessing(selectedPoints);
-  }
-
-  // 执行处理逻辑
-  Future<void> _executeProcessing(
-      List<Map<String, dynamic>> selectedPoints) async {
-    try {
-      EasyLoading.show(
-        status: '处理中...',
-        maskType: EasyLoadingMaskType.black,
-      );
-      final boxItems = await _processPointsData(selectedPoints);
-      // 将数据存入provider
-      _boxHandoverProvider.setBoxHandoverData(boxItems);
-      _boxHandoverProvider.setSelectedPoints(selectedPoints);
-      _boxHandoverProvider.setSelectedRoute(selectedRoute as Map<String, dynamic>);
-      _boxHandoverProvider.setOperationType(isReceiveEnabled ? InOutStatus.inlet.code.toString() : InOutStatus.outlet.code.toString());
-      if (boxItems.isNotEmpty) {
-        Navigator.pushNamed(context, '/outlets/box-handover-detail');
-      }
-    } catch (e) {
-      _boxHandoverProvider.setErrorMessage(e.toString());
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('数据处理失败：${e.toString()}'),
-          duration: const Duration(seconds: 3),
-          backgroundColor: const Color.fromARGB(255, 219, 3, 3),
-        ),
-      );
-    } finally {
-      _boxHandoverProvider.setProcessing(false);
-      EasyLoading.dismiss();
-    }
   }
 
   // 处理网点数据的具体逻辑
@@ -909,44 +642,6 @@ class _BoxHandoverPageState extends State<BoxHandoverPage> {
     return boxCollection;
   }
 
-  // 底部按钮控件
-  Widget footerButton() {
-    final selectedPoints = _getSelectedPointsData();
-    final bool hasSelection = selectedPoints.isNotEmpty;
-
-    return Container(
-      padding: const EdgeInsets.only(left: 6, right: 6, bottom: 6, top: 6),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: hasSelection ? _processSelectedPoints : null,
-              icon: const Icon(Icons.arrow_circle_right_outlined),
-              label:
-                  Text(hasSelection ? '下一步 (${selectedPoints.length})' : '下一步'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: hasSelection
-                    ? const Color.fromARGB(255, 2, 112, 215)
-                    : const Color.fromARGB(255, 200, 200, 200),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 15),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -966,8 +661,6 @@ class _BoxHandoverPageState extends State<BoxHandoverPage> {
                 headerRouteLine(lines),
                 // 客户列表信息
                 customerListWidget(),
-                // 底部按钮
-                footerButton(),
               ],
             )
           : const Center(child: Text('暂无数据')),

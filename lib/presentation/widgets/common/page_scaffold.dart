@@ -70,6 +70,14 @@ class PageScaffold extends StatelessWidget {
     );
   }
 
+  /// 截断标题，最多显示6个字
+  String _truncateTitle(String title) {
+    if (title.length <= 6) {
+      return title;
+    }
+    return '${title.substring(0, 6)}...';
+  }
+
   /// 构建标题区域
   Widget _buildHeader() {
     return Container(
@@ -124,7 +132,7 @@ class PageScaffold extends StatelessWidget {
           Center(
             child: titleWidget ??
                 Text(
-                  title ?? '',
+                  _truncateTitle(title ?? ''),
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     fontSize: 16,

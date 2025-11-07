@@ -110,15 +110,17 @@ class _BoxScanPageState extends State<BoxScanPage> {
   }
 
   // 获取分组后的网点列表
-  Map<String, List<Map<String, dynamic>>> _getGroupedPoints() {
+  Map<PointType, List<Map<String, dynamic>>> _getGroupedPoints() {
     if (selectedRoute == null) return {};
 
     // 安全获取 planDTOS 列表
     final List<dynamic>? planDTOS =
         selectedRoute!['planDTOS'] as List<dynamic>?;
     if (planDTOS == null || planDTOS.isEmpty) {
-      AppLogger.warning('selectedRoute 中的 planDTOS 为空');
-      return {'出库网点': [], '入库网点': []};
+      return {
+        PointType.deliverPoint: [],
+        PointType.receivePoint: [],
+      };
     }
 
     // 用 Map 存储网点，key 为 orgNo（唯一标识），避免重复
@@ -182,8 +184,8 @@ class _BoxScanPageState extends State<BoxScanPage> {
 
     // 将去重后的 Map 转为 List
     return {
-      '出库网点': deliverPointsMap.values.toList(),
-      '入库网点': receivePointsMap.values.toList(),
+      PointType.deliverPoint: deliverPointsMap.values.toList(),
+      PointType.receivePoint: receivePointsMap.values.toList(),
     };
   }
 
@@ -343,17 +345,20 @@ class _BoxScanPageState extends State<BoxScanPage> {
                     color: Colors.white.withOpacity(0.05),
                     // borderRadius: BorderRadius.circular(8),
                   ),
-                  child: DropdownButton<Map<String, dynamic>>(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minWidth: 800),
+                    child: DropdownButton<Map<String, dynamic>>(
                     value: selectedRoute,
                     isExpanded: true,
                     dropdownColor: Colors.white,
                     underline: const SizedBox(),
+                    menuMaxHeight: 400,
                     icon:
                         const Icon(Icons.arrow_drop_down, color: Colors.white),
                     selectedItemBuilder: (BuildContext context) {
                       return lines.map<Widget>((Map<String, dynamic> route) {
                         return Container(
-                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          padding: const EdgeInsets.symmetric(vertical: 2.0),
                           child: Row(
                             children: [
                               Expanded(
@@ -404,52 +409,81 @@ class _BoxScanPageState extends State<BoxScanPage> {
                       }).toList();
                     },
                     items: lines.map((Map<String, dynamic> route) {
+                      // 计算每个文本的长度，用于动态分配空间
+                      final lineNameLength = route['lineName'].toString().length;
+                      final carNoLength = getPlateNumber(route['carNo'].toString()).length;
+                      final escortNameLength = route['escortName'].toString().length;
+                      
+                      // 计算总长度
+                      final totalLength = lineNameLength + carNoLength + escortNameLength;
+                      
+                      // 根据文本长度按比例分配 flex 值，最小值为 1，确保每个区域都有空间
+                      final lineNameFlex = totalLength > 0 
+                          ? (lineNameLength * 20 / totalLength).ceil().clamp(1, 10) 
+                          : 1;
+                      final carNoFlex = totalLength > 0 
+                          ? (carNoLength * 20 / totalLength).ceil().clamp(1, 10) 
+                          : 1;
+                      final escortNameFlex = totalLength > 0 
+                          ? (escortNameLength * 20 / totalLength).ceil().clamp(1, 10) 
+                          : 1;
+                      
                       return DropdownMenuItem<Map<String, dynamic>>(
                         value: route,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 4.0),
+                          width: double.infinity,
                           child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Expanded(
-                                flex: 1,
-                                child: Text(
-                                  route['lineName'].toString(),
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.black87,
+                                flex: lineNameFlex,
+                                child: Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(2.0),
+                                  child: Text(
+                                    route['lineName'].toString(),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.black87,
+                                    ),
+                                    textAlign: TextAlign.left,
                                   ),
-                                  textAlign: TextAlign.left,
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
                                 ),
                               ),
+                              const SizedBox(width: 4),
                               Expanded(
-                                flex: 1,
-                                child: Text(
-                                  getPlateNumber(route['carNo'].toString()),
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.black87,
+                                flex: carNoFlex,
+                                child: Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(2.0),
+                                  child: Text(
+                                    getPlateNumber(route['carNo'].toString()),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.black87,
+                                    ),
+                                    textAlign: TextAlign.center,
                                   ),
-                                  textAlign: TextAlign.center,
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
                                 ),
                               ),
+                              const SizedBox(width: 4),
                               Expanded(
-                                flex: 2,
-                                child: Text(
-                                  route['escortName'].toString(),
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.black87,
+                                flex: escortNameFlex,
+                                child: Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(2.0),
+                                  child: Text(
+                                    route['escortName'].toString(),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.black87,
+                                    ),
+                                    textAlign: TextAlign.right,
                                   ),
-                                  textAlign: TextAlign.right,
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
                                 ),
                               ),
                             ],
@@ -462,6 +496,7 @@ class _BoxScanPageState extends State<BoxScanPage> {
                         selectedRoute = newValue;
                       });
                     },
+                    ),
                   ),
                 ),
               ),
@@ -513,7 +548,7 @@ class _BoxScanPageState extends State<BoxScanPage> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildGroupHeader(entry.key, entry.value.length),
+              _buildGroupHeader(entry.key.displayName, entry.value.length),
               ...entry.value.map<Widget>((point) => _buildPointItem(point)),
             ],
           );

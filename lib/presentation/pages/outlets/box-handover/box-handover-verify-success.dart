@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:tj_tms_mobile/presentation/state/providers/teller_verify_provider.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/page_scaffold.dart';
 import 'package:tj_tms_mobile/presentation/state/providers/box_handover_provider.dart';
+import 'package:tj_tms_mobile/presentation/state/providers/line_info_provider.dart';
 
 class BoxHandoverVerifySuccessPage extends StatefulWidget {
   const BoxHandoverVerifySuccessPage({super.key});
@@ -160,8 +161,8 @@ class _BoxScanVerifySuccessPageState extends State<BoxHandoverVerifySuccessPage>
                           _buildInfoRow('交接时间', _getCurrentTime()),
                           const SizedBox(height: 12),
                           _buildInfoRow('交接状态', '已完成'),
-                          const SizedBox(height: 12),
-                          _buildInfoRow('验证方式', '人脸识别/密码验证'),
+                          // const SizedBox(height: 12),
+                          // _buildInfoRow('验证方式', '人脸识别/密码验证'),
                           const SizedBox(height: 12),
                           Consumer<TellerVerifyProvider>(
                             builder: (context, tellerVerifyProvider, child) {
@@ -177,10 +178,11 @@ class _BoxScanVerifySuccessPageState extends State<BoxHandoverVerifySuccessPage>
                             },
                           ),
                           const SizedBox(height: 12),
-                          Consumer<BoxHandoverProvider>(
-                            builder: (context, boxHandoverProvider, child) {
+                          Consumer<LineInfoProvider>(
+                            builder: (context, lineInfoProvider, child) {
+                              final orgName = lineInfoProvider.getOrgName;
                               return _buildInfoRow(
-                                  '交接网点', boxHandoverProvider.selectedRoute['lineOrgName'].toString() ?? '暂无数据');
+                                  '交接网点', orgName.isNotEmpty ? orgName : '暂无数据');
                             },
                           ),
                         ],

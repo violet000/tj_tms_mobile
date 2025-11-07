@@ -502,6 +502,66 @@ class _PersonalDetailPageState extends State<PersonalDetailPage> {
     );
   }
 
+  // 显示放大头像对话框
+  void _showAvatarDialog() {
+    if (currentEscortInfo == null ||
+        currentEscortInfo['cocn'] == null ||
+        currentEscortInfo['cocn'].toString().isEmpty) {
+      return;
+    }
+
+    showDialog<void>(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: EdgeInsets.zero,
+          child: Stack(
+            children: [
+              Center(
+                child: InteractiveViewer(
+                  minScale: 0.5,
+                  maxScale: 4.0,
+                  child: Image.memory(
+                    base64Decode(currentEscortInfo['cocn'].toString()),
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: 300,
+                        height: 300,
+                        color: Colors.grey.shade100,
+                        child: Icon(
+                          Icons.person,
+                          size: 100,
+                          color: Colors.grey.shade400,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 40,
+                right: 20,
+                child: IconButton(
+                  icon: const Icon(
+                    Icons.close,
+                    color: Colors.white,
+                    size: 30,
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return PageScaffold(
@@ -532,46 +592,51 @@ class _PersonalDetailPageState extends State<PersonalDetailPage> {
                         horizontal: 20, vertical: 14),
                     child: Column(
                       children: [
-                        Container(
-                          width: 150,
-                          height: 150,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                                color: Colors.blue.shade200, width: 3),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.3),
-                                spreadRadius: 2,
-                                blurRadius: 1,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: ClipOval(
-                            child: currentEscortInfo != null &&
-                                    currentEscortInfo['cocn'] != null &&
-                                    currentEscortInfo['cocn']
-                                        .toString()
-                                        .isNotEmpty
-                                ? Image.memory(
-                                    base64Decode(
-                                        currentEscortInfo['cocn'].toString()),
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Container(
-                                        color: Colors.grey.shade100,
-                                        child: Icon(Icons.person,
-                                            size: 60,
-                                            color: Colors.grey.shade400),
-                                      );
-                                    },
-                                  )
-                                : Container(
-                                    color: Colors.grey.shade100,
-                                    child: Icon(Icons.person,
-                                        size: 60, color: Colors.grey.shade400),
-                                  ),
+                        GestureDetector(
+                          onTap: () {
+                            _showAvatarDialog();
+                          },
+                          child: Container(
+                            width: 150,
+                            height: 150,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                  color: Colors.blue.shade200, width: 3),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.3),
+                                  spreadRadius: 2,
+                                  blurRadius: 1,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: ClipOval(
+                              child: currentEscortInfo != null &&
+                                      currentEscortInfo['cocn'] != null &&
+                                      currentEscortInfo['cocn']
+                                          .toString()
+                                          .isNotEmpty
+                                  ? Image.memory(
+                                      base64Decode(
+                                          currentEscortInfo['cocn'].toString()),
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Container(
+                                          color: Colors.grey.shade100,
+                                          child: Icon(Icons.person,
+                                              size: 60,
+                                              color: Colors.grey.shade400),
+                                        );
+                                      },
+                                    )
+                                  : Container(
+                                      color: Colors.grey.shade100,
+                                      child: Icon(Icons.person,
+                                          size: 60, color: Colors.grey.shade400),
+                                    ),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 14),

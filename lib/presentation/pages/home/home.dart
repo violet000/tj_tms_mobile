@@ -43,7 +43,6 @@ class _HomePageState extends State<HomePage>
   @override
   void initState() {
     super.initState();
-    AppLogger.info('HomePage initState');
 
     WidgetsBinding.instance.addObserver(this);
 
@@ -172,7 +171,6 @@ class _HomePageState extends State<HomePage>
           LocationManager().setWatchdogIntervalSeconds(_uploadInterval);
         }
       } catch (e) {
-        AppLogger.warning('获取AGPS间隔失败，使用默认值: $e');
       }
 
       // 启动持续定位
@@ -234,8 +232,8 @@ class _HomePageState extends State<HomePage>
         if (latitude != null && longitude != null) {
           await _service9087?.sendGpsInfo(<String, dynamic>{
             'handheldNo': _deviceInfo['deviceId'],
-            'x': latitude,
-            'y': longitude,
+            'x': longitude,
+            'y': latitude,
             'timestamp': date.millisecondsSinceEpoch,
             'dateTime': formattedDateTime,
             'status': 'valid',

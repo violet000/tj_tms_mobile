@@ -83,7 +83,6 @@ class LocationPollingManager {
     }
 
     if (!LocationPollingConfig.enableLocationPolling) {
-      AppLogger.warning('位置轮询功能已禁用，无法启动');
       return;
     }
 
@@ -171,15 +170,15 @@ class LocationPollingManager {
 
     while (retryCount < maxRetries) {
       try {
-        final dynamic latitude = location['latitude'];
-        final dynamic longitude = location['longitude'];
+        final dynamic latitude = location['latitude']; // 经度
+        final dynamic longitude = location['longitude']; // 纬度
         final date = DateTime.now();
         final formattedDateTime = _formatDateTime(date);
         if (latitude != null && longitude != null) {
           await _service9087?.sendGpsInfo(<String, dynamic>{
             'handheldNo': _deviceInfo['deviceId'],
-            'x': latitude,
-            'y': longitude,
+            'x': longitude,
+            'y': latitude,
             'timestamp': date.millisecondsSinceEpoch,
             'dateTime': formattedDateTime,
             'status':

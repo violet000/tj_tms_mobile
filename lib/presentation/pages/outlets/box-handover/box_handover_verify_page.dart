@@ -509,7 +509,6 @@ class _BoxHandoverVerifyPageState extends State<BoxHandoverVerifyPage>
       final String? password = tellerProvider.getPassword(personIndex);
       final String? faceImage = tellerProvider.getFaceImage(personIndex);
 
-      // 验证规则：username必须存在，password或者faceImage其中满足一项就校验通过
       if (username == null || username.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('请输入柜员${i}的柜员号')),
@@ -553,6 +552,7 @@ class _BoxHandoverVerifyPageState extends State<BoxHandoverVerifyPage>
       }
 
       final String? isConsistent = args['isConsistent']?.toString();
+      final String? unrecognizedBox = args['unrecognizedBox']?.toString();
 
       if (implBoxDetail.isEmpty || outTre.isEmpty) {
         throw Exception('缺少参数');
@@ -630,6 +630,7 @@ class _BoxHandoverVerifyPageState extends State<BoxHandoverVerifyPage>
             'escortNo': escortNo,
             'deliver': deliver,
             'inconsistent': isConsistent,
+            'unrecognizedBox': unrecognizedBox?.split(',').toList(),
           });
           handoverSuccess = true;
         } catch (e) {

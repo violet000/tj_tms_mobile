@@ -177,17 +177,38 @@ class _AuthDialogState extends State<AuthDialog>
   Color _comparisonColor(String? expected, String? actual) {
     final String expectedTrimmed = (expected ?? '').trim();
     final String actualTrimmed = (actual ?? '').trim();
-    AppLogger.info('expectedTrimmed: $expectedTrimmed');
-    AppLogger.info('actualTrimmed: $actualTrimmed');
     if (actualTrimmed.isEmpty) {
       return Colors.red[700]!;
     }
     if (expectedTrimmed.isEmpty) {
       return Colors.red[700]!;
     }
-    return expectedTrimmed == actualTrimmed
-        ? Colors.green[700]!
-        : Colors.red[700]!;
+    // 完全相等：一致
+    if (expectedTrimmed == actualTrimmed) {
+      return Colors.green[700]!;
+    }
+
+    // 允许 expected 为多值（以 / 分隔），当 actual 的每一项均包含在 expected 集合中时也判为一致
+    final List<String> expectedParts = expectedTrimmed
+        .split('/')
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+    final List<String> actualParts = actualTrimmed
+        .split('/')
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+
+    if (expectedParts.isNotEmpty && actualParts.isNotEmpty) {
+      final Set<String> expectedSet = Set<String>.from(expectedParts);
+      final bool allActualInExpected = actualParts.every(expectedSet.contains);
+      if (allActualInExpected) {
+        return Colors.green[700]!;
+      }
+    }
+
+    return Colors.red[700]!;
   }
 
   Color _badgeBackground(Color base) {
@@ -285,7 +306,9 @@ class _AuthDialogState extends State<AuthDialog>
                   .toString()
               : null,
           'face': _faceImageBase641,
-          'handheldNo': _deviceInfo['deviceId'] ?? '',
+          // 'handheldNo': _deviceInfo['deviceId'] ?? '',
+          'handheldNo':
+              'c7aec416ab7f236a71495d2849a662229974bab16723e7a012e41d6998288001',
           'isImport': true
         },
         <String, dynamic>{
@@ -296,7 +319,9 @@ class _AuthDialogState extends State<AuthDialog>
                   .toString()
               : null,
           'face': _faceImageBase642,
-          'handheldNo': _deviceInfo['deviceId'] ?? '',
+          // 'handheldNo': _deviceInfo['deviceId'] ?? '',
+          'handheldNo':
+              'c7aec416ab7f236a71495d2849a662229974bab16723e7a012e41d6998288001',
           'isImport': false
         }
       ];
@@ -309,8 +334,6 @@ class _AuthDialogState extends State<AuthDialog>
             loginResult['retList'] as List<dynamic>?;
         _username1 = userList?[0]['userName'] as String?;
         _username2 = userList?[1]['userName'] as String?;
-
-        AppLogger.info('登录成功 - 用户1: $_username1, 用户2: $_username2');
 
         EasyLoading.dismiss();
         // 下一步
@@ -427,8 +450,34 @@ class _AuthDialogState extends State<AuthDialog>
       case AuthStep.vehicleVerify:
         return _isVehicleStepValid();
       case AuthStep.confirmVerify:
-        return true; // 确认步骤总是可以完成
+        final bool allMatched = _isBothConsistent(context);
+        if (allMatched) return true;
+        return (_selectedMismatchReason != null &&
+            _selectedMismatchReason!.trim().isNotEmpty);
     }
+  }
+
+  /// 判断车辆与人员是否都一致
+  bool _isBothConsistent(BuildContext context) {
+    // 人员一致性
+    final lineInfoProvider =
+        Provider.of<LineInfoProvider>(context, listen: false);
+    final String expectedEscort = (lineInfoProvider.escortName ?? '').trim();
+    final String actualEscort = ((_username1?.isNotEmpty ?? false) &&
+            (_username2?.isNotEmpty ?? false))
+        ? '${_username1}/${_username2}'
+        : (_username1?.trim() ?? '') + (_username2?.trim() ?? '').trim();
+    final Color peopleColor =
+        _comparisonColor(expectedEscort, actualEscort);
+
+    // 车辆一致性
+    final String expectedPlate =
+        getPlateNumber(widget.vehicleRfidExpected ?? '').toString();
+    final Color vehicleColor =
+        _comparisonColor(expectedPlate, _vehiclePlateNumber);
+
+    return peopleColor == Colors.green[700] &&
+        vehicleColor == Colors.green[700];
   }
 
   /// 判断登录步骤是否完成
@@ -550,11 +599,7 @@ class _AuthDialogState extends State<AuthDialog>
                 _vehiclePlateNumber = plate;
               });
             }
-          } else {
-            AppLogger.warning('查询车牌号失败: 未返回车辆列表');
           }
-        } else {
-          AppLogger.warning('查询车牌号失败: ${result['message']}');
         }
       }
     } catch (e) {
@@ -864,7 +909,8 @@ class _AuthDialogState extends State<AuthDialog>
                                     // 忽略错误
                                   }
                                   // 等待一小段时间后自动开始新的扫描
-                                  await Future<void>.delayed(const Duration(milliseconds: 100));
+                                  await Future<void>.delayed(
+                                      const Duration(milliseconds: 100));
                                   try {
                                     await controller.startScan();
                                     if (mounted) {
@@ -954,7 +1000,7 @@ class _AuthDialogState extends State<AuthDialog>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(
-                    width: 52,
+                    width: 32,
                     child: Text('车辆',
                         style: TextStyle(
                             fontSize: 14, fontWeight: FontWeight.w500)),
@@ -964,7 +1010,7 @@ class _AuthDialogState extends State<AuthDialog>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          mainAxisSize: MainAxisSize.min,
+                          mainAxisSize: MainAxisSize.max,
                           children: [
                             Container(
                               padding: const EdgeInsets.symmetric(
@@ -979,37 +1025,42 @@ class _AuthDialogState extends State<AuthDialog>
                                       fontSize: 14, color: Colors.black54)),
                             ),
                             const SizedBox(width: 6),
-                            GestureDetector(
-                              onTap: () => _showFullText(
-                                  '车辆原定',
-                                  getPlateNumber(
-                                      widget.vehicleRfidExpected ?? '')),
-                              child: Text(
-                                _middleEllipsis(
-                                            getPlateNumber(widget
-                                                        .vehicleRfidExpected ??
-                                                    '')
-                                                .toString(),
-                                            head: 6,
-                                            tail: 6)
-                                        .isNotEmpty
-                                    ? _middleEllipsis(
-                                        getPlateNumber(
-                                                widget.vehicleRfidExpected ??
-                                                    '')
-                                            .toString(),
-                                        head: 6,
-                                        tail: 6)
-                                    : 'null',
-                                style: const TextStyle(
-                                    fontSize: 14, color: Colors.black87),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => _showFullText(
+                                    '车辆原定',
+                                    getPlateNumber(
+                                        widget.vehicleRfidExpected ?? '')),
+                                child: Text(
+                                  _middleEllipsis(
+                                              getPlateNumber(widget
+                                                          .vehicleRfidExpected ??
+                                                      '')
+                                                  .toString(),
+                                              head: 6,
+                                              tail: 6)
+                                          .isNotEmpty
+                                      ? _middleEllipsis(
+                                          getPlateNumber(
+                                                  widget.vehicleRfidExpected ??
+                                                      '')
+                                              .toString(),
+                                          head: 6,
+                                          tail: 6)
+                                      : 'null',
+                                  style: const TextStyle(
+                                      fontSize: 14, color: Colors.black87),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  softWrap: false,
+                                ),
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 4),
                         Row(
-                          mainAxisSize: MainAxisSize.min,
+                          mainAxisSize: MainAxisSize.max,
                           children: [
                             Container(
                               padding: const EdgeInsets.symmetric(
@@ -1024,46 +1075,51 @@ class _AuthDialogState extends State<AuthDialog>
                                       fontSize: 14, color: Colors.blue)),
                             ),
                             const SizedBox(width: 6),
-                            GestureDetector(
-                              onTap: () =>
-                                  _showFullText('车辆实际', _vehiclePlateNumber),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    vertical: 4, horizontal: 8),
-                                decoration: BoxDecoration(
-                                  color: _badgeBackground(
-                                    _comparisonColor(
-                                        getPlateNumber(
-                                                widget.vehicleRfidExpected ??
-                                                    '')
-                                            .toString(),
-                                        _vehiclePlateNumber),
-                                  ),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: _comparisonColor(
-                                      getPlateNumber(
-                                              widget.vehicleRfidExpected ?? '')
-                                          .toString(),
-                                      _vehiclePlateNumber,
-                                    ).withOpacity(0.4),
-                                  ),
-                                ),
-                                child: Text(
-                                  _middleEllipsis(_vehiclePlateNumber,
-                                              head: 6, tail: 6)
-                                          .isNotEmpty
-                                      ? _middleEllipsis(_vehiclePlateNumber,
-                                          head: 6, tail: 6)
-                                      : 'null',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: _comparisonColor(
-                                      getPlateNumber(
-                                              widget.vehicleRfidExpected ?? '')
-                                          .toString(),
-                                      _vehiclePlateNumber,
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () =>
+                                    _showFullText('车辆实际', _vehiclePlateNumber),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 4, horizontal: 8),
+                                  decoration: BoxDecoration(
+                                    color: _badgeBackground(
+                                      _comparisonColor(
+                                          getPlateNumber(
+                                                  widget.vehicleRfidExpected ??
+                                                      '')
+                                              .toString(),
+                                          _vehiclePlateNumber),
                                     ),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: _comparisonColor(
+                                        getPlateNumber(
+                                                widget.vehicleRfidExpected ?? '')
+                                            .toString(),
+                                        _vehiclePlateNumber,
+                                      ).withOpacity(0.4),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    _middleEllipsis(_vehiclePlateNumber,
+                                                head: 6, tail: 6)
+                                            .isNotEmpty
+                                        ? _middleEllipsis(_vehiclePlateNumber,
+                                            head: 6, tail: 6)
+                                        : 'null',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: _comparisonColor(
+                                        getPlateNumber(
+                                                widget.vehicleRfidExpected ?? '')
+                                            .toString(),
+                                        _vehiclePlateNumber,
+                                      ),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    softWrap: false,
                                   ),
                                 ),
                               ),
@@ -1101,7 +1157,7 @@ class _AuthDialogState extends State<AuthDialog>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(
-                      width: 52,
+                      width: 32,
                       child: Text('人员',
                           style: TextStyle(
                               fontSize: 14, fontWeight: FontWeight.w500)),
@@ -1111,7 +1167,7 @@ class _AuthDialogState extends State<AuthDialog>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
-                            mainAxisSize: MainAxisSize.min,
+                            mainAxisSize: MainAxisSize.max,
                             children: [
                               Container(
                                 padding: const EdgeInsets.symmetric(
@@ -1126,21 +1182,26 @@ class _AuthDialogState extends State<AuthDialog>
                                         fontSize: 14, color: Colors.black54)),
                               ),
                               const SizedBox(width: 6),
-                              GestureDetector(
-                                onTap: () =>
-                                    _showFullText('人员原定', expectedDisplay),
-                                child: Text(
-                                  _middleEllipsis(expectedDisplay,
-                                      head: 6, tail: 6),
-                                  style: const TextStyle(
-                                      fontSize: 14, color: Colors.black87),
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () =>
+                                      _showFullText('人员原定', expectedDisplay),
+                                  child: Text(
+                                    _middleEllipsis(expectedDisplay,
+                                        head: 6, tail: 6),
+                                    style: const TextStyle(
+                                        fontSize: 14, color: Colors.black87),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    softWrap: false,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 4),
                           Row(
-                            mainAxisSize: MainAxisSize.min,
+                            mainAxisSize: MainAxisSize.max,
                             children: [
                               Container(
                                 padding: const EdgeInsets.symmetric(
@@ -1152,26 +1213,31 @@ class _AuthDialogState extends State<AuthDialog>
                                 ),
                                 child: const Text('实际',
                                     style: TextStyle(
-                                        fontSize: 10, color: Colors.blue)),
+                                        fontSize: 14, color: Colors.blue)),
                               ),
                               const SizedBox(width: 6),
-                              GestureDetector(
-                                onTap: () =>
-                                    _showFullText('人员实际', actualDisplay),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      vertical: 4, horizontal: 8),
-                                  decoration: BoxDecoration(
-                                    color: _badgeBackground(color),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                        color: color.withOpacity(0.4)),
-                                  ),
-                                  child: Text(
-                                    _middleEllipsis(actualDisplay,
-                                        head: 6, tail: 6),
-                                    style:
-                                        TextStyle(fontSize: 11, color: color),
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () =>
+                                      _showFullText('人员实际', actualDisplay),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 4, horizontal: 8),
+                                    decoration: BoxDecoration(
+                                      color: _badgeBackground(color),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                          color: color.withOpacity(0.4)),
+                                    ),
+                                    child: Text(
+                                      _middleEllipsis(actualDisplay,
+                                          head: 6, tail: 6),
+                                      style:
+                                          TextStyle(fontSize: 14, color: color),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      softWrap: false,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -1187,40 +1253,41 @@ class _AuthDialogState extends State<AuthDialog>
           ),
         ),
         const SizedBox(height: 16),
-        // 不一致原因下拉框
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey[300]!),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              isExpanded: true,
-              value: _selectedMismatchReason,
-              hint: const Text(
-                '请选择不一致原因',
-                style: TextStyle(fontSize: 12),
-              ),
-              items: _mismatchReasons
-                  .map(
-                    (reason) => DropdownMenuItem<String>(
-                      value: reason,
-                      child: Text(
-                        reason,
-                        style: const TextStyle(fontSize: 12),
+        // 不一致原因下拉框（仅在存在不一致时显示）
+        if (!_isBothConsistent(context))
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey[300]!),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                isExpanded: true,
+                value: _selectedMismatchReason,
+                hint: const Text(
+                  '请选择不一致原因',
+                  style: TextStyle(fontSize: 12),
+                ),
+                items: _mismatchReasons
+                    .map(
+                      (reason) => DropdownMenuItem<String>(
+                        value: reason,
+                        child: Text(
+                          reason,
+                          style: const TextStyle(fontSize: 12),
+                        ),
                       ),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedMismatchReason = value;
-                });
-              },
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedMismatchReason = value;
+                  });
+                },
+              ),
             ),
           ),
-        ),
       ],
     );
   }

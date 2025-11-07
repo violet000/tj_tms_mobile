@@ -553,6 +553,7 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage>
       final dynamic implBoxDetail = args['implBoxDetail'];
       final String? outTre = args['operationType']?.toString();
       final String? isConsistent = args['isConsistent']?.toString();
+      final String? unrecognizedBox = args['unrecognizedBox']?.toString();
 
       if (implBoxDetail == null || outTre == null) {
         throw Exception('缺少参数');
@@ -606,8 +607,7 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage>
       if (faceLoginParams.isNotEmpty) {
         EasyLoading.show(status: '核验柜员身份中...');
         try {
-          print('faceLoginParams: $faceLoginParams');
-          await _service?.accountLogin(faceLoginParams);
+          await _service?.faceVerify(faceLoginParams);
           faceLoginSuccess = true;
         } catch (e) {
           faceLoginSuccess = false;
@@ -622,6 +622,19 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage>
       if (faceLoginSuccess) {
         EasyLoading.show(status: '提交复核...');
         try {
+          print('==============================================');
+          print(<String, dynamic>{
+            'implNo': implBoxDetail
+                .map((dynamic e) => int.parse(e['implNo'] as String))
+                .toList(),
+            'outTre': outTre,
+            'hander': hander,
+            'escortNo': escortNo,
+            'deliver': deliver,
+            'inconsistent': isConsistent,
+            'unrecognizedBox': unrecognizedBox?.split(',').toList(),
+          });
+          print('==============================================');
           await _service?.outletHandover(<String, dynamic>{
             'implNo': implBoxDetail
                 .map((dynamic e) => int.parse(e['implNo'] as String))
@@ -631,6 +644,7 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage>
             'escortNo': escortNo,
             'deliver': deliver,
             'inconsistent': isConsistent,
+            'unrecognizedBox': unrecognizedBox?.split(',').toList(),
           });
           handoverSuccess = true;
         } catch (e) {

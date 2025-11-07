@@ -39,6 +39,9 @@ class _BoxHandoverDetailPageState extends State<BoxHandoverDetailPage> {
   // 存储手工匹配弹窗中用户选中的款箱
   List<Map<String, dynamic>> _selectedManualBoxes = [];
 
+  // 存储手工匹配的款箱代码（用于标记显示）
+  final List<String> unrecognizedBox = [];
+
   // 认证相关
   bool _isAuthenticated = false;
   bool _isAuthDialogShown = false;
@@ -911,6 +914,10 @@ class _BoxHandoverDetailPageState extends State<BoxHandoverDetailPage> {
                                                     .split('-')
                                                     .first;
                                         if (boxCodeFront.isNotEmpty) {
+                                          // 添加到手工匹配数组
+                                          if (!unrecognizedBox.contains(boxCodeFront)) {
+                                            unrecognizedBox.add(boxCodeFront);
+                                          }
                                           _updateCashBoxStatus(boxCodeFront, 0);
                                         }
                                       }
@@ -1036,6 +1043,7 @@ class _BoxHandoverDetailPageState extends State<BoxHandoverDetailPage> {
                     arguments: <String, dynamic>{
                       'isConsistent': isConsistent,
                       'orgNo': orgNos[0],
+                      'unrecognizedBox': unrecognizedBox.join(',').toString(),
                     },
                   );
                 }
@@ -1109,6 +1117,16 @@ class _BoxHandoverDetailPageState extends State<BoxHandoverDetailPage> {
     );
 
     if (result['success'] as bool) {
+      // 获取款箱代码
+      final String boxCode = item['boxCode'] == null
+          ? ''
+          : item['boxCode'].toString().split('-').first;
+      
+      // 如果是手工匹配的款箱，从数组中移除
+      if (boxCode.isNotEmpty && unrecognizedBox.contains(boxCode)) {
+        unrecognizedBox.remove(boxCode);
+      }
+      
       setState(() {
         _uhfScannedTags.clear();
         _uhfScannedTags.addAll(result['uhfScannedTags'] as List<String>);
