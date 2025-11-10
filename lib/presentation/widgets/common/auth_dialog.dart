@@ -511,6 +511,7 @@ class _AuthDialogState extends State<AuthDialog> {
     });
 
     // 调用接口查询车牌号
+    bool hasPlateNumber = false;
     try {
       if (_loginService != null) {
         EasyLoading.show(
@@ -529,6 +530,7 @@ class _AuthDialogState extends State<AuthDialog> {
               setState(() {
                 _vehiclePlateNumber = plate;
               });
+              hasPlateNumber = true;
             }
           }
         }
@@ -537,6 +539,12 @@ class _AuthDialogState extends State<AuthDialog> {
       AppLogger.error('查询车牌号时发生错误', e);
     } finally {
       EasyLoading.dismiss();
+      // 如果查询失败或没有结果，确保清除之前的车牌号
+      if (!hasPlateNumber && mounted) {
+        setState(() {
+          _vehiclePlateNumber = null;
+        });
+      }
     }
   }
 
@@ -720,6 +728,9 @@ class _AuthDialogState extends State<AuthDialog> {
                 _vehicleScanController = controller;
               }
 
+              // 保存 onScanStateChanged 回调的引用，用于手动触发状态更新
+              late Function(bool) scanStateChangedCallback;
+
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -728,19 +739,39 @@ class _AuthDialogState extends State<AuthDialog> {
                     padding: const EdgeInsets.only(left: 20),
                     child: UHFScanButton(
                       startText: '点击识别车辆卡',
-                      onTagScanned: (rfid) {
+                      stopText: '点击识别车辆卡',
+                      isAutoRefresh: true,
+                      onTagScanned: (rfid) async {
                         // 允许重新扫描，覆盖已有结果
                         final last4 = rfid.length >= 4
                             ? rfid.substring(rfid.length - 4)
                             : rfid;
                         _onVehicleRfidScanned(last4);
-                        // 扫描到即停止扫描
-                        controller.stopScan();
+                        // 扫描到即停止扫描，并确保状态同步
+                        try {
+                          await controller.stopScan();
+                          // 手动触发状态变化回调，确保 UHFScanButton 状态同步，让按钮可以立即再次点击
+                          scanStateChangedCallback(false);
+                          // 重置防抖状态，确保可以立即重新扫描
+                          await Future<void>.delayed(const Duration(milliseconds: 100));
+                        } catch (e) {
+                          // 忽略错误
+                        }
                       },
                       onScanStateChanged: (isScanning) {
-                        setState(() {
-                          _isVehicleScanning = isScanning;
-                        });
+                        // 保存回调引用
+                        scanStateChangedCallback = (bool state) {
+                          if (!mounted) return;
+                          setState(() {
+                            _isVehicleScanning = state;
+                            // 开始扫描时，清除之前的结果，允许重新扫描
+                            if (state && _scannedVehicleRfid != null) {
+                              _scannedVehicleRfid = null;
+                              _vehiclePlateNumber = null;
+                            }
+                          });
+                        };
+                        scanStateChangedCallback(isScanning);
                       },
                       onError: _showError,
                     ),
@@ -773,63 +804,6 @@ class _AuthDialogState extends State<AuthDialog> {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            // 重新扫描按钮
-                            if (_scannedVehicleRfid != null &&
-                                _scannedVehicleRfid!.isNotEmpty)
-                              InkWell(
-                                onTap: () async {
-                                  setState(() {
-                                    _scannedVehicleRfid = null;
-                                    _vehiclePlateNumber = null;
-                                    _isVehicleScanning = false;
-                                  });
-                                  // 停止当前扫描
-                                  try {
-                                    await controller.stopScan();
-                                  } catch (e) {
-                                    // 忽略错误
-                                  }
-                                  // 等待一小段时间后自动开始新的扫描
-                                  await Future<void>.delayed(
-                                      const Duration(milliseconds: 100));
-                                  try {
-                                    await controller.startScan();
-                                    if (mounted) {
-                                      setState(() {
-                                        _isVehicleScanning = true;
-                                      });
-                                    }
-                                  } catch (e) {
-                                    // 忽略错误
-                                  }
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.blue[50],
-                                    borderRadius: BorderRadius.circular(4),
-                                    border:
-                                        Border.all(color: Colors.blue[300]!),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: const [
-                                      Icon(
-                                        Icons.refresh,
-                                        size: 14,
-                                        color: Colors.blue,
-                                      ),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        '重新扫描',
-                                        style: TextStyle(
-                                            fontSize: 11, color: Colors.blue),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
                           ],
                         ),
                         const SizedBox(height: 8),

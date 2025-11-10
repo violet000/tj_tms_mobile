@@ -12,6 +12,7 @@ class UHFScanButton extends StatefulWidget {
   final double? fontSize;
   final EdgeInsets? padding;
   final Widget? loadingIndicator;
+  final bool? isAutoRefresh;
   final Function(String tag)? onTagScanned;
   final Function(bool isScanning)? onScanStateChanged;
   final Function(String error)? onError;
@@ -27,6 +28,7 @@ class UHFScanButton extends StatefulWidget {
     this.fontSize,
     this.padding,
     this.loadingIndicator,
+    this.isAutoRefresh = false, // 默认是不自动刷新的
     this.onTagScanned,
     this.onScanStateChanged,
     this.onError,
@@ -74,7 +76,10 @@ class _UHFScanButtonState extends State<UHFScanButton> {
         return StreamBuilder<Map<String, dynamic>>(
           stream: controller.tagStream,
           builder: (context, snapshot) {
-            if (snapshot.hasData && snapshot.data != null) {
+            // 只有当按钮处于扫描状态时才处理标签事件，避免其他扫描按钮的标签被误处理
+            // 注意：不自动同步 controller.isScanning，因为多个按钮共享同一个 controller
+            // 每个按钮应该只根据自己的点击状态来管理 _isScanning
+            if (_isScanning && snapshot.hasData && snapshot.data != null) {
               final tagData = snapshot.data!;
               if (tagData.containsKey('epc')) {
                 final epc = tagData['epc'] as String?;
@@ -142,7 +147,17 @@ class _UHFScanButtonState extends State<UHFScanButton> {
             }
 
             return InkWell(
-              onTap: () => _toggleScan(controller),
+              onTap: () {
+                if (_isScanning && widget.isAutoRefresh == true) {
+                  _stopScan(controller).then((_) {
+                    Future.delayed(const Duration(milliseconds: 200), () {
+                      _startScan(controller);
+                    });
+                  });
+                } else {
+                  _toggleScan(controller);
+                }
+              },
               child: buttonContent,
             );
           },
@@ -154,6 +169,18 @@ class _UHFScanButtonState extends State<UHFScanButton> {
   Future<void> _toggleScan(UHFController controller) async {
     if (_isStarting) {
       return;
+    }
+    // 注意：不自动同步 controller.isScanning，因为多个按钮共享同一个 controller
+    // 如果 controller 正在扫描但当前按钮的 _isScanning 为 false，说明是其他按钮在扫描
+    // 此时应该先停止其他按钮的扫描，再开始当前按钮的扫描
+    if (controller.isScanning && !_isScanning) {
+      // 其他按钮正在扫描，先停止
+      try {
+        await controller.stopScan();
+        await Future<void>.delayed(const Duration(milliseconds: 150));
+      } catch (e) {
+        // 忽略错误
+      }
     }
     if (_isScanning) {
       await _stopScan(controller);
@@ -174,11 +201,16 @@ class _UHFScanButtonState extends State<UHFScanButton> {
 
       _lastProcessedEpc = null;
       _lastProcessedTime = null;
-      await controller.startScan();
 
-      if (!mounted) return;
-      setState(() => _isScanning = true);
+      // 提前设置扫描状态，确保首次点击即可进入扫描态
+      if (mounted) {
+        setState(() => _isScanning = true);
+      } else {
+        _isScanning = true;
+      }
       widget.onScanStateChanged?.call(true);
+
+      await controller.startScan();
 
       // 启动后1秒内未收到任何标签，自动重启一次以增强可靠性
       Future<void>.delayed(const Duration(seconds: 1), () async {
