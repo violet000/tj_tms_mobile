@@ -528,13 +528,9 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage>
     }
 
     // 检查登录人员的押运员信息
-    final String? escort1 = faceLoginProvider.getUsername(0);
-    final String? escort2 = faceLoginProvider.getUsername(1);
+    final String? escort = faceLoginProvider.getUsername(0);
 
-    if (escort1 == null ||
-        escort1.isEmpty ||
-        escort2 == null ||
-        escort2.isEmpty) {
+    if (escort == null || escort.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('登录人员信息不完整，请重新登录')),
       );
@@ -561,7 +557,7 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage>
 
       final String hander = tellerProvider.getUsername(1) ?? '';
       final String deliver = tellerProvider.getUsername(0) ?? '';
-      final String escortNo = '$escort1/$escort2';
+      final String escortNo = '$escort';
 
       // 获取柜员的密码和人脸图片
       final String? handerPassword = tellerProvider.getPassword(1);

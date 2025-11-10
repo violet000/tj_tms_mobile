@@ -89,27 +89,20 @@ class AuthDialog extends StatefulWidget {
   State<AuthDialog> createState() => _AuthDialogState();
 }
 
-class _AuthDialogState extends State<AuthDialog>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _AuthDialogState extends State<AuthDialog> {
   late PageController _pageController;
 
   AuthStep _currentStep = AuthStep.login;
 
-  // 登录相关 - 两个人员
-  final _usernameController1 = TextEditingController();
-  final _passwordController1 = TextEditingController();
-  final _usernameController2 = TextEditingController();
-  final _passwordController2 = TextEditingController();
-  String? _username1 = null;
-  String? _username2 = null;
+  // 登录相关 - 单个人员
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
+  String? _username = null;
   final _picker = ImagePicker();
-  String? _faceImageBase641;
-  String? _faceImageBase642;
+  String? _faceImageBase64;
 
-  // 登录方式状态 - 每个人员是否使用密码登录
-  bool _usePassword1 = false;
-  bool _usePassword2 = false;
+  // 登录方式状态 - 是否使用密码登录
+  bool _usePassword = false;
 
   // 车辆核验相关
   String? _scannedVehicleRfid;
@@ -137,16 +130,13 @@ class _AuthDialogState extends State<AuthDialog>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
     _pageController = PageController();
     _initializeLoginService();
     _loadDeviceInfo();
 
     // 为输入框添加监听器，实时更新按钮状态
-    _usernameController1.addListener(_onInputChanged);
-    _passwordController1.addListener(_onInputChanged);
-    _usernameController2.addListener(_onInputChanged);
-    _passwordController2.addListener(_onInputChanged);
+    _usernameController.addListener(_onInputChanged);
+    _passwordController.addListener(_onInputChanged);
   }
 
   /// 输入框内容变化时的回调
@@ -244,12 +234,9 @@ class _AuthDialogState extends State<AuthDialog>
 
   @override
   void dispose() {
-    _tabController.dispose();
     _pageController.dispose();
-    _usernameController1.dispose();
-    _passwordController1.dispose();
-    _usernameController2.dispose();
-    _passwordController2.dispose();
+    _usernameController.dispose();
+    _passwordController.dispose();
     _vehicleScanController = null; // 清理 controller 引用
     super.dispose();
   }
@@ -299,30 +286,15 @@ class _AuthDialogState extends State<AuthDialog>
       // 准备登录参数
       final loginParams = [
         <String, dynamic>{
-          'username': _usernameController1.text,
-          'password': _usePassword1 && _passwordController1.text.isNotEmpty
+          'username': _usernameController.text,
+          'password': _usePassword && _passwordController.text.isNotEmpty
               ? md5
-                  .convert(utf8.encode(_passwordController1.text + 'messi'))
+                  .convert(utf8.encode(_passwordController.text + 'messi'))
                   .toString()
               : null,
-          'face': _faceImageBase641,
-          // 'handheldNo': _deviceInfo['deviceId'] ?? '',
-          'handheldNo':
-              'c7aec416ab7f236a71495d2849a662229974bab16723e7a012e41d6998288001',
+          'face': _faceImageBase64,
+          'handheldNo': _deviceInfo['deviceId'] ?? '',
           'isImport': true
-        },
-        <String, dynamic>{
-          'username': _usernameController2.text,
-          'password': _usePassword2 && _passwordController2.text.isNotEmpty
-              ? md5
-                  .convert(utf8.encode(_passwordController2.text + 'messi'))
-                  .toString()
-              : null,
-          'face': _faceImageBase642,
-          // 'handheldNo': _deviceInfo['deviceId'] ?? '',
-          'handheldNo':
-              'c7aec416ab7f236a71495d2849a662229974bab16723e7a012e41d6998288001',
-          'isImport': false
         }
       ];
 
@@ -332,8 +304,7 @@ class _AuthDialogState extends State<AuthDialog>
       if (loginResult['retCode'] == HTTPCode.success.code) {
         final List<dynamic>? userList =
             loginResult['retList'] as List<dynamic>?;
-        _username1 = userList?[0]['userName'] as String?;
-        _username2 = userList?[1]['userName'] as String?;
+        _username = userList?[0]['userName'] as String?;
 
         EasyLoading.dismiss();
         // 下一步
@@ -393,39 +364,21 @@ class _AuthDialogState extends State<AuthDialog>
 
   /// 验证登录步骤
   bool _validateLoginStep() {
-    // 验证第一个人员
-    if (_usernameController1.text.isEmpty) {
-      _showError('请输入第一个人员的用户名');
-      return false;
-    }
-
-    // 验证第二个人员
-    if (_usernameController2.text.isEmpty) {
-      _showError('请输入第二个人员的用户名');
+    // 验证人员
+    if (_usernameController.text.isEmpty) {
+      _showError('请输入用户名');
       return false;
     }
 
     // 根据登录方式验证
-    if (_usePassword1) {
-      if (_passwordController1.text.isEmpty) {
-        _showError('第一个人员请输入密码');
+    if (_usePassword) {
+      if (_passwordController.text.isEmpty) {
+        _showError('请输入密码');
         return false;
       }
     } else {
-      if (_faceImageBase641 == null || _faceImageBase641!.isEmpty) {
-        _showError('第一个人员请进行人脸拍照');
-        return false;
-      }
-    }
-
-    if (_usePassword2) {
-      if (_passwordController2.text.isEmpty) {
-        _showError('第二个人员请输入密码');
-        return false;
-      }
-    } else {
-      if (_faceImageBase642 == null || _faceImageBase642!.isEmpty) {
-        _showError('第二个人员请进行人脸拍照');
+      if (_faceImageBase64 == null || _faceImageBase64!.isEmpty) {
+        _showError('请进行人脸拍照');
         return false;
       }
     }
@@ -463,10 +416,7 @@ class _AuthDialogState extends State<AuthDialog>
     final lineInfoProvider =
         Provider.of<LineInfoProvider>(context, listen: false);
     final String expectedEscort = (lineInfoProvider.escortName ?? '').trim();
-    final String actualEscort = ((_username1?.isNotEmpty ?? false) &&
-            (_username2?.isNotEmpty ?? false))
-        ? '${_username1}/${_username2}'
-        : (_username1?.trim() ?? '') + (_username2?.trim() ?? '').trim();
+    final String actualEscort = _username?.trim() ?? '';
     final Color peopleColor =
         _comparisonColor(expectedEscort, actualEscort);
 
@@ -482,33 +432,18 @@ class _AuthDialogState extends State<AuthDialog>
 
   /// 判断登录步骤是否完成
   bool _isLoginStepValid() {
-    // 验证第一个人员
-    if (_usernameController1.text.isEmpty) {
-      return false;
-    }
-
-    // 验证第二个人员
-    if (_usernameController2.text.isEmpty) {
+    // 验证人员
+    if (_usernameController.text.isEmpty) {
       return false;
     }
 
     // 根据登录方式验证
-    if (_usePassword1) {
-      if (_passwordController1.text.isEmpty) {
+    if (_usePassword) {
+      if (_passwordController.text.isEmpty) {
         return false;
       }
     } else {
-      if (_faceImageBase641 == null || _faceImageBase641!.isEmpty) {
-        return false;
-      }
-    }
-
-    if (_usePassword2) {
-      if (_passwordController2.text.isEmpty) {
-        return false;
-      }
-    } else {
-      if (_faceImageBase642 == null || _faceImageBase642!.isEmpty) {
+      if (_faceImageBase64 == null || _faceImageBase64!.isEmpty) {
         return false;
       }
     }
@@ -542,7 +477,7 @@ class _AuthDialogState extends State<AuthDialog>
   }
 
   /// 拍照
-  Future<void> _takePicture(int personIndex) async {
+  Future<void> _takePicture() async {
     try {
       final XFile? photo = await _picker.pickImage(
         source: ImageSource.camera,
@@ -559,11 +494,7 @@ class _AuthDialogState extends State<AuthDialog>
         }
 
         setState(() {
-          if (personIndex == 1) {
-            _faceImageBase641 = base64Encode(bytes);
-          } else {
-            _faceImageBase642 = base64Encode(bytes);
-          }
+          _faceImageBase64 = base64Encode(bytes);
         });
       }
     } catch (e) {
@@ -685,53 +616,11 @@ class _AuthDialogState extends State<AuthDialog>
 
   /// 构建登录步骤
   Widget _buildLoginStep() {
-    return Column(
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: TabBar(
-            controller: _tabController,
-            indicator: const UnderlineTabIndicator(
-              borderSide: BorderSide(color: Colors.blue, width: 1),
-              insets: EdgeInsets.symmetric(horizontal: 8),
-            ),
-            indicatorSize: TabBarIndicatorSize.label,
-            labelColor: Colors.blue,
-            unselectedLabelColor: Colors.grey[600],
-            labelPadding: const EdgeInsets.symmetric(horizontal: 8),
-            tabs: const [
-              Tab(height: 32, text: '押运员1'),
-              Tab(height: 32, text: '押运员2'),
-            ],
-            labelStyle: const TextStyle(fontSize: 11),
-          ),
-        ),
-        const SizedBox(height: 8),
-        // Tab内容
-        Expanded(
-          child: TabBarView(
-            controller: _tabController,
-            children: [
-              _buildPersonLogin(1),
-              _buildPersonLogin(2),
-            ],
-          ),
-        ),
-      ],
-    );
+    return _buildPersonLogin();
   }
 
   /// 构建人员登录
-  Widget _buildPersonLogin(int personIndex) {
-    final usernameController =
-        personIndex == 1 ? _usernameController1 : _usernameController2;
-    final passwordController =
-        personIndex == 1 ? _passwordController1 : _passwordController2;
-    final faceImage = personIndex == 1 ? _faceImageBase641 : _faceImageBase642;
-    final usePassword = personIndex == 1 ? _usePassword1 : _usePassword2;
-
+  Widget _buildPersonLogin() {
     return LayoutBuilder(
       builder: (context, constraints) {
         return SingleChildScrollView(
@@ -746,7 +635,7 @@ class _AuthDialogState extends State<AuthDialog>
               children: [
                 // 用户名输入
                 CustomTextField(
-                  controller: usernameController,
+                  controller: _usernameController,
                   hintText: '请输入用户名',
                   prefixIcon: Icons.person,
                   obscureText: false,
@@ -756,9 +645,9 @@ class _AuthDialogState extends State<AuthDialog>
 
                 const SizedBox(height: 12),
                 // 人脸扫描区域或密码输入框
-                if (usePassword)
+                if (_usePassword)
                   CustomTextField(
-                    controller: passwordController,
+                    controller: _passwordController,
                     hintText: '请输入密码',
                     prefixIcon: Icons.lock,
                     obscureText: true,
@@ -767,21 +656,17 @@ class _AuthDialogState extends State<AuthDialog>
                 else
                   Center(
                     child: FaceScanWidget(
-                      onTap: () => _takePicture(personIndex),
+                      onTap: () => _takePicture(),
                       width: 220,
                       height: 140,
                       frameColor: Colors.blue,
                       iconColor: Colors.blue,
                       iconSize: 60,
                       hintText: '点击进行人脸拍照',
-                      imageBase64: faceImage,
+                      imageBase64: _faceImageBase64,
                       onDelete: () {
                         setState(() {
-                          if (personIndex == 1) {
-                            _faceImageBase641 = null;
-                          } else {
-                            _faceImageBase642 = null;
-                          }
+                          _faceImageBase64 = null;
                         });
                       },
                     ),
@@ -795,11 +680,7 @@ class _AuthDialogState extends State<AuthDialog>
                     TextButton(
                       onPressed: () {
                         setState(() {
-                          if (personIndex == 1) {
-                            _usePassword1 = !_usePassword1;
-                          } else {
-                            _usePassword2 = !_usePassword2;
-                          }
+                          _usePassword = !_usePassword;
                         });
                       },
                       style: TextButton.styleFrom(
@@ -808,7 +689,7 @@ class _AuthDialogState extends State<AuthDialog>
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                       child: Text(
-                        usePassword ? '人脸登录' : '账号登录',
+                        _usePassword ? '人脸登录' : '账号登录',
                         style: const TextStyle(
                           color: Colors.black54,
                           fontSize: 14,
@@ -1140,16 +1021,12 @@ class _AuthDialogState extends State<AuthDialog>
                 // 线路上的 escortName
                 final expectedDisplay =
                     escortName.isNotEmpty ? escortName : '空';
-                // 与实际两人合并后的字符串进行对比（用逗号间隔）
+                // 与实际押运员进行对比
                 final expectedForCompare = escortName;
 
                 final actualDisplay =
-                    '${_username1?.isNotEmpty ?? false ? _username1 : '未输入'} / ${_username2?.isNotEmpty ?? false ? _username2 : '未输入'}';
-                final actualForCompare = ((_username1?.isNotEmpty ?? false) &&
-                        (_username2?.isNotEmpty ?? false))
-                    ? '$_username1/$_username2'
-                    : (_username1?.trim() ?? '') +
-                        (_username2?.trim() ?? '').trim();
+                    _username?.isNotEmpty ?? false ? _username! : '未输入';
+                final actualForCompare = _username?.trim() ?? '';
                 final color =
                     _comparisonColor(expectedForCompare, actualForCompare);
 

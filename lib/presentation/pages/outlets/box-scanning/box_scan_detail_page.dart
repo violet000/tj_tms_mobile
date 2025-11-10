@@ -956,7 +956,8 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
                                                     .first;
                                         if (boxCodeFront.isNotEmpty) {
                                           // 添加到手工匹配数组
-                                          if (!unrecognizedBox.contains(boxCodeFront)) {
+                                          if (!unrecognizedBox
+                                              .contains(boxCodeFront)) {
                                             unrecognizedBox.add(boxCodeFront);
                                           }
                                           _updateCashBoxStatus(boxCodeFront, 0);
@@ -1163,12 +1164,12 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
       final String boxCode = item['boxCode'] == null
           ? ''
           : item['boxCode'].toString().split('-').first;
-      
+
       // 如果是手工匹配的款箱，从数组中移除
       if (boxCode.isNotEmpty && unrecognizedBox.contains(boxCode)) {
         unrecognizedBox.remove(boxCode);
       }
-      
+
       setState(() {
         _uhfScannedTags.clear();
         _uhfScannedTags.addAll(result['uhfScannedTags'] as List<String>);

@@ -148,7 +148,7 @@ class _BoxScanPageState extends State<BoxScanPage> {
               'operationType': InOutStatus.outlet.code, // 标记为出库
               // 补充网点显示所需的字段（如果原数据没有，避免UI报错）
               'pointName': org['orgName'] ?? '未知网点', // 适配UI中使用的pointName
-              'address': org['address'] ?? '未知地址', // 适配UI中使用的address
+              'address': org['address'] ?? '', // 适配UI中使用的address
               'implBoxDetail':
                   org['implBoxDetail'] ?? <Map<String, dynamic>>[], // 新增款箱数据
             };
@@ -173,7 +173,7 @@ class _BoxScanPageState extends State<BoxScanPage> {
               'operationType': InOutStatus.inlet.code, // 标记为入库
               // 补充网点显示所需的字段
               'pointName': org['orgName'] ?? '未知网点',
-              'address': org['address'] ?? '未知地址',
+              'address': org['address'] ?? '',
               'implBoxDetail':
                   org['implBoxDetail'] ?? <Map<String, dynamic>>[], // 新增款箱数据
             };

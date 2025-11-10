@@ -1036,7 +1036,6 @@ class _BoxHandoverDetailPageState extends State<BoxHandoverDetailPage> {
                       .map((p) => p['orgNo']?.toString())
                       .whereType<String>()
                       .toList();
-
                   Navigator.pushNamed(
                     context,
                     '/outlets/box-handover-verify',

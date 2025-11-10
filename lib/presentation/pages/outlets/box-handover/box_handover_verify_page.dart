@@ -529,13 +529,9 @@ class _BoxHandoverVerifyPageState extends State<BoxHandoverVerifyPage>
     }
 
     // 检查登录人员的押运员信息
-    final String? escort1 = faceLoginProvider.getUsername(0);
-    final String? escort2 = faceLoginProvider.getUsername(1);
+    final String? escort = faceLoginProvider.getUsername(0);
 
-    if (escort1 == null ||
-        escort1.isEmpty ||
-        escort2 == null ||
-        escort2.isEmpty) {
+    if (escort == null || escort.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('登录人员信息不完整，请重新登录')),
       );
@@ -553,14 +549,13 @@ class _BoxHandoverVerifyPageState extends State<BoxHandoverVerifyPage>
 
       final String? isConsistent = args['isConsistent']?.toString();
       final String? unrecognizedBox = args['unrecognizedBox']?.toString();
-
       if (implBoxDetail.isEmpty || outTre.isEmpty) {
         throw Exception('缺少参数');
       }
 
       final String hander = tellerProvider.getUsername(1) ?? '';
       final String deliver = tellerProvider.getUsername(0) ?? '';
-      final String escortNo = '$escort1/$escort2';
+      final String escortNo = '$escort';
 
       // 获取柜员的密码和人脸图片
       final String? handerPassword = tellerProvider.getPassword(1);
@@ -621,6 +616,10 @@ class _BoxHandoverVerifyPageState extends State<BoxHandoverVerifyPage>
       if (faceLoginSuccess) {
         EasyLoading.show(status: '提交复核...');
         try {
+          // 处理 unrecognizedBox：如果为空字符串或null，则返回null；否则转换为列表
+          final List<String>? unrecognizedBoxList = (unrecognizedBox == null || unrecognizedBox.isEmpty)
+              ? null
+              : unrecognizedBox.split(',').where((e) => e.trim().isNotEmpty).toList();
           await _service?.outletHandover(<String, dynamic>{
             'implNo': implBoxDetail
                 .map((dynamic e) => int.parse(e['implNo'] as String))
@@ -630,7 +629,7 @@ class _BoxHandoverVerifyPageState extends State<BoxHandoverVerifyPage>
             'escortNo': escortNo,
             'deliver': deliver,
             'inconsistent': isConsistent,
-            'unrecognizedBox': unrecognizedBox?.split(',').toList(),
+            'unrecognizedBox': unrecognizedBoxList,
           });
           handoverSuccess = true;
         } catch (e) {

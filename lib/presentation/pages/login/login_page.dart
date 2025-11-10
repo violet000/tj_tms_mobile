@@ -40,7 +40,6 @@ class _LoginPageState extends State<LoginPage> {
     _verifyTokenProvider =
         Provider.of<VerifyTokenProvider>(context, listen: false);
 
-    
     // 延迟检查电池优化状态并弹框
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(seconds: 1), () {
@@ -50,22 +49,17 @@ class _LoginPageState extends State<LoginPage> {
       });
     });
 
-    // Prefill two users and ensure password mode
+    // Prefill user and ensure password mode
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final faceLoginProvider =
           Provider.of<FaceLoginProvider>(context, listen: false);
       // 用于快速测试，自动填入账号与密码
       faceLoginProvider.setUsername(0, '00000001');
       faceLoginProvider.setPassword(0, 'Aa123789!');
-      faceLoginProvider.setUsername(1, '00000002');
-      faceLoginProvider.setPassword(1, 'Aa123789!');
 
       // 切换为账号密码登录模式（如果当前为人脸模式）
       if (faceLoginProvider.isFaceLogin(0)) {
         faceLoginProvider.toggleLoginMode(0);
-      }
-      if (faceLoginProvider.isFaceLogin(1)) {
-        faceLoginProvider.toggleLoginMode(1);
       }
     });
   }
@@ -89,8 +83,6 @@ class _LoginPageState extends State<LoginPage> {
     });
   }
 
-
-
   // 验证表单
   bool _validateFormData(
       String? username, String? password, String? faceImage) {
@@ -108,17 +100,18 @@ class _LoginPageState extends State<LoginPage> {
 
   // 保存登录数据
   Future<void> _saveLoginData(
-      String username1, String username2, Map<String, dynamic> loginResult) async {
-    // 设置最后一个用户的token作为当前token
+      String username, Map<String, dynamic> loginResult) async {
+    // 设置用户的token作为当前token
     _verifyTokenProvider.setToken(loginResult['access_token'].toString());
 
     // 保存token到SharedPreferences，供其他服务使用
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('access_token', loginResult['access_token'].toString());
+    await prefs.setString(
+        'access_token', loginResult['access_token'].toString());
 
-    // 保存第一个用户数据到列表
+    // 保存用户数据到列表
     _verifyTokenProvider.addUserData(<String, dynamic>{
-      'username': username1,
+      'username': username,
       'access_token': loginResult['access_token'],
       'refresh_token': loginResult['refresh_token'],
       'expires_in': loginResult['expires_in'],
@@ -126,19 +119,9 @@ class _LoginPageState extends State<LoginPage> {
       'scope': loginResult['scope'],
     });
 
-    // 保存第二个用户数据到列表
-    _verifyTokenProvider.addUserData(<String, dynamic>{
-      'username': username2,
-      'access_token': loginResult['access_token'],
-      'refresh_token': loginResult['refresh_token'],
-      'expires_in': loginResult['expires_in'],
-      'token_type': loginResult['token_type'],
-      'scope': loginResult['scope'],
-    });
-
-    // 设置当前用户数据为最后一个登录的用户
+    // 设置当前用户数据
     _verifyTokenProvider.setUserData(<String, dynamic>{
-      'username': username1,
+      'username': username,
       'access_token': loginResult['access_token'],
       'refresh_token': loginResult['refresh_token'],
       'expires_in': loginResult['expires_in'],
@@ -149,8 +132,7 @@ class _LoginPageState extends State<LoginPage> {
     // 保存押运员信息到全局的 FaceLoginProvider
     final faceLoginProvider =
         Provider.of<FaceLoginProvider>(context, listen: false);
-    faceLoginProvider.setUsername(0, username1);
-    faceLoginProvider.setUsername(1, username2);
+    faceLoginProvider.setUsername(0, username);
   }
 
   // 登录提交
@@ -165,21 +147,15 @@ class _LoginPageState extends State<LoginPage> {
       final faceLoginProvider =
           Provider.of<FaceLoginProvider>(context, listen: false);
 
-      final faceImage1 = faceLoginProvider.getFaceImage(0);
-      final username1 = faceLoginProvider.getUsername(0) ?? '';
-      final password1 = faceLoginProvider.getPassword(0) ?? '';
-
-      final faceImage2 = faceLoginProvider.getFaceImage(1);
-      final username2 = faceLoginProvider.getUsername(1) ?? '';
-      final password2 = faceLoginProvider.getPassword(1) ?? '';
+      final faceImage = faceLoginProvider.getFaceImage(0);
+      final username = faceLoginProvider.getUsername(0) ?? '';
+      final password = faceLoginProvider.getPassword(0) ?? '';
 
       // 在登录前，先将押运员信息保存到全局的 FaceLoginProvider
-      faceLoginProvider.setUsername(0, username1!);
-      faceLoginProvider.setUsername(1, username2!);
+      faceLoginProvider.setUsername(0, username);
 
       // 验证数据
-      _validateFormData(username1, password1, faceImage1);
-      _validateFormData(username2, password2, faceImage2);
+      _validateFormData(username, password, faceImage);
 
       setState(() {
         _isLoading = true;
@@ -193,33 +169,33 @@ class _LoginPageState extends State<LoginPage> {
       if (_loginService == null) {
         await _initializeLoginService();
       }
+      print(<String, dynamic>{
+        'username': username,
+        'password': (password == null || password.isEmpty)
+            ? null
+            : md5.convert(utf8.encode(password + 'messi')).toString(),
+        'face': faceImage,
+        'handheldNo': _deviceInfo['deviceId'] ?? '',
+        'isImport': true
+      });
       final Map<String, dynamic> loginResult =
           await _loginService!.accountLogin([
         <String, dynamic>{
-          'username': username1,
-          'password': (password1 == null || password1.isEmpty)
+          'username': username,
+          'password': (password == null || password.isEmpty)
               ? null
-              : md5.convert(utf8.encode(password1 + 'messi')).toString(),
-          'face': faceImage1,
+              : md5.convert(utf8.encode(password + 'messi')).toString(),
+          'face': faceImage,
           'handheldNo': _deviceInfo['deviceId'] ?? '',
           'isImport': true
-        },
-        <String, dynamic>{
-          'username': username2,
-          'password': (password2 == null || password2.isEmpty)
-              ? null
-              : md5.convert(utf8.encode(password2 + 'messi')).toString(),
-          'face': faceImage2,
-          'handheldNo': _deviceInfo['deviceId'] ?? '',
-          'isImport': false
         }
       ]);
 
-      await _saveLoginData(username1, username2, loginResult);
+      await _saveLoginData(username, loginResult);
 
       EasyLoading.dismiss();
       EasyLoading.showSuccess('登录成功');
-      
+
       Navigator.of(context).pushReplacementNamed('/home');
     } catch (e) {
       EasyLoading.dismiss();
@@ -239,7 +215,7 @@ class _LoginPageState extends State<LoginPage> {
     final topSectionHeight = screenHeight * 0.4; // 40% 的高度用于蓝色背景
 
     return DefaultTabController(
-      length: 2,
+      length: 1,
       child: Scaffold(
         resizeToAvoidBottomInset: false,
         body: Stack(
@@ -367,8 +343,7 @@ class _LoginPageState extends State<LoginPage> {
                                   fontWeight: FontWeight.normal,
                                 ),
                                 tabs: [
-                                  Tab(text: '押运员1'),
-                                  Tab(text: '押运员2'),
+                                  Tab(text: '押运员'),
                                 ],
                               ),
                             ),
@@ -380,10 +355,8 @@ class _LoginPageState extends State<LoginPage> {
                               child: TabBarView(
                                 physics: NeverScrollableScrollPhysics(),
                                 children: [
-                                  // 押运人员1的输入框
+                                  // 押运人员的输入框
                                   FaceLogin(personIndex: 0),
-                                  // 押运人员2的输入框
-                                  FaceLogin(personIndex: 1),
                                 ],
                               ),
                             ),
@@ -405,23 +378,21 @@ class _LoginPageState extends State<LoginPage> {
                   children: [
                     Consumer<FaceLoginProvider>(
                       builder: (context, faceLoginProvider, child) {
-                        final faceImage1 = faceLoginProvider.getFaceImage(0);
-                        final username1 = faceLoginProvider.getUsername(0);
-                        final password1 = faceLoginProvider.getPassword(0);
+                        final faceImage = faceLoginProvider.getFaceImage(0);
+                        final username = faceLoginProvider.getUsername(0);
+                        final password = faceLoginProvider.getPassword(0);
 
-                        final faceImage2 = faceLoginProvider.getFaceImage(1);
-                        final username2 = faceLoginProvider.getUsername(1);
-                        final password2 = faceLoginProvider.getPassword(1);
+                        // 检查押运员：faceImage和username有值 或者 username和password有值
+                        bool personValid = (faceImage != null &&
+                                faceImage.isNotEmpty &&
+                                username != null &&
+                                username.isNotEmpty) ||
+                            (username != null &&
+                                username.isNotEmpty &&
+                                password != null &&
+                                password.isNotEmpty);
 
-                        // 检查押运员1：faceImage1和username1有值 或者 username1和password1有值
-                        bool person1Valid = (faceImage1 != null && faceImage1.isNotEmpty && username1 != null && username1.isNotEmpty) ||
-                                           (username1 != null && username1.isNotEmpty && password1 != null && password1.isNotEmpty);
-
-                        // 检查押运员2：faceImage2和username2有值 或者 username2和password2有值
-                        bool person2Valid = (faceImage2 != null && faceImage2.isNotEmpty && username2 != null && username2.isNotEmpty) ||
-                                           (username2 != null && username2.isNotEmpty && password2 != null && password2.isNotEmpty);
-
-                        bool isLoginEnabled = person1Valid && person2Valid && !_isLoading;
+                        bool isLoginEnabled = personValid && !_isLoading;
 
                         return ElevatedButton(
                           onPressed: isLoginEnabled ? _login : null,
@@ -431,7 +402,8 @@ class _LoginPageState extends State<LoginPage> {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            disabledBackgroundColor: const Color.fromARGB(255, 228, 227, 227),
+                            disabledBackgroundColor:
+                                const Color.fromARGB(255, 228, 227, 227),
                           ),
                           child: _isLoading
                               ? const SizedBox(
@@ -439,14 +411,14 @@ class _LoginPageState extends State<LoginPage> {
                                   height: 24,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    valueColor:
-                                        AlwaysStoppedAnimation<Color>(Colors.white),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white),
                                   ),
                                 )
                               : Text(
                                   '登录',
                                   style: TextStyle(
-                                      color: isLoginEnabled 
+                                      color: isLoginEnabled
                                           ? Color.fromARGB(255, 241, 240, 240)
                                           : Colors.grey.shade600,
                                       fontSize: 16),
