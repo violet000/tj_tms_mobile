@@ -97,7 +97,6 @@ class _BoxScanPageState extends State<BoxScanPage> {
         }
       });
     } catch (e, s) {
-      AppLogger.error('获取或解析线路数据时发生错误', e, s);
       if (mounted) {
         setState(() {
           lines = [];

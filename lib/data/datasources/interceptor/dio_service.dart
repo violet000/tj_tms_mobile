@@ -116,7 +116,6 @@ class DioService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('access_token');
     } catch (e) {
-      AppLogger.error('清除SharedPreferences中的token失败: $e');
     }
     
     // 确保AGPS位置轮询服务继续运行
@@ -132,7 +131,6 @@ class DioService {
     try {
       final locationPollingManager = LocationPollingManager();
     } catch (e) {
-      AppLogger.error('确保AGPS位置轮询服务继续运行时出错: $e');
     }
   }
 

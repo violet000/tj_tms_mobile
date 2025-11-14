@@ -31,7 +31,7 @@ class _NetworkSettingsPageState extends State<NetworkSettingsPage> {
   static const String vmsKey = 'network_vms_ip';
   // static const String agpsIntervalKey = 'agps_interval_seconds';
   Map<String, dynamic> _deviceInfo = <String, dynamic>{};
-  
+
   // 电池优化状态
   bool _isIgnoringBatteryOptimizations = false;
   bool _isCheckingBatteryOptimization = false;
@@ -123,7 +123,7 @@ class _NetworkSettingsPageState extends State<NetworkSettingsPage> {
   /// 加载权限状态
   Future<void> _loadPermissionStatus() async {
     if (kIsWeb) return;
-    
+
     setState(() {
       _isLoadingPermissions = true;
     });
@@ -132,7 +132,7 @@ class _NetworkSettingsPageState extends State<NetworkSettingsPage> {
       final statuses = await _permissionService.getAllPermissionStatus();
       // 同时加载电池优化状态
       await _checkBatteryOptimizationStatus();
-      
+
       if (mounted) {
         setState(() {
           _permissionStatuses = statuses;
@@ -163,10 +163,10 @@ class _NetworkSettingsPageState extends State<NetworkSettingsPage> {
 
     try {
       final results = await _permissionService.requestAllPermissions();
-      
+
       // 同时刷新电池优化状态
       await _checkBatteryOptimizationStatus();
-      
+
       if (mounted) {
         setState(() {
           _permissionStatuses = results;
@@ -190,7 +190,7 @@ class _NetworkSettingsPageState extends State<NetworkSettingsPage> {
           final permanentlyDenied = deniedPermissions
               .where((e) => e.value == PermissionStatus.permanentlyDenied)
               .toList();
-          
+
           if (permanentlyDenied.isNotEmpty) {
             // 如果有永久拒绝的权限，自动打开设置页面
             ScaffoldMessenger.of(context).showSnackBar(
@@ -289,7 +289,8 @@ class _NetworkSettingsPageState extends State<NetworkSettingsPage> {
     });
 
     try {
-      final isIgnoring = await BatteryOptimizationService.isIgnoringBatteryOptimizations();
+      final isIgnoring =
+          await BatteryOptimizationService.isIgnoringBatteryOptimizations();
       if (mounted) {
         setState(() {
           _isIgnoringBatteryOptimizations = isIgnoring;
@@ -316,11 +317,11 @@ class _NetworkSettingsPageState extends State<NetworkSettingsPage> {
 
     try {
       await BatteryOptimizationService.requestIgnoreBatteryOptimizations();
-      
+
       // 延迟检查结果，给用户时间完成设置
       Future.delayed(const Duration(seconds: 2), () async {
         await _checkBatteryOptimizationStatus();
-        
+
         if (mounted) {
           if (_isIgnoringBatteryOptimizations) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -366,6 +367,7 @@ class _NetworkSettingsPageState extends State<NetworkSettingsPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      const SizedBox(height: 16),
                       TextFormField(
                         controller: _vpsIpController,
                         decoration: const InputDecoration(
@@ -421,7 +423,7 @@ class _NetworkSettingsPageState extends State<NetworkSettingsPage> {
                         ),
                         const SizedBox(height: 16),
                         // 权限状态列表
-                        ..._permissionStatuses.entries.map((entry) {
+                        ..._permissionStatuses.entries.where((entry) => entry.key != Permission.location && entry.key != Permission.locationAlways).map((entry) {
                           final permission = entry.key;
                           final status = entry.value;
                           return Card(
@@ -485,9 +487,7 @@ class _NetworkSettingsPageState extends State<NetworkSettingsPage> {
                                 ),
                               ),
                               child: Text(
-                                _isIgnoringBatteryOptimizations
-                                    ? '已设置'
-                                    : '未设置',
+                                _isIgnoringBatteryOptimizations ? '已设置' : '未设置',
                                 style: TextStyle(
                                   color: _isIgnoringBatteryOptimizations
                                       ? Colors.green
@@ -499,33 +499,31 @@ class _NetworkSettingsPageState extends State<NetworkSettingsPage> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 16),
-                        // 申请权限按钮
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: _isLoadingPermissions
-                                ? null
-                                : _requestAllPermissions,
-                            icon: _isLoadingPermissions
-                                ? const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Icon(Icons.security),
-                            label: Text(
-                              _isLoadingPermissions
-                                  ? '申请中...'
-                                  : '申请所有权限',
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                            ),
-                          ),
-                        ),
+                        // const SizedBox(height: 16),
+                        // // 申请权限按钮
+                        // SizedBox(
+                        //   width: double.infinity,
+                        //   child: ElevatedButton.icon(
+                        //     onPressed: _isLoadingPermissions
+                        //         ? null
+                        //         : _requestAllPermissions,
+                        //     icon: _isLoadingPermissions
+                        //         ? const SizedBox(
+                        //             width: 16,
+                        //             height: 16,
+                        //             child: CircularProgressIndicator(
+                        //               strokeWidth: 2,
+                        //             ),
+                        //           )
+                        //         : const Icon(Icons.security),
+                        //     label: Text(
+                        //       _isLoadingPermissions ? '申请中...' : '申请所有权限',
+                        //     ),
+                        //     style: ElevatedButton.styleFrom(
+                        //       padding: const EdgeInsets.symmetric(vertical: 16),
+                        //     ),
+                        //   ),
+                        // ),
                         const SizedBox(height: 8),
                         // 刷新权限状态按钮
                         SizedBox(
@@ -568,21 +566,21 @@ class _NetworkSettingsPageState extends State<NetworkSettingsPage> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        // 刷新电池优化状态按钮
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed: _isCheckingBatteryOptimization
-                                ? null
-                                : _checkBatteryOptimizationStatus,
-                            icon: const Icon(Icons.refresh),
-                            label: const Text('刷新电池优化状态'),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                            ),
-                          ),
-                        ),
+                        // const SizedBox(height: 8),
+                        // // 刷新电池优化状态按钮
+                        // SizedBox(
+                        //   width: double.infinity,
+                        //   child: OutlinedButton.icon(
+                        //     onPressed: _isCheckingBatteryOptimization
+                        //         ? null
+                        //         : _checkBatteryOptimizationStatus,
+                        //     icon: const Icon(Icons.refresh),
+                        //     label: const Text('刷新电池优化状态'),
+                        //     style: OutlinedButton.styleFrom(
+                        //       padding: const EdgeInsets.symmetric(vertical: 16),
+                        //     ),
+                        //   ),
+                        // ),
                         const SizedBox(height: 8),
                         // 打开设置按钮
                         SizedBox(

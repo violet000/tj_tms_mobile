@@ -101,9 +101,6 @@ class _BoxHandoverPageState extends State<BoxHandoverPage> {
         }
       });
     } catch (e, s) {
-      // 统一处理可能发生的任何错误
-      AppLogger.error('获取或解析线路数据时发生错误', e, s);
-      // 可以在这里弹出一个对话框告诉用户加载失败
       if (mounted) {
         setState(() {
           lines = [];

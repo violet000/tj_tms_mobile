@@ -48,7 +48,6 @@ class LocationPollingManager {
       _loadDeviceInfo();
       _service9087 = await Service9087.create();
     } catch (e) {
-      AppLogger.error('位置轮询管理器初始化失败: $e');
       rethrow;
     }
   }
@@ -58,7 +57,6 @@ class LocationPollingManager {
     try {
       _service9087 = await Service9087.create();
     } catch (e) {
-      AppLogger.error('重新加载 Service9087 失败: $e');
     }
   }
 
@@ -102,7 +100,6 @@ class LocationPollingManager {
         _onLocationUpdate?.call(location);
       }
     }, onError: (Object e) {
-      AppLogger.error('连续定位回调异常: $e');
       _onError?.call('连续定位回调异常: $e');
     });
   }
@@ -112,7 +109,6 @@ class LocationPollingManager {
     try {
       await ForegroundServiceManager.startForegroundService();
     } catch (e) {
-      AppLogger.error('启动前台服务异常: $e');
     }
   }
 
@@ -136,7 +132,6 @@ class LocationPollingManager {
     try {
       await ForegroundServiceManager.stopForegroundService();
     } catch (e) {
-      AppLogger.error('停止前台服务异常: $e');
     }
   }
 
@@ -148,7 +143,6 @@ class LocationPollingManager {
       // 连续定位场景仅更新节流门限时间点
       _lastUploadAt = null;
     } catch (e) {
-      AppLogger.error('设置轮询间隔失败: $e');
       _onError?.call('设置轮询间隔失败: $e');
     }
   }
@@ -188,7 +182,6 @@ class LocationPollingManager {
         }
       } catch (e) {
         retryCount++;
-        AppLogger.error('上送失败(retry=$retryCount): $e');
       }
     }
   }

@@ -27,7 +27,6 @@ class IntervalManager {
       final interval = prefs.getInt(currentIntervalKey);
       return interval;
     } catch (e) {
-      AppLogger.error('获取当前间隔值失败: $e');
       return null;
     }
   }
@@ -70,7 +69,6 @@ class IntervalManager {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt(agpsIntervalKey, interval);
     } catch (e) {
-      AppLogger.error('设置AGPS间隔值失败: $e');
     }
   }
 
@@ -80,7 +78,6 @@ class IntervalManager {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt(currentIntervalKey, interval);
     } catch (e) {
-      AppLogger.error('设置当前间隔值失败: $e');
     }
   }
 
@@ -90,7 +87,6 @@ class IntervalManager {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt(interfaceIntervalKey, interval);
     } catch (e) {
-      AppLogger.error('设置当前间隔值失败: $e');
     }
   }
 
@@ -102,7 +98,6 @@ class IntervalManager {
         setCurrentInterval(interval),
       ]);
     } catch (e) {
-      AppLogger.error('设置间隔值失败: $e');
     }
   }
 
@@ -113,7 +108,6 @@ class IntervalManager {
           await LocationPollingConfig.getSavedPollingInterval();
       return defaultInterval as int;
     } catch (e) {
-      AppLogger.error('获取默认间隔值失败: $e');
       return 30; // 默认30秒
     }
   }
@@ -123,7 +117,6 @@ class IntervalManager {
     try {
       await LocationPollingConfig.setPollingInterval(interval);
     } catch (e) {
-      AppLogger.error('更新LocationPollingConfig失败: $e');
     }
   }
 
@@ -134,7 +127,6 @@ class IntervalManager {
       await prefs.remove(agpsIntervalKey);
       await prefs.remove(currentIntervalKey);
     } catch (e) {
-      AppLogger.error('清除间隔值失败: $e');
     }
   }
 
@@ -153,7 +145,6 @@ class IntervalManager {
         'defaultInterval': defaultInterval,
       };
     } catch (e) {
-      AppLogger.error('获取所有间隔值信息失败: $e');
       return <String, dynamic>{
         'agpsInterval': null,
         'currentInterval': null,

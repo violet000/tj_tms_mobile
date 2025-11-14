@@ -6,7 +6,7 @@ class LocationConfig {
   /// 设置Android端定位参数
   static BaiduLocationAndroidOption getAndroidOptions() {
     return BaiduLocationAndroidOption(
-      coorType: 'gcj02', // 坐标类型
+      coorType: 'bd09ll', // 使用百度默认坐标系，提升兼容性与首包成功率
       locationMode: BMFLocationMode.hightAccuracy, // 定位模式
       isNeedAddress: false, // 不需要地址，减少功耗
       isNeedAltitude: false, // 不需要海拔，减少功耗
@@ -14,14 +14,14 @@ class LocationConfig {
       isNeedNewVersionRgc: false, // 不需要新版本RGC，减少功耗
       isNeedLocationDescribe: false, // 不需要位置描述，减少功耗
       openGps: true, // 打开GPS，提高定位精度
-      coordType: BMFLocationCoordType.gcj02 , // 坐标类型
+      coordType: BMFLocationCoordType.bd09ll , // 坐标类型
     );
   }
 
   /// 设置iOS端定位参数
   static BaiduLocationIOSOption getIOSOptions() {
     return BaiduLocationIOSOption(
-      coordType: BMFLocationCoordType.gcj02,
+      coordType: BMFLocationCoordType.bd09ll,
       BMKLocationCoordinateType: 'BMKLocationCoordinateTypeBMK09LL',
       desiredAccuracy: BMFDesiredAccuracy.best
     );

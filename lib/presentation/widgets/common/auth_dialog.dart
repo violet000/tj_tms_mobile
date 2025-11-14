@@ -323,7 +323,6 @@ class _AuthDialogState extends State<AuthDialog> {
         EasyLoading.dismiss();
       }
     } catch (e) {
-      AppLogger.error('登录过程中发生错误', e);
       _showError('登录失败: ${e.toString()}');
       EasyLoading.dismiss();
     } finally {
@@ -536,7 +535,6 @@ class _AuthDialogState extends State<AuthDialog> {
         }
       }
     } catch (e) {
-      AppLogger.error('查询车牌号时发生错误', e);
     } finally {
       EasyLoading.dismiss();
       // 如果查询失败或没有结果，确保清除之前的车牌号

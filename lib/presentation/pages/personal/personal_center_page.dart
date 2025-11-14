@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tj_tms_mobile/core/utils/location_helper.dart';
 import 'package:tj_tms_mobile/services/foreground_service_manager.dart';
 import 'package:tj_tms_mobile/data/datasources/interceptor/dio_service.dart';
+import 'package:tj_tms_mobile/services/app_exit_helper.dart';
 
 class PersonalCenterPage extends StatefulWidget {
   const PersonalCenterPage({super.key});
@@ -207,10 +208,10 @@ class _PersonalCenterPageState extends State<PersonalCenterPage> {
       faceLoginProvider.clearData(0);
       faceLoginProvider.clearData(1);
       DioServiceManager().clearAccessTokenForAll();
-      SystemNavigator.pop();
+      await AppExitHelper.exitApp();
     } catch (e) {
       // 如果清除数据失败，仍然退出APP
-      SystemNavigator.pop();
+      await AppExitHelper.exitApp();
     }
   }
 

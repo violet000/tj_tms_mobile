@@ -35,7 +35,6 @@ Future<Map<String, dynamic>> loadDeviceInfo() async {
   try {
     return await getDeviceInfo();
   } catch (e) {
-    AppLogger.error('获取设备信息失败: $e');
     return <String, dynamic>{};
   }
 }
