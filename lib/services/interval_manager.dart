@@ -1,6 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/logger.dart';
-import 'package:tj_tms_mobile/core/config/location_polling_config.dart';
+import 'package:tj_tms_mobile/services/location_polling_config.dart';
 
 /// 间隔值管理工具类
 class IntervalManager {

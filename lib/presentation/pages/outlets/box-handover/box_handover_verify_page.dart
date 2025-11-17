@@ -11,7 +11,7 @@ import 'package:tj_tms_mobile/presentation/state/providers/teller_verify_provide
 import 'package:tj_tms_mobile/presentation/state/providers/face_login_provider.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:tj_tms_mobile/presentation/state/providers/box_handover_provider.dart';
-import 'package:tj_tms_mobile/core/utils/util.dart' as app_utils;
+import 'package:tj_tms_mobile/core/utils/common_util.dart' as app_utils;
 import 'package:tj_tms_mobile/presentation/widgets/common/box_items_dialog.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/confirm_dialog.dart';
 

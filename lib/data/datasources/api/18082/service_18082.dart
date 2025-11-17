@@ -2,7 +2,7 @@ import 'package:tj_tms_mobile/data/datasources/interceptor/dio_service.dart';
 import 'package:tj_tms_mobile/core/config/env.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tj_tms_mobile/core/utils/password_encrypt.dart';
-import 'package:tj_tms_mobile/core/utils/util.dart' as app_utils;
+import 'package:tj_tms_mobile/core/utils/common_util.dart' as app_utils;
 
 /// 18082服务接口部分
 class Service18082 {

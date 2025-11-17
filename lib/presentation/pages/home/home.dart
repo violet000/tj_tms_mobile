@@ -7,12 +7,13 @@ import 'package:tj_tms_mobile/presentation/widgets/common/page_scaffold.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/error_page.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/logger.dart';
 import 'package:tj_tms_mobile/presentation/pages/personal/personal_center_page.dart';
+// import 'package:tj_tms_mobile/services/location_polling_manager.dart';
 import 'package:tj_tms_mobile/data/datasources/api/18082/service_18082.dart';
 import 'package:tj_tms_mobile/services/interval_manager.dart';
-import 'package:tj_tms_mobile/core/utils/location_helper.dart';
+import 'package:tj_tms_mobile/services/location_helper.dart';
 import 'package:tj_tms_mobile/services/location_manager.dart';
 import 'package:tj_tms_mobile/data/datasources/api/9087/service_9087.dart';
-import 'package:tj_tms_mobile/core/utils/util.dart' as app_utils;
+import 'package:tj_tms_mobile/core/utils/common_util.dart' as app_utils;
 
 class HomePage extends StatefulWidget {
   final Map<String, dynamic>? arguments;
@@ -31,6 +32,10 @@ class _HomePageState extends State<HomePage>
   List<MenuItem> menus = [];
   bool _isInitialized = false; // 初始化状态
 
+  // 位置轮询相关
+  // final LocationPollingManager _locationPollingManager =
+  //     LocationPollingManager();
+
   // 持续定位相关
   final LocationHelper _locationHelper = LocationHelper();
   StreamSubscription<Map<String, dynamic>>? _locationSubscription;
@@ -38,12 +43,13 @@ class _HomePageState extends State<HomePage>
   Service9087? _service9087;
   Map<String, dynamic> _deviceInfo = <String, dynamic>{};
   DateTime? _lastUploadAt;
-  int _uploadInterval = 60; // 默认上送间隔
+  int _uploadInterval = 60; // 默认上传间隔30秒
 
   @override
   void initState() {
     super.initState();
 
+    // 注册应用生命周期监听
     WidgetsBinding.instance.addObserver(this);
 
     _animationController = AnimationController(
@@ -53,6 +59,7 @@ class _HomePageState extends State<HomePage>
     _fadeAnimation =
         Tween<double>(begin: 0.0, end: 1.0).animate(_animationController);
 
+    // 检查是否有传入的tab索引参数
     if (widget.arguments != null && widget.arguments!['selectedTab'] != null) {
       _selectedIndex = widget.arguments!['selectedTab'] as int;
     }
@@ -78,60 +85,61 @@ class _HomePageState extends State<HomePage>
 
   Future<void> _loadAGPSInterval() async {
     try {
-      final service = await Service18082.create();
-      final result = await service.getAGPSParam(<String, dynamic>{
-        'catalog': '',
-        'paramName': 'GPS_SEND_TIME',
-        'statement': '',
-        'description': '',
-        'pageSize': 10,
-        'curRow': 1
-      });
+      // final service = await Service18082.create();
+      // final result = await service.getAGPSParam(<String, dynamic>{
+      //   'catalog': '',
+      //   'paramName': 'GPS_SEND_TIME',
+      //   'statement': '',
+      //   'description': '',
+      //   'pageSize': 10,
+      //   'curRow': 1
+      // });
 
-      if ((result['retCode'] as String?) == '000000') {
-        final List<dynamic> dataList =
-            (result['retList'] as List<dynamic>?) ?? <dynamic>[];
-        if (dataList.isNotEmpty) {
-          final Map<String, dynamic> agpsData =
-              dataList.first as Map<String, dynamic>;
-          final String? paramValue = agpsData['paramValue']?.toString();
-          final String? statement = agpsData['statement']?.toString();
-          if (paramValue != null) {
-            int initInterval = parseIntervalToSeconds(
-                paramValue: paramValue, statement: statement ?? '');
-            int interval = initInterval ~/ 2; // 基于该时间除以2
-            if (interval < 1) interval = 1; // 最小1秒
-            await IntervalManager.setBothIntervals(interval);
-            await IntervalManager.setInterfaceInterval(initInterval);
-            _uploadInterval = interval;
-            _lastUploadAt = null;
-            LocationManager().setWatchdogIntervalSeconds(_uploadInterval);
-            return;
-          }
-        }
-      }
+      // if ((result['retCode'] as String?) == '000000') {
+      //   final List<dynamic> dataList =
+      //       (result['retList'] as List<dynamic>?) ?? <dynamic>[];
+      //   if (dataList.isNotEmpty) {
+      //     final Map<String, dynamic> agpsData =
+      //         dataList.first as Map<String, dynamic>;
+      //     final String? paramValue = agpsData['paramValue']?.toString();
+      //     final String? statement = agpsData['statement']?.toString();
+      //     if (paramValue != null) {
+      //       final int interval = parseIntervalToSeconds(
+      //           paramValue: paramValue, statement: statement ?? '');
+      //       await IntervalManager.setBothIntervals(interval);
+      //       _uploadInterval = interval;
+      //       // 同步设置看门狗间隔，使重启仅在需要上送的节奏附近发生
+      //       LocationManager().setWatchdogIntervalSeconds(_uploadInterval);
+      //       // await _startLocationPolling();
+      //       return;
+      //     }
+      //   }
+      // }
 
       // 如果服务器获取失败，使用本地保存的配置
       final saved = await IntervalManager.getAGPSInterval();
       final current = saved ?? await IntervalManager.getDefaultInterval();
       await IntervalManager.setCurrentInterval(current);
       _uploadInterval = current;
-      _lastUploadAt = null;
       LocationManager().setWatchdogIntervalSeconds(_uploadInterval);
       if (saved != null && saved > 0) {
         await IntervalManager.updateLocationPollingConfig(saved);
       }
+      // await _startLocationPolling();
     } catch (e) {
+      AppLogger.error('加载AGPS间隔配置失败: $e');
+
+      // 异常情况下使用默认配置
       try {
         final saved = await IntervalManager.getAGPSInterval();
         final current = saved ?? await IntervalManager.getDefaultInterval();
         await IntervalManager.setCurrentInterval(current);
         _uploadInterval = current;
-        _lastUploadAt = null;
         LocationManager().setWatchdogIntervalSeconds(_uploadInterval);
         if (saved != null && saved > 0) {
           await IntervalManager.updateLocationPollingConfig(saved);
         }
+        // await _startLocationPolling();
       } catch (innerError) {
         AppLogger.error('启动位置轮询服务失败: $innerError');
       }
@@ -148,37 +156,38 @@ class _HomePageState extends State<HomePage>
       });
       _animationController.forward();
 
-      // 在UI初始化完成后再启动AGPS服务（等待加载完成，确保间隔及时生效）
-      await _loadAGPSInterval();
+      // 在UI初始化完成后再启动AGPS服务
+      _loadAGPSInterval();
 
-      // 初始化定位服务
-      await _initializeLocationService();
+      // 初始化定位服务（已按需注释，停止在 Home 页启动GPS定位）
+      // await _initializeLocationService();
     }
   }
 
-  // 初始化定位服务
-  Future<void> _initializeLocationService() async {
-    try {
-      await _locationHelper.initialize();
-      await _loadDeviceInfo();
-      _service9087 = await Service9087.create();
-
-      // 从配置加载上传间隔
-      try {
-        final saved = await IntervalManager.getAGPSInterval();
-        if (saved != null && saved > 0) {
-          _uploadInterval = saved;
-          LocationManager().setWatchdogIntervalSeconds(_uploadInterval);
-        }
-      } catch (e) {
-      }
-
-      // 启动持续定位
-      _startContinuousLocation();
-    } catch (e) {
-      AppLogger.error('初始化定位服务失败: $e');
-    }
-  }
+  // 初始化定位服务（Home 页已停用GPS定位）
+  // Future<void> _initializeLocationService() async {
+  //   try {
+  //     await _locationHelper.initialize();
+  //     await _loadDeviceInfo();
+  //     _service9087 = await Service9087.create();
+  // 
+  //     // 从配置加载上传间隔
+  //     try {
+  //       final saved = await IntervalManager.getAGPSInterval();
+  //       if (saved != null && saved > 0) {
+  //         _uploadInterval = saved;
+  //         LocationManager().setWatchdogIntervalSeconds(_uploadInterval);
+  //       }
+  //     } catch (e) {
+  //       AppLogger.warning('获取AGPS间隔失败，使用默认值: $e');
+  //     }
+  // 
+  //     // 启动持续定位
+  //     _startContinuousLocation();
+  //   } catch (e) {
+  //     AppLogger.error('初始化定位服务失败: $e');
+  //   }
+  // }
 
   // 加载设备信息
   Future<void> _loadDeviceInfo() async {
@@ -186,66 +195,57 @@ class _HomePageState extends State<HomePage>
     _deviceInfo = info;
   }
 
-  // 启动持续定位
-  void _startContinuousLocation() {
-    if (_locationSubscription != null) {
-      return;
-    }
+  // 启动持续定位（Home 页已停用GPS定位）
+  // void _startContinuousLocation() {
+  //   if (_locationSubscription != null) {
+  //     return;
+  //   }
+  //   try {
+  //     _continuousHandle = _locationHelper.startTracking();
+  //     _locationSubscription = _continuousHandle!.stream.listen((location) {
+  //       if (mounted) {
+  //         _handleLocationUpdate(location);
+  //       }
+  //     }, onError: (Object error) {
+  //       AppLogger.error('[HomePage] 定位错误: $error');
+  //     });
+  //   } catch (e) {
+  //     AppLogger.error('启动持续定位失败: $e');
+  //   }
+  // }
 
-    try {
-      _continuousHandle = _locationHelper.startTracking();
-      _locationSubscription = _continuousHandle!.stream.listen((location) {
-        if (mounted) {
-          _handleLocationUpdate(location);
-        }
-      }, onError: (Object error) {
-        AppLogger.error('[HomePage] 定位错误: $error');
-      });
-    } catch (e) {
-      AppLogger.error('启动持续定位失败: $e');
-    }
-  }
+  // 处理定位更新（Home 页已停用GPS定位）
+  // void _handleLocationUpdate(Map<String, dynamic> location) {
+  //   final now = DateTime.now();
+  //   if (_lastUploadAt == null ||
+  //       now.difference(_lastUploadAt!).inSeconds >= _uploadInterval) {
+  //     _lastUploadAt = now;
+  //     _uploadLocationData(location);
+  //   }
+  // }
 
-  // 处理定位更新
-  void _handleLocationUpdate(Map<String, dynamic> location) {
-    final now = DateTime.now();
-    // 检查是否到达上传间隔
-    if (_lastUploadAt == null ||
-        now.difference(_lastUploadAt!).inSeconds >= _uploadInterval) {
-      _lastUploadAt = now;
-      _uploadLocationData(location);
-    }
-  }
-
-  // 上传位置数据
-  Future<void> _uploadLocationData(Map<String, dynamic> location) async {
-    const int maxRetries = 5;
-    int retryCount = 0;
-
-    while (retryCount < maxRetries) {
-      try {
-        final dynamic latitude = location['latitude'];
-        final dynamic longitude = location['longitude'];
-        final date = DateTime.now();
-        final formattedDateTime = _formatDateTime(date);
-
-        if (latitude != null && longitude != null) {
-          await _service9087?.sendGpsInfo(<String, dynamic>{
-            'handheldNo': _deviceInfo['deviceId'],
-            'x': longitude,
-            'y': latitude,
-            'timestamp': date.millisecondsSinceEpoch,
-            'dateTime': formattedDateTime,
-            'status': 'valid',
-          });
-          return;
-        }
-      } catch (e) {
-        retryCount++;
-        AppLogger.error('上送失败(retry=$retryCount): $e');
-      }
-    }
-  }
+  // 上传位置数据（Home 页已停用GPS定位）
+  // Future<void> _uploadLocationData(Map<String, dynamic> location) async {
+  //   try {
+  //     final dynamic latitude = location['latitude'];
+  //     final dynamic longitude = location['longitude'];
+  //     final date = DateTime.now();
+  //     final formattedDateTime = _formatDateTime(date);
+  //     if (latitude != null && longitude != null) {
+  //       await _service9087?.sendGpsInfo(<String, dynamic>{
+  //         'handheldNo': _deviceInfo['deviceId'],
+  //         'x': latitude,
+  //         'y': longitude,
+  //         'timestamp': date.millisecondsSinceEpoch,
+  //         'dateTime': formattedDateTime,
+  //         'status': 'valid',
+  //       });
+  //       return;
+  //     }
+  //   } catch (e) {
+  //     AppLogger.error('上送失败: $e');
+  //   }
+  // }
 
   // 格式化日期时间
   String _formatDateTime(DateTime date) {
@@ -264,12 +264,12 @@ class _HomePageState extends State<HomePage>
           selectedIcon: 'assets/storage/inner_selected.svg',
           children: [
             MenuItem(
-              name: '网点交接',
+              name: '插件测试',
               index: 0,
               mode: 0,
               imagePath: 'assets/icons/handover_circle.svg',
               iconPath: 'assets/icons/net_handover_icon.svg',
-              route: '/outlets/box-scan',
+              route: '/plugin-test',
               color: const Color.fromARGB(255, 115, 190, 240).withOpacity(0.1),
             ),
             MenuItem(
@@ -298,17 +298,21 @@ class _HomePageState extends State<HomePage>
 
   @override
   void dispose() {
+    // 移除应用生命周期监听
     WidgetsBinding.instance.removeObserver(this);
 
+    // 确保动画控制器正确释放
     if (_animationController.isAnimating) {
       _animationController.stop();
     }
     _animationController.dispose();
 
+    // 停止持续定位并清理资源
     _locationSubscription?.cancel();
     _locationSubscription = null;
     _continuousHandle?.stopTracking();
     _continuousHandle = null;
+    _locationHelper.dispose();
 
     super.dispose();
   }
@@ -376,8 +380,8 @@ class _HomePageState extends State<HomePage>
           borderRadius: BorderRadius.circular(8),
         ),
         child: InkWell(
-          splashColor: Colors.transparent, // 点击时没有水波纹效果
-          highlightColor: Colors.transparent, // 点击时没有高亮效果
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
           onTap: () {
             Navigator.pushNamed(context, menu.route!,
                 arguments: {'mode': menu.mode});
@@ -399,7 +403,6 @@ class _HomePageState extends State<HomePage>
             ),
             child: Stack(
               children: [
-                // 背景SVG - 放大并定位到右下区域
                 Positioned(
                   right: -30,
                   bottom: -30,
@@ -407,7 +410,7 @@ class _HomePageState extends State<HomePage>
                     borderRadius: BorderRadius.circular(8),
                     child: BackdropFilter(
                       filter:
-                          ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0), // 模糊效果
+                          ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
                       child: SvgPicture.asset(
                         menu.imagePath!,
                         width: 120,

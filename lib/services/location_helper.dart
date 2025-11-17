@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../../services/location_manager.dart';
+import 'location_manager.dart';
 
 // 位置帮助类
 // 获取单次位置信息
@@ -32,6 +32,20 @@ class LocationHelper {
     if (!_isInitialized) {
       await _locationManager.initialize();
       _isInitialized = true;
+    }
+  }
+
+  /// 返回包含位置信息和状态的 LocationResult 对象
+  Future<LocationResult> getLocation() async {
+    try {
+      if (!_isInitialized) {
+        await initialize();
+      }
+
+      final location = await _locationManager.getSingleLocation();
+      return LocationResult(location: location);
+    } catch (e) {
+      return LocationResult(error: e.toString());
     }
   }
 

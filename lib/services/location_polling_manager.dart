@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:tj_tms_mobile/services/location_manager.dart';
-import 'package:tj_tms_mobile/core/config/location_polling_config.dart';
+import 'package:tj_tms_mobile/services/location_polling_config.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/logger.dart';
 import 'package:tj_tms_mobile/data/datasources/api/9087/service_9087.dart';
-import 'package:tj_tms_mobile/core/utils/util.dart' as app_utils;
+import 'package:tj_tms_mobile/core/utils/common_util.dart' as app_utils;
 import 'package:tj_tms_mobile/services/foreground_service_manager.dart';
  
 

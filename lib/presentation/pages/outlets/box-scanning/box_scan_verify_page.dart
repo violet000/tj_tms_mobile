@@ -13,7 +13,7 @@ import 'package:tj_tms_mobile/presentation/state/providers/teller_verify_provide
 import 'package:tj_tms_mobile/presentation/state/providers/face_login_provider.dart';
 import 'package:tj_tms_mobile/presentation/state/providers/line_info_provider.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
-import 'package:tj_tms_mobile/core/utils/util.dart' as app_utils;
+import 'package:tj_tms_mobile/core/utils/common_util.dart' as app_utils;
 
 class BoxScanVerifyPage extends StatefulWidget {
   const BoxScanVerifyPage({super.key});

@@ -10,7 +10,7 @@ import 'package:crypto/crypto.dart';
 import 'dart:convert';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:tj_tms_mobile/presentation/pages/setting/network_settings_page.dart';
-import 'package:tj_tms_mobile/core/utils/util.dart' as app_utils;
+import 'package:tj_tms_mobile/core/utils/common_util.dart' as app_utils;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tj_tms_mobile/core/config/env.dart';
 import 'package:tj_tms_mobile/data/datasources/interceptor/dio_service.dart';
@@ -128,63 +128,63 @@ class _LoginPageState extends State<LoginPage> {
   // 登录提交
   Future<void> _login() async {
     try {
-      // 确保登录服务已初始化
-      if (_loginService == null) {
-        await _initializeLoginService();
-      }
+      // // 确保登录服务已初始化
+      // if (_loginService == null) {
+      //   await _initializeLoginService();
+      // }
 
-      // 获取全局的 FaceLoginProvider
-      final faceLoginProvider =
-          Provider.of<FaceLoginProvider>(context, listen: false);
+      // // 获取全局的 FaceLoginProvider
+      // final faceLoginProvider =
+      //     Provider.of<FaceLoginProvider>(context, listen: false);
 
-      final faceImage = faceLoginProvider.getFaceImage(0);
-      final username = faceLoginProvider.getUsername(0) ?? '';
-      final password = faceLoginProvider.getPassword(0) ?? '';
+      // final faceImage = faceLoginProvider.getFaceImage(0);
+      // final username = faceLoginProvider.getUsername(0) ?? '';
+      // final password = faceLoginProvider.getPassword(0) ?? '';
 
-      // 在登录前，先将押运员信息保存到全局的 FaceLoginProvider
-      faceLoginProvider.setUsername(0, username);
+      // // 在登录前，先将押运员信息保存到全局的 FaceLoginProvider
+      // faceLoginProvider.setUsername(0, username);
 
-      // 验证数据
-      _validateFormData(username, password, faceImage);
+      // // 验证数据
+      // _validateFormData(username, password, faceImage);
 
-      setState(() {
-        _isLoading = true;
-      });
+      // setState(() {
+      //   _isLoading = true;
+      // });
 
-      EasyLoading.show(
-        status: '登录中...',
-        maskType: EasyLoadingMaskType.black,
-      );
+      // EasyLoading.show(
+      //   status: '登录中...',
+      //   maskType: EasyLoadingMaskType.black,
+      // );
 
-      if (_loginService == null) {
-        await _initializeLoginService();
-      }
-      print(<String, dynamic>{
-        'username': username,
-        'password': (password == null || password.isEmpty)
-            ? null
-            : md5.convert(utf8.encode(password + 'messi')).toString(),
-        'face': faceImage,
-        'handheldNo': _deviceInfo['deviceId'] ?? '',
-        'isImport': true
-      });
-      final Map<String, dynamic> loginResult =
-          await _loginService!.accountLogin([
-        <String, dynamic>{
-          'username': username,
-          'password': (password == null || password.isEmpty)
-              ? null
-              : md5.convert(utf8.encode(password + 'messi')).toString(),
-          'face': faceImage,
-          'handheldNo': _deviceInfo['deviceId'] ?? '',
-          'isImport': true
-        }
-      ]);
+      // if (_loginService == null) {
+      //   await _initializeLoginService();
+      // }
+      // print(<String, dynamic>{
+      //   'username': username,
+      //   'password': (password == null || password.isEmpty)
+      //       ? null
+      //       : md5.convert(utf8.encode(password + 'messi')).toString(),
+      //   'face': faceImage,
+      //   'handheldNo': _deviceInfo['deviceId'] ?? '',
+      //   'isImport': true
+      // });
+      // final Map<String, dynamic> loginResult =
+      //     await _loginService!.accountLogin([
+      //   <String, dynamic>{
+      //     'username': username,
+      //     'password': (password == null || password.isEmpty)
+      //         ? null
+      //         : md5.convert(utf8.encode(password + 'messi')).toString(),
+      //     'face': faceImage,
+      //     'handheldNo': _deviceInfo['deviceId'] ?? '',
+      //     'isImport': true
+      //   }
+      // ]);
 
-      await _saveLoginData(username, loginResult);
+      // await _saveLoginData(username, loginResult);
 
-      EasyLoading.dismiss();
-      EasyLoading.showSuccess('登录成功');
+      // EasyLoading.dismiss();
+      // EasyLoading.showSuccess('登录成功');
 
       Navigator.of(context).pushReplacementNamed('/home');
     } catch (e) {

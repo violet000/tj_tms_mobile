@@ -9,7 +9,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/blue_polygon_background.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/page_scaffold.dart';
 import 'package:tj_tms_mobile/core/constants/constant.dart';
-import 'package:tj_tms_mobile/core/utils/util.dart';
+import 'package:tj_tms_mobile/core/utils/common_util.dart';
 
 class BoxHandoverPage extends StatefulWidget {
   const BoxHandoverPage({super.key});

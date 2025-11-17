@@ -9,9 +9,9 @@ import 'package:tj_tms_mobile/presentation/widgets/common/uhf_plugin_widget.dart
 import 'package:tj_tms_mobile/presentation/widgets/common/uhf_scan_button.dart';
 // UHFController 类型已通过 uhf_plugin_widget.dart 导入
 import 'package:image_picker/image_picker.dart';
-import 'package:tj_tms_mobile/core/utils/util.dart' as app_utils;
+import 'package:tj_tms_mobile/core/utils/common_util.dart' as app_utils;
 import 'package:tj_tms_mobile/data/datasources/api/api.dart';
-import 'package:tj_tms_mobile/core/utils/util.dart';
+import 'package:tj_tms_mobile/core/utils/common_util.dart';
 import 'package:tj_tms_mobile/presentation/state/providers/line_info_provider.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';

@@ -5,10 +5,10 @@ import 'package:tj_tms_mobile/presentation/state/providers/verify_token_provider
 import 'package:tj_tms_mobile/presentation/state/providers/face_login_provider.dart';
 import 'package:flutter/services.dart';
 import 'dart:io';
-import 'package:tj_tms_mobile/core/utils/util.dart' as app_utils;
+import 'package:tj_tms_mobile/core/utils/common_util.dart' as app_utils;
 import 'package:tj_tms_mobile/services/interval_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tj_tms_mobile/core/utils/location_helper.dart';
+import 'package:tj_tms_mobile/services/location_helper.dart';
 import 'package:tj_tms_mobile/services/foreground_service_manager.dart';
 import 'package:tj_tms_mobile/data/datasources/interceptor/dio_service.dart';
 import 'package:tj_tms_mobile/services/app_exit_helper.dart';
