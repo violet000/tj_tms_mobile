@@ -4,7 +4,6 @@ import 'package:tj_tms_mobile/presentation/pages/home/home.dart';
 import 'package:tj_tms_mobile/presentation/pages/outlets/box-scanning/box_scan_page.dart';
 import 'package:tj_tms_mobile/presentation/pages/outlets/box-handover/box_handover_page.dart';
 import 'package:tj_tms_mobile/presentation/pages/personal/personal_center_page.dart';
-import 'package:tj_tms_mobile/presentation/pages/plugins/plugin_test_page.dart';
 import 'package:tj_tms_mobile/presentation/pages/outlets/box-scanning/box_scan_verify_page.dart';
 import 'package:tj_tms_mobile/presentation/pages/outlets/box-scanning/box-scan-verify-success.dart';
 import 'package:tj_tms_mobile/presentation/pages/outlets/box-handover/box_handover_detail_page.dart';
@@ -12,7 +11,6 @@ import 'package:tj_tms_mobile/presentation/pages/outlets/box-handover/box_handov
 import 'package:tj_tms_mobile/presentation/pages/outlets/box-handover/box-handover-verify-success.dart';
 import 'package:tj_tms_mobile/presentation/pages/setting/network_settings_page.dart';
 import 'package:tj_tms_mobile/presentation/pages/personal/personal_detail_page.dart';
-import 'package:tj_tms_mobile/presentation/pages/plugins/plugin_test_page.dart';
 
 class AppRoutes {
   static const String login = '/login';
@@ -49,7 +47,6 @@ class AppRoutes {
       personalDetail: (context) => const PersonalDetailPage(),
       networkSettings: (context) => const NetworkSettingsPage(),
       personal: (context) => const PersonalCenterPage(),
-      pluginTest: (context) => const PluginTestPage(),
     };
   }
 } 

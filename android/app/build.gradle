@@ -64,6 +64,9 @@ android {
         exclude 'META-INF/notice.txt'
         exclude 'META-INF/ASL2.0'
         exclude 'META-INF/*.kotlin_module'
+        // 云之盾SDK相关
+        doNotStrip "*/armeabi-v7a/*.so"
+        doNotStrip "*/arm64-v8a/*.so"
     }
     
     // 解决重复类冲突
@@ -88,6 +91,18 @@ android {
         targetSdkVersion 35
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
+        
+        // 云之盾SDK配置
+        multiDexEnabled true
+        
+        ndk {
+            abiFilters 'armeabi-v7a', 'arm64-v8a'
+        }
+        
+        packagingOptions {
+            doNotStrip "*/armeabi-v7a/*.so"
+            doNotStrip "*/arm64-v8a/*.so"
+        }
     }
 
     signingConfigs {
@@ -128,11 +143,13 @@ flutter {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    implementation fileTree(dir: 'libs', include: ['*.aar'])
+    implementation fileTree(dir: 'libs', include: ['*.aar', '*.jar'])
     // 明确依赖较新版本的 core，提供 ServiceCompat.startForeground 等API
     implementation 'androidx.core:core:1.12.0'
     implementation 'androidx.core:core-ktx:1.12.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.9.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    // 云之盾SDK依赖
+    implementation 'androidx.multidex:multidex:2.0.1'
 }

@@ -87,6 +87,10 @@ class MainActivity : FlutterActivity() {
         val uhfEventChannel = pluginFactory.setupUHFEventChannel(uhfPlugin)
         pluginManager.registerEventChannel("uhf_events", uhfEventChannel)
         
+        // 创建并注册云之盾活体检测插件
+        val cloudwalkFacePlugin = pluginFactory.createCloudwalkFacePlugin(this)
+        pluginManager.registerPlugin(cloudwalkFacePlugin.pluginId, cloudwalkFacePlugin)
+        
         // 初始化所有已注册的插件
         pluginManager.initializePlugins()
         

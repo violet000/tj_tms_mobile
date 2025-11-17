@@ -6,6 +6,8 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
 import com.zijin.tj_tms_mobile.plugins.BarcodeScannerPlugin
 import com.zijin.tj_tms_mobile.plugins.UHFPlugin
+import com.zijin.tj_tms_mobile.plugins.CloudwalkFacePlugin
+import android.app.Activity
 
 /**
  * 插件工厂
@@ -28,6 +30,14 @@ class PluginFactory(private val context: Context, private val engine: FlutterEng
     fun createUHFPlugin(): UHFPlugin {
         Log.d(TAG, "Creating UHFPlugin...")
         return UHFPlugin(context.applicationContext, engine)
+    }
+
+    /**
+     * 创建云之盾活体检测插件
+     */
+    fun createCloudwalkFacePlugin(activity: Activity): CloudwalkFacePlugin {
+        Log.d(TAG, "Creating CloudwalkFacePlugin...")
+        return CloudwalkFacePlugin(context, engine, activity)
     }
 
     /**

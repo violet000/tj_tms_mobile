@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:async';
-import 'dart:convert';
 import 'package:provider/provider.dart';
 import 'package:tj_tms_mobile/presentation/state/providers/teller_verify_provider.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/face_scan_widget.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/custom_text_field.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:tj_tms_mobile/services/cloudwalk_face_plugin.dart';
 
 class TellerFaceLogin extends StatefulWidget {
   final int personIndex; // 添加索引
@@ -24,7 +22,6 @@ class _TellerFaceLoginState extends State<TellerFaceLogin>
     with SingleTickerProviderStateMixin {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _picker = ImagePicker();
   final _scrollController = ScrollController();
   final _usernameFocusNode = FocusNode();
   final _passwordFocusNode = FocusNode();
@@ -78,53 +75,62 @@ class _TellerFaceLoginState extends State<TellerFaceLogin>
 
   Future<void> _takePicture() async {
     try {
-
-      // 显示拍照提示
       EasyLoading.show(
-        status: '拍照中...',
+        status: '启动活体检测...',
         maskType: EasyLoadingMaskType.black,
       );
-      final XFile? photo = await _picker.pickImage(
-        source: ImageSource.camera,
-        imageQuality: 30, // 降低图片质量到30%
-        maxWidth: 640,    // 限制最大宽度
-        maxHeight: 480,   // 限制最大高度
-      );
 
-      if (photo != null) {
-        EasyLoading.show(status: '处理中...');
-        
-        // 添加超时处理
-        final bytes = await photo.readAsBytes().timeout(
-          const Duration(seconds: 10),
-          onTimeout: () {
-            throw TimeoutException('图片读取超时');
-          },
-        );
-        
-        // 检查图片大小
-        if (bytes.length > 500 * 1024) { // 500KB限制
-          throw Exception('图片太大，请重新拍照');
+      // 直接启动活体检测，SDK会自动获取所需的参数
+      final result = await CloudwalkFacePlugin.startLiveDetection();
+
+      EasyLoading.dismiss();
+
+      // 处理检测结果
+      if (result.success) {
+        // 检测成功，获取最佳人脸图片
+        final bestFace = result.bestFace;
+        if (bestFace != null && bestFace.isNotEmpty) {
+          // 保存人脸图片到 Provider
+          final provider = Provider.of<TellerVerifyProvider>(context, listen: false);
+          provider.setFaceImage(widget.personIndex, bestFace);
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('活体检测成功'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('检测成功但未获取到人脸图片')),
+          );
         }
-        final base64String = base64Encode(bytes);
-
-        // 在异步操作前获取Provider
-        final provider = Provider.of<TellerVerifyProvider>(context, listen: false);
-        provider.setFaceImage(widget.personIndex, base64String);
-        EasyLoading.dismiss();
+      } else {
+        // 检测失败或取消
+        if (result.isCancelled) {
+          // 用户取消了检测，不显示错误提示
+          return;
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('活体检测失败: ${result.errorMsg ?? result.message}'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
       }
     } catch (e) {
       EasyLoading.dismiss();
-      if (e is TimeoutException) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('拍照超时，请重试')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('拍照失败: ${e.toString()}')),
-        );
-      }
-      print('拍照失败: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('活体检测异常: ${e.toString()}'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      print('活体检测失败: $e');
     }
   }
 
@@ -187,7 +193,7 @@ class _TellerFaceLoginState extends State<TellerFaceLogin>
                             frameColor: Colors.blue,
                             iconColor: Colors.blue,
                             iconSize: 60,
-                            hintText: '点击进行人脸拍照',
+                            hintText: '点击进行活体检测',
                             imageBase64:
                                 provider.getFaceImage(widget.personIndex),
                             onDelete: () {

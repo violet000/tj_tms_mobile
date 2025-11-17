@@ -129,7 +129,7 @@ class _FaceScanWidgetState extends State<FaceScanWidget> with SingleTickerProvid
                   base64Decode(widget.imageBase64!),
                   width: widget.width,
                   height: widget.height,
-                  fit: BoxFit.cover,
+                  fit: BoxFit.contain,
                   cacheWidth: (widget.width * MediaQuery.of(context).devicePixelRatio).toInt(),
                   cacheHeight: (widget.height * MediaQuery.of(context).devicePixelRatio).toInt(),
                 ),

@@ -4,11 +4,40 @@
 
 ## 项目概述
 
-- 插件集成：集成C71手持机厂商的DeviceAPI_ver20250209_release.aar包
+- 插件集成：
+    1、集成C71手持机厂商的DeviceAPI_ver20250209_release.aar包(RFID扫码)
+    2、集成云从科技的活体检测SDK
+    3、调取安卓底层的LocationManager获取内置GPS定位
 - 应用框架：Flutter 3.4.0 + Dart + Android SDK
 
-## 插件环境
-- 插件需要使用flutter_bmflocation插件，放入的目录层级和当前项目一个层级，从Git上进行拉取，
+## 云之盾活体检测插件使用 
+1. 已从服务器获取 sessionId、actionSet、sceneId 等必要参数
+2. 已申请并配置授权码（licence）
+
+```
+ import 'package:********/cloudwalk_face_plugin.dart';
+
+ // 启动活体检测
+ final result = await CloudwalkFacePlugin.startLiveDetection();
+
+ // 处理
+ if (result.success) {
+   print('检测成功');
+   print('hackParams: ${result.hackParams}');
+   print('根据SDK获取最佳人脸图片用于展示: ${result.bestFace}');
+   // 将 hackParams 等参数发送到服务器进行后端验证
+ } else {
+   // 检测失败或取消
+   if (result.isCancelled) {
+     print('取消检测');
+   } else {
+     print('检测失败: ${result.errorMsg}');
+   }
+ }
+```
+
+## 插件环境(已废弃，改为使用内置GPS)
+- 插件需要使用flutter_bmflocation插件，放入的目录层级和当前项目一个层级，从Git上进行拉取
 
 ## 环境要求
 

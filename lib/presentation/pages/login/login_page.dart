@@ -39,19 +39,7 @@ class _LoginPageState extends State<LoginPage> {
     _verifyTokenProvider =
         Provider.of<VerifyTokenProvider>(context, listen: false);
 
-    // Prefill user and ensure password mode
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final faceLoginProvider =
-          Provider.of<FaceLoginProvider>(context, listen: false);
-      // 用于快速测试，自动填入账号与密码
-      faceLoginProvider.setUsername(0, '00000001');
-      faceLoginProvider.setPassword(0, 'Aa123789!');
 
-      // 切换为账号密码登录模式（如果当前为人脸模式）
-      if (faceLoginProvider.isFaceLogin(0)) {
-        faceLoginProvider.toggleLoginMode(0);
-      }
-    });
   }
 
   Future<void> _initializeLoginService() async {
@@ -128,63 +116,63 @@ class _LoginPageState extends State<LoginPage> {
   // 登录提交
   Future<void> _login() async {
     try {
-      // // 确保登录服务已初始化
-      // if (_loginService == null) {
-      //   await _initializeLoginService();
-      // }
+      // 确保登录服务已初始化
+      if (_loginService == null) {
+        await _initializeLoginService();
+      }
 
-      // // 获取全局的 FaceLoginProvider
-      // final faceLoginProvider =
-      //     Provider.of<FaceLoginProvider>(context, listen: false);
+      // 获取全局的 FaceLoginProvider
+      final faceLoginProvider =
+          Provider.of<FaceLoginProvider>(context, listen: false);
 
-      // final faceImage = faceLoginProvider.getFaceImage(0);
-      // final username = faceLoginProvider.getUsername(0) ?? '';
-      // final password = faceLoginProvider.getPassword(0) ?? '';
+      final faceImage = faceLoginProvider.getFaceImage(0);
+      final username = faceLoginProvider.getUsername(0) ?? '';
+      final password = faceLoginProvider.getPassword(0) ?? '';
 
-      // // 在登录前，先将押运员信息保存到全局的 FaceLoginProvider
-      // faceLoginProvider.setUsername(0, username);
+      // 在登录前，先将押运员信息保存到全局的 FaceLoginProvider
+      faceLoginProvider.setUsername(0, username);
 
-      // // 验证数据
-      // _validateFormData(username, password, faceImage);
+      // 验证数据
+      _validateFormData(username, password, faceImage);
 
-      // setState(() {
-      //   _isLoading = true;
-      // });
+      setState(() {
+        _isLoading = true;
+      });
 
-      // EasyLoading.show(
-      //   status: '登录中...',
-      //   maskType: EasyLoadingMaskType.black,
-      // );
+      EasyLoading.show(
+        status: '登录中...',
+        maskType: EasyLoadingMaskType.black,
+      );
 
-      // if (_loginService == null) {
-      //   await _initializeLoginService();
-      // }
-      // print(<String, dynamic>{
-      //   'username': username,
-      //   'password': (password == null || password.isEmpty)
-      //       ? null
-      //       : md5.convert(utf8.encode(password + 'messi')).toString(),
-      //   'face': faceImage,
-      //   'handheldNo': _deviceInfo['deviceId'] ?? '',
-      //   'isImport': true
-      // });
-      // final Map<String, dynamic> loginResult =
-      //     await _loginService!.accountLogin([
-      //   <String, dynamic>{
-      //     'username': username,
-      //     'password': (password == null || password.isEmpty)
-      //         ? null
-      //         : md5.convert(utf8.encode(password + 'messi')).toString(),
-      //     'face': faceImage,
-      //     'handheldNo': _deviceInfo['deviceId'] ?? '',
-      //     'isImport': true
-      //   }
-      // ]);
+      if (_loginService == null) {
+        await _initializeLoginService();
+      }
+      print(<String, dynamic>{
+        'username': username,
+        'password': (password == null || password.isEmpty)
+            ? null
+            : md5.convert(utf8.encode(password + 'messi')).toString(),
+        'face': faceImage,
+        'handheldNo': _deviceInfo['deviceId'] ?? '',
+        'isImport': true
+      });
+      final Map<String, dynamic> loginResult =
+          await _loginService!.accountLogin([
+        <String, dynamic>{
+          'username': username,
+          'password': (password == null || password.isEmpty)
+              ? null
+              : md5.convert(utf8.encode(password + 'messi')).toString(),
+          'face': faceImage,
+          'handheldNo': _deviceInfo['deviceId'] ?? '',
+          'isImport': true
+        }
+      ]);
 
-      // await _saveLoginData(username, loginResult);
+      await _saveLoginData(username, loginResult);
 
-      // EasyLoading.dismiss();
-      // EasyLoading.showSuccess('登录成功');
+      EasyLoading.dismiss();
+      EasyLoading.showSuccess('登录成功');
 
       Navigator.of(context).pushReplacementNamed('/home');
     } catch (e) {
