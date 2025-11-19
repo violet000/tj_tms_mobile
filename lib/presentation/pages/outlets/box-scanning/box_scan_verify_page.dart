@@ -10,7 +10,6 @@ import 'package:tj_tms_mobile/presentation/widgets/common/box_items_dialog.dart'
 import 'package:tj_tms_mobile/presentation/widgets/common/confirm_dialog.dart';
 import 'package:tj_tms_mobile/presentation/pages/outlets/common/teller_face_login.dart';
 import 'package:tj_tms_mobile/presentation/state/providers/teller_verify_provider.dart';
-import 'package:tj_tms_mobile/presentation/state/providers/face_login_provider.dart';
 import 'package:tj_tms_mobile/presentation/state/providers/line_info_provider.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:tj_tms_mobile/core/utils/common_util.dart' as app_utils;
@@ -34,6 +33,8 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage>
   final GlobalKey _inputAreaKey = GlobalKey();
 
   Map<String, dynamic> _deviceInfo = <String, dynamic>{};
+  String? _authUsername;
+  String? _authenticatedVehiclePlateNumber;
 
   @override
   void initState() {
@@ -52,6 +53,8 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage>
       _items = args['items'] as List<Map<String, dynamic>>;
       _escortName = args['escortName']?.toString() ?? '';
       _orgNo = args['orgNo']?.toString() ?? '';
+      _authUsername = args['authUsername']?.toString();
+      _authenticatedVehiclePlateNumber = args['vehiclePlateNumber']?.toString();
 
       // 设置 LineInfoProvider 的数据
       final lineInfoProvider =
@@ -497,8 +500,6 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage>
   Future<void> _verifyAllTellers() async {
     final TellerVerifyProvider tellerProvider =
         Provider.of<TellerVerifyProvider>(context, listen: false);
-    final FaceLoginProvider faceLoginProvider =
-        Provider.of<FaceLoginProvider>(context, listen: false);
 
     // 验证两个柜员
     for (int i = 1; i <= 2; i++) {
@@ -528,7 +529,7 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage>
     }
 
     // 检查登录人员的押运员信息
-    final String? escort = faceLoginProvider.getUsername(0);
+    final String? escort = _authUsername?.trim();
 
     if (escort == null || escort.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -650,7 +651,9 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage>
       }
 
       if (faceLoginSuccess && handoverSuccess && mounted) {
-        Navigator.pushNamed(context, '/outlets/box-scan-verify-success');
+        Navigator.pushNamed(context, '/outlets/box-scan-verify-success', arguments: {
+          'vehiclePlateNumber': _authenticatedVehiclePlateNumber,
+        });
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

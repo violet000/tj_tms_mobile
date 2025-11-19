@@ -11,6 +11,7 @@ import 'package:tj_tms_mobile/presentation/pages/outlets/box-handover/box_handov
 import 'package:tj_tms_mobile/presentation/pages/outlets/box-handover/box-handover-verify-success.dart';
 import 'package:tj_tms_mobile/presentation/pages/setting/network_settings_page.dart';
 import 'package:tj_tms_mobile/presentation/pages/personal/personal_detail_page.dart';
+import 'package:tj_tms_mobile/presentation/pages/setting/plugin_test_page.dart';
 
 class AppRoutes {
   static const String login = '/login';
@@ -18,7 +19,6 @@ class AppRoutes {
   static const String boxScan = '/outlets/box-scan';
   static const String boxHandover = '/outlets/box-handover';
   static const String personal = '/personal_center_page';
-  static const String pluginTest = '/plugin-test';
   static const String boxScanVerify = '/outlets/box_scan_verify_page';
   static const String boxScanVerifySuccess = '/outlets/box-scan-verify-success';
   static const String boxHandoverDetail = '/outlets/box-handover-detail';
@@ -26,6 +26,7 @@ class AppRoutes {
   static const String boxHandoverVerifySuccess = '/outlets/box-handover-verify-success';
   static const String networkSettings = '/network-settings';
   static const String personalDetail = '/personal/detail';
+  static const String pluginTest = '/plugin-test';
 
   static Map<String, WidgetBuilder> getRoutes() {
     return {
@@ -47,6 +48,7 @@ class AppRoutes {
       personalDetail: (context) => const PersonalDetailPage(),
       networkSettings: (context) => const NetworkSettingsPage(),
       personal: (context) => const PersonalCenterPage(),
+      pluginTest: (context) => const PluginTestPage(),
     };
   }
 } 

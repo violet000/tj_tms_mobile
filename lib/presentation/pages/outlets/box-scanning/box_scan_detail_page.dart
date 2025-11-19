@@ -59,6 +59,8 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
   // 认证相关
   bool _isAuthenticated = false;
   bool _isAuthDialogShown = false;
+  String? _authenticatedUsername;
+  String? _authenticatedVehiclePlateNumber;
 
   @override
   void initState() {
@@ -100,6 +102,8 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
           setState(() {
             _isAuthenticated = true;
             isConsistent = result.errorMessage ?? '';
+            _authenticatedUsername = result.username?.trim();
+            _authenticatedVehiclePlateNumber = result.vehiclePlateNumber?.trim();
           });
         } else {
           // 可以选择返回上一页或重新认证
@@ -1086,7 +1090,9 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
                       'operationType': widget.operationType,
                       'implBoxDetail': widget.implBoxDetail,
                       'unrecognizedBox': unrecognizedBox.join(',').toString(),
+                      'vehiclePlateNumber': _authenticatedVehiclePlateNumber,
                       'isConsistent': isConsistent,
+                      'authUsername': _authenticatedUsername,
                     },
                   );
                 }

@@ -8,13 +8,13 @@ import 'package:tj_tms_mobile/presentation/widgets/common/logger.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/uhf_plugin_widget.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/uhf_scan_button.dart';
 // UHFController 类型已通过 uhf_plugin_widget.dart 导入
-import 'package:image_picker/image_picker.dart';
 import 'package:tj_tms_mobile/core/utils/common_util.dart' as app_utils;
 import 'package:tj_tms_mobile/data/datasources/api/api.dart';
 import 'package:tj_tms_mobile/core/utils/common_util.dart';
 import 'package:tj_tms_mobile/presentation/state/providers/line_info_provider.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:tj_tms_mobile/services/cloudwalk_face_plugin.dart';
 import 'dart:convert';
 import 'dart:async';
 
@@ -33,6 +33,7 @@ class AuthResult {
   final String? password;
   final String? faceImage;
   final String? vehicleRfid;
+  final String? vehiclePlateNumber;
   final String? personRfid;
 
   AuthResult({
@@ -42,6 +43,7 @@ class AuthResult {
     this.password,
     this.faceImage,
     this.vehicleRfid,
+    this.vehiclePlateNumber,
     this.personRfid,
   });
 }
@@ -51,6 +53,7 @@ class AuthDialog extends StatefulWidget {
   final String? title;
   final String? vehicleRfidExpected; // 预期的车辆RFID
   final String? personRfidExpected; // 预期的人员RFID
+  final String? vehiclePlateNumberExpected; // 预期的车牌号
   final VoidCallback? onCancel;
   final Function(AuthResult)? onComplete;
 
@@ -59,6 +62,7 @@ class AuthDialog extends StatefulWidget {
     this.title,
     this.vehicleRfidExpected,
     this.personRfidExpected,
+    this.vehiclePlateNumberExpected,
     this.onCancel,
     this.onComplete,
   }) : super(key: key);
@@ -98,7 +102,6 @@ class _AuthDialogState extends State<AuthDialog> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   String? _username = null;
-  final _picker = ImagePicker();
   String? _faceImageBase64;
 
   // 登录方式状态 - 是否使用密码登录
@@ -460,6 +463,12 @@ class _AuthDialogState extends State<AuthDialog> {
     final result = AuthResult(
       success: true,
       errorMessage: _selectedMismatchReason,
+      username: _usernameController.text.trim(),
+      password: _usePassword ? _passwordController.text : null,
+      faceImage: _faceImageBase64,
+      vehicleRfid: _scannedVehicleRfid,
+      vehiclePlateNumber: _vehiclePlateNumber,
+      personRfid: _scannedPersonRfid,
     );
     Navigator.of(context).pop(result);
     widget.onComplete?.call(result);
@@ -475,29 +484,35 @@ class _AuthDialogState extends State<AuthDialog> {
     );
   }
 
-  /// 拍照
+  /// 启动活体检测并获取最佳人脸图片
   Future<void> _takePicture() async {
     try {
-      final XFile? photo = await _picker.pickImage(
-        source: ImageSource.camera,
-        imageQuality: 30,
-        maxWidth: 640,
-        maxHeight: 480,
+      EasyLoading.show(
+        status: '启动活体检测...',
+        maskType: EasyLoadingMaskType.black,
       );
 
-      if (photo != null) {
-        final bytes = await photo.readAsBytes();
-        if (bytes.length > 500 * 1024) {
-          _showError('图片太大，请重新拍照');
+      final result = await CloudwalkFacePlugin.startLiveDetection();
+      EasyLoading.dismiss();
+
+      if (result.success) {
+        final bestFace = result.bestFace;
+        if (bestFace != null && bestFace.isNotEmpty) {
+          setState(() {
+            _faceImageBase64 = bestFace;
+          });
+        } else {
+          _showError('检测成功但未获取到人脸图片');
+        }
+      } else {
+        if (result.isCancelled) {
           return;
         }
-
-        setState(() {
-          _faceImageBase64 = base64Encode(bytes);
-        });
+        _showError('活体检测失败: ${result.errorMsg ?? result.message}');
       }
     } catch (e) {
-      _showError('拍照失败: ${e.toString()}');
+      EasyLoading.dismiss();
+      _showError('活体检测异常: ${e.toString()}');
     }
   }
 
@@ -662,13 +677,13 @@ class _AuthDialogState extends State<AuthDialog> {
                 else
                   Center(
                     child: FaceScanWidget(
-                      onTap: () => _takePicture(),
+                      onTap: _takePicture,
                       width: 220,
                       height: 140,
                       frameColor: Colors.blue,
                       iconColor: Colors.blue,
                       iconSize: 60,
-                      hintText: '点击进行人脸拍照',
+                      hintText: '点击进行活体检测',
                       imageBase64: _faceImageBase64,
                       onDelete: () {
                         setState(() {

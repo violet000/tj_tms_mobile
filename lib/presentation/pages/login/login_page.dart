@@ -38,8 +38,19 @@ class _LoginPageState extends State<LoginPage> {
     _initializeLoginService();
     _verifyTokenProvider =
         Provider.of<VerifyTokenProvider>(context, listen: false);
+    // Prefill user and ensure password mode
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final faceLoginProvider =
+          Provider.of<FaceLoginProvider>(context, listen: false);
+      // 用于快速测试，自动填入账号与密码
+      faceLoginProvider.setUsername(0, '00000001');
+      faceLoginProvider.setPassword(0, 'Aa123789!');
 
-
+      // 切换为账号密码登录模式（如果当前为人脸模式）
+      if (faceLoginProvider.isFaceLogin(0)) {
+        faceLoginProvider.toggleLoginMode(0);
+      }
+    });
   }
 
   Future<void> _initializeLoginService() async {

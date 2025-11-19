@@ -153,7 +153,9 @@ class LocationService {
 
   // 停止连续位置更新
   void stopLocationUpdates() {
-    _locationPlugin.stopLocation();
+    if (!LocationConfig.offlineGpsOnly) {
+      _locationPlugin.stopLocation();
+    }
     _geoFallbackTimer?.cancel();
     _geoFallbackTimer = null;
     _geoStreamSub?.cancel();

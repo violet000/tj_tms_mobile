@@ -18,7 +18,8 @@ class _BoxScanVerifySuccessPageState extends State<BoxScanVerifySuccessPage>
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
   late Animation<double> _fadeAnimation;
-
+  String? _authenticatedVehiclePlateNumber;
+  
   @override
   void initState() {
     super.initState();
@@ -54,6 +55,12 @@ class _BoxScanVerifySuccessPageState extends State<BoxScanVerifySuccessPage>
 
   @override
   Widget build(BuildContext context) {
+    final lineInfoProvider = context.watch<LineInfoProvider>();
+    final tellerVerifyProvider = context.watch<TellerVerifyProvider>();
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is Map<String, dynamic> && args.containsKey('vehiclePlateNumber')) {
+      _authenticatedVehiclePlateNumber = args['vehiclePlateNumber']?.toString();
+    }
     return PageScaffold(
       title: '交接详情',
       showBackButton: false, // 不显示返回按钮，防止用户返回
@@ -156,33 +163,29 @@ class _BoxScanVerifySuccessPageState extends State<BoxScanVerifySuccessPage>
                             ],
                           ),
                           const SizedBox(height: 20),
-
-                          // 信息行
-                          _buildInfoRow('交接时间', _getCurrentTime()),
-                          const SizedBox(height: 12),
                           _buildInfoRow('交接状态', '已完成'),
-                          // const SizedBox(height: 12),
-                          // _buildInfoRow('验证方式', '人脸识别/密码验证'),
                           const SizedBox(height: 12),
-                          Consumer<TellerVerifyProvider>(
-                            builder: (context, tellerVerifyProvider, child) {
-                              return _buildInfoRow('复核柜员',
-                                  '${tellerVerifyProvider.getUsername(0) ?? ''}, ${tellerVerifyProvider.getUsername(1) ?? ''}');
-                            },
+                          _buildInfoRow(
+                            '押运车',
+                            _authenticatedVehiclePlateNumber?.toString() ?? '暂无数据',
                           ),
                           const SizedBox(height: 12),
-                          Consumer<LineInfoProvider>(
-                            builder: (context, lineInfoProvider, child) {
-                              return _buildInfoRow(
-                                  '款箱数量', lineInfoProvider.itemsCountString);
-                            },
+                          _buildInfoRow(
+                            '复核柜员',
+                            [
+                              tellerVerifyProvider.getUsername(0) ?? '',
+                              tellerVerifyProvider.getUsername(1) ?? '',
+                            ].where((name) => name.isNotEmpty).join(', '),
                           ),
                           const SizedBox(height: 12),
-                          Consumer<LineInfoProvider>(
-                            builder: (context, lineInfoProvider, child) {
-                              return _buildInfoRow(
-                                  '交接网点', lineInfoProvider.getOrgName);
-                            },
+                          _buildInfoRow(
+                            '款箱数量',
+                            lineInfoProvider.itemsCountString,
+                          ),
+                          const SizedBox(height: 12),
+                          _buildInfoRow(
+                            '交接网点',
+                            lineInfoProvider.getOrgName,
                           ),
                         ],
                       ),

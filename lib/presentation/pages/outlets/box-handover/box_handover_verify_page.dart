@@ -8,7 +8,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:tj_tms_mobile/presentation/pages/outlets/common/teller_face_login.dart';
 import 'package:tj_tms_mobile/presentation/state/providers/teller_verify_provider.dart';
-import 'package:tj_tms_mobile/presentation/state/providers/face_login_provider.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:tj_tms_mobile/presentation/state/providers/box_handover_provider.dart';
 import 'package:tj_tms_mobile/core/utils/common_util.dart' as app_utils;
@@ -36,6 +35,7 @@ class _BoxHandoverVerifyPageState extends State<BoxHandoverVerifyPage>
   final GlobalKey _inputAreaKey = GlobalKey();
   String _orgNo = '';
   Map<String, dynamic> _deviceInfo = <String, dynamic>{};
+  String? _authUsername;
 
   @override
   void initState() {
@@ -58,6 +58,7 @@ class _BoxHandoverVerifyPageState extends State<BoxHandoverVerifyPage>
     if (args != null) {
       _isConsistent = args['isConsistent']?.toString() ?? '';
       _orgNo = args['orgNo']?.toString() ?? '';
+      _authUsername = args['authUsername']?.toString();
     }
   }
 
@@ -499,8 +500,6 @@ class _BoxHandoverVerifyPageState extends State<BoxHandoverVerifyPage>
   Future<void> _verifyAllTellers() async {
     final TellerVerifyProvider tellerProvider =
         Provider.of<TellerVerifyProvider>(context, listen: false);
-    final FaceLoginProvider faceLoginProvider =
-        Provider.of<FaceLoginProvider>(context, listen: false);
 
     // 验证两个柜员
     for (int i = 1; i <= 2; i++) {
@@ -529,7 +528,7 @@ class _BoxHandoverVerifyPageState extends State<BoxHandoverVerifyPage>
     }
 
     // 检查登录人员的押运员信息
-    final String? escort = faceLoginProvider.getUsername(0);
+    final String? escort = _authUsername?.trim();
 
     if (escort == null || escort.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -556,6 +555,7 @@ class _BoxHandoverVerifyPageState extends State<BoxHandoverVerifyPage>
       final String hander = tellerProvider.getUsername(1) ?? '';
       final String deliver = tellerProvider.getUsername(0) ?? '';
       final String escortNo = '$escort';
+      final String vehiclePlateNumber = args['vehiclePlateNumber']?.toString() ?? '';
 
       // 获取柜员的密码和人脸图片
       final String? handerPassword = tellerProvider.getPassword(1);
@@ -639,7 +639,9 @@ class _BoxHandoverVerifyPageState extends State<BoxHandoverVerifyPage>
       }
 
       if (faceLoginSuccess && handoverSuccess && mounted) {
-        Navigator.pushNamed(context, '/outlets/box-handover-verify-success');
+        Navigator.pushNamed(context, '/outlets/box-handover-verify-success', arguments: {
+          'vehiclePlateNumber': vehiclePlateNumber,
+        });
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

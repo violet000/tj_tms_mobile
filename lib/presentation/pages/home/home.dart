@@ -30,7 +30,7 @@ class _HomePageState extends State<HomePage>
   late Animation<double> _fadeAnimation;
   List<MenuItem> menus = [];
   bool _isInitialized = false; // 初始化状态
-  bool _hasShownGpsDialog = false;
+  // bool _hasShownGpsDialog = false;
 
   // 持续定位相关
   final LocationHelper _locationHelper = LocationHelper();
@@ -202,10 +202,8 @@ class _HomePageState extends State<HomePage>
       _locationSubscription = _continuousHandle!.stream.listen((location) {
         _callbackCount += 1;
         _lastCallbackAt = DateTime.now();
-        final double? latitude =
-            (location['latitude'] as num?)?.toDouble();
-        final double? longitude =
-            (location['longitude'] as num?)?.toDouble();
+        final double? latitude = (location['latitude'] as num?)?.toDouble();
+        final double? longitude = (location['longitude'] as num?)?.toDouble();
         AppLogger.debug(
             '[HomePage] GPS#$_callbackCount lat:$latitude lon:$longitude last:${_lastCallbackAt?.toIso8601String()}');
         if (mounted) {
@@ -220,7 +218,10 @@ class _HomePageState extends State<HomePage>
   }
 
   void _stopContinuousLocation() {
-    _stopContinuousLocation();
+    _locationSubscription?.cancel();
+    _locationSubscription = null;
+    _continuousHandle?.stopTracking();
+    _continuousHandle = null;
   }
 
   @override
@@ -246,14 +247,13 @@ class _HomePageState extends State<HomePage>
       _lastUploadAt = now;
       _uploadLocationData(location);
     }
-
-    if (!_hasShownGpsDialog &&
-        mounted &&
-        location['latitude'] != null &&
-        location['longitude'] != null) {
-      _hasShownGpsDialog = true;
-      _showGpsAcquiredDialog(location);
-    }
+    // if (!_hasShownGpsDialog &&
+    //     mounted &&
+    //     location['latitude'] != null &&
+    //     location['longitude'] != null) {
+    //   _hasShownGpsDialog = true;
+    //   _showGpsAcquiredDialog(location);
+    // }
   }
 
   // 上传位置数据
@@ -279,31 +279,31 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  Future<void> _showGpsAcquiredDialog(Map<String, dynamic> location) async {
-    if (!mounted) return;
-    final double? latitude = (location['latitude'] as num?)?.toDouble();
-    final double? longitude = (location['longitude'] as num?)?.toDouble();
+  // Future<void> _showGpsAcquiredDialog(Map<String, dynamic> location) async {
+  //   if (!mounted) return;
+  //   final double? latitude = (location['latitude'] as num?)?.toDouble();
+  //   final double? longitude = (location['longitude'] as num?)?.toDouble();
 
-    final message = (latitude != null && longitude != null)
-        ? '当前坐标：$latitude, $longitude'
-        : '已成功获取GPS坐标';
+  //   final message = (latitude != null && longitude != null)
+  //       ? '当前坐标：$latitude, $longitude'
+  //       : '已成功获取GPS坐标';
 
-    await showDialog<void>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('GPS定位成功'),
-          content: Text(message),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('知道了'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  //   await showDialog<void>(
+  //     context: context,
+  //     builder: (context) {
+  //       return AlertDialog(
+  //         title: const Text('GPS定位成功'),
+  //         content: Text(message),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () => Navigator.of(context).pop(),
+  //             child: const Text('知道了'),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
 
   // 格式化日期时间
   String _formatDateTime(DateTime date) {
@@ -338,7 +338,16 @@ class _HomePageState extends State<HomePage>
               iconPath: 'assets/icons/treasury_handover_icon.svg',
               route: '/outlets/box-handover',
               color: const Color.fromARGB(255, 134, 221, 245).withOpacity(0.1),
-            )
+            ),
+            // MenuItem(
+            //   name: '插件测试',
+            //   index: 1,
+            //   mode: 1,
+            //   imagePath: 'assets/icons/treasury_reat.svg',
+            //   iconPath: 'assets/icons/treasury_handover_icon.svg',
+            //   route: '/plugin-test',
+            //   color: const Color.fromARGB(255, 134, 221, 245).withOpacity(0.1),
+            // )
           ],
           color: const Color(0xFF0489FE),
         ),
@@ -366,10 +375,7 @@ class _HomePageState extends State<HomePage>
     _animationController.dispose();
 
     // 停止持续定位并清理资源
-    _locationSubscription?.cancel();
-    _locationSubscription = null;
-    _continuousHandle?.stopTracking();
-    _continuousHandle = null;
+    _stopContinuousLocation();
     _locationHelper.dispose();
 
     super.dispose();
@@ -467,8 +473,7 @@ class _HomePageState extends State<HomePage>
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: BackdropFilter(
-                      filter:
-                          ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+                      filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
                       child: SvgPicture.asset(
                         menu.imagePath!,
                         width: 120,
