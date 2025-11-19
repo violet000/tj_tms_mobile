@@ -626,7 +626,7 @@ class _BoxHandoverVerifyPageState extends State<BoxHandoverVerifyPage>
                 .toList(),
             'outTre': outTre,
             'hander': hander,
-            'escortNo': escortNo,
+            'escortNo': escortNo, 
             'deliver': deliver,
             'inconsistent': isConsistent,
             'unrecognizedBox': unrecognizedBoxList,

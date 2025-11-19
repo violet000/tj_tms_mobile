@@ -30,7 +30,6 @@ class _HomePageState extends State<HomePage>
   late Animation<double> _fadeAnimation;
   List<MenuItem> menus = [];
   bool _isInitialized = false; // 初始化状态
-  // bool _hasShownGpsDialog = false;
 
   // 持续定位相关
   final LocationHelper _locationHelper = LocationHelper();
@@ -247,13 +246,6 @@ class _HomePageState extends State<HomePage>
       _lastUploadAt = now;
       _uploadLocationData(location);
     }
-    // if (!_hasShownGpsDialog &&
-    //     mounted &&
-    //     location['latitude'] != null &&
-    //     location['longitude'] != null) {
-    //   _hasShownGpsDialog = true;
-    //   _showGpsAcquiredDialog(location);
-    // }
   }
 
   // 上传位置数据
@@ -278,32 +270,6 @@ class _HomePageState extends State<HomePage>
       AppLogger.error('上送失败: $e');
     }
   }
-
-  // Future<void> _showGpsAcquiredDialog(Map<String, dynamic> location) async {
-  //   if (!mounted) return;
-  //   final double? latitude = (location['latitude'] as num?)?.toDouble();
-  //   final double? longitude = (location['longitude'] as num?)?.toDouble();
-
-  //   final message = (latitude != null && longitude != null)
-  //       ? '当前坐标：$latitude, $longitude'
-  //       : '已成功获取GPS坐标';
-
-  //   await showDialog<void>(
-  //     context: context,
-  //     builder: (context) {
-  //       return AlertDialog(
-  //         title: const Text('GPS定位成功'),
-  //         content: Text(message),
-  //         actions: [
-  //           TextButton(
-  //             onPressed: () => Navigator.of(context).pop(),
-  //             child: const Text('知道了'),
-  //           ),
-  //         ],
-  //       );
-  //     },
-  //   );
-  // }
 
   // 格式化日期时间
   String _formatDateTime(DateTime date) {
@@ -339,15 +305,6 @@ class _HomePageState extends State<HomePage>
               route: '/outlets/box-handover',
               color: const Color.fromARGB(255, 134, 221, 245).withOpacity(0.1),
             ),
-            // MenuItem(
-            //   name: '插件测试',
-            //   index: 1,
-            //   mode: 1,
-            //   imagePath: 'assets/icons/treasury_reat.svg',
-            //   iconPath: 'assets/icons/treasury_handover_icon.svg',
-            //   route: '/plugin-test',
-            //   color: const Color.fromARGB(255, 134, 221, 245).withOpacity(0.1),
-            // )
           ],
           color: const Color(0xFF0489FE),
         ),
