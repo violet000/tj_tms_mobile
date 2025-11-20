@@ -619,19 +619,6 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage>
       if (faceLoginSuccess) {
         EasyLoading.show(status: '提交复核...');
         try {
-          print('==============================================');
-          print(<String, dynamic>{
-            'implNo': implBoxDetail
-                .map((dynamic e) => int.parse(e['implNo'] as String))
-                .toList(),
-            'outTre': outTre,
-            'hander': hander,
-            'escortNo': escortNo,
-            'deliver': deliver,
-            'inconsistent': isConsistent,
-            'unrecognizedBox': unrecognizedBox?.split(',').toList(),
-          });
-          print('==============================================');
           await _service?.outletHandover(<String, dynamic>{
             'implNo': implBoxDetail
                 .map((dynamic e) => int.parse(e['implNo'] as String))
@@ -641,6 +628,7 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage>
             'escortNo': escortNo,
             'deliver': deliver,
             'inconsistent': isConsistent,
+            'vehiclePlateNumber': _authenticatedVehiclePlateNumber,
             'unrecognizedBox': unrecognizedBox?.split(',').toList(),
           });
           handoverSuccess = true;
