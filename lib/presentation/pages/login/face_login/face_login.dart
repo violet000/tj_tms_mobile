@@ -59,23 +59,9 @@ class _FaceLoginState extends State<FaceLogin>
           // 保存人脸图片到 Provider
           final provider = Provider.of<FaceLoginProvider>(context, listen: false);
           provider.setFaceImage(widget.personIndex, bestFace);
-          
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('活体检测成功'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('检测成功但未获取到人脸图片')),
-          );
         }
       } else {
-        // 检测失败或取消
         if (result.isCancelled) {
-          // 用户取消了检测，不显示错误提示
           return;
         } else {
           ScaffoldMessenger.of(context).showSnackBar(

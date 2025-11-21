@@ -201,10 +201,6 @@ class _HomePageState extends State<HomePage>
       _locationSubscription = _continuousHandle!.stream.listen((location) {
         _callbackCount += 1;
         _lastCallbackAt = DateTime.now();
-        final double? latitude = (location['latitude'] as num?)?.toDouble();
-        final double? longitude = (location['longitude'] as num?)?.toDouble();
-        AppLogger.debug(
-            '[HomePage] GPS#$_callbackCount lat:$latitude lon:$longitude last:${_lastCallbackAt?.toIso8601String()}');
         if (mounted) {
           _handleLocationUpdate(location);
         }
@@ -234,7 +230,6 @@ class _HomePageState extends State<HomePage>
     } else if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.paused) {
       AppLogger.info('[HomePage] 应用进入后台，保持前台服务运行');
-      // 不主动停止定位，但记录状态
     }
   }
 

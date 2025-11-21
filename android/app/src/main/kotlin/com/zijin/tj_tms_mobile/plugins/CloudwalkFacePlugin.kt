@@ -41,8 +41,9 @@ class CloudwalkFacePlugin(
     
     // ==================== 固定配置项 ====================
     companion object {
-        // 云从测试环境，平台服务器地址
-        private const val DEFAULT_PRIVATE_PLATFORM_SERVER_IP = "https://mix02.cloudwalk.com"
+        // 云从天津测试平台服务器地址
+        private const val DEFAULT_PRIVATE_PLATFORM_SERVER_IP = "http://14.1.204.59:80"
+        // "https://mix02.cloudwalk.com"
         
         // 场景ID
         private const val DEFAULT_SCENE_ID = "300"
@@ -165,8 +166,8 @@ class CloudwalkFacePlugin(
      */
     private fun getActionSequence(callback: (Boolean) -> Unit) {
         flowId = UUID.randomUUID().toString().replace("-", "")
-        // val bundleId = context.packageName
-        val bundleId = "cn.cloudwalk.faceanitspoofing"
+        val bundleId = context.packageName
+        // val bundleId = "cn.cloudwalk.faceanitspoofing" //废弃，使用context.packageName获取当前本身的包名配置
         
         signToken = generateSignToken()
         
@@ -245,7 +246,7 @@ class CloudwalkFacePlugin(
                     
                     // 启动活体检测
                     startLive()
-                }
+                }                                                                                                                                                                                                                                  
             }
         } catch (e: Exception) {
             Log.e(TAG, "启动活体检测失败", e)

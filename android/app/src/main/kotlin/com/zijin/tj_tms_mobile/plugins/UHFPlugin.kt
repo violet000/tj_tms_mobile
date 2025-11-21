@@ -39,35 +39,25 @@ class UHFPlugin(private val context: Context, private val engine: FlutterEngine)
 
     override fun initialize() {
         try {
-            Log.d(TAG, "Starting UHF reader initialization")
             mReader = RFIDWithUHFUART.getInstance()
             if (mReader == null) {
                 Log.e(TAG, "Failed to get UHF reader instance")
                 return
             }
-            Log.d(TAG, "Got UHF reader instance, attempting initialization")
             val success = mReader?.init(context) ?: false
-            Log.d(TAG, "UHF reader initialization result: $success")
             if (success) {
-                Log.d(TAG, "UHF reader initialized successfully")
                 try {
-                    Log.d(TAG, "Setting UHF reader power to 30")
                     val powerSuccess = mReader?.setPower(30) ?: false
-                    Log.d(TAG, "Power setting result: $powerSuccess")
                     if (!powerSuccess) {
                         Log.e(TAG, "Failed to set power")
                     }
                     
-                    Log.d(TAG, "Setting frequency mode to 0x02")
                     val freqSuccess = mReader?.setFrequencyMode(0x02) ?: false
-                    Log.d(TAG, "Frequency mode setting result: $freqSuccess")
                     if (!freqSuccess) {
                         Log.e(TAG, "Failed to set frequency mode")
                     }
                     
-                    Log.d(TAG, "Setting EPC mode")
                     val epcSuccess = mReader?.setEPCMode() ?: false
-                    Log.d(TAG, "EPC mode setting result: $epcSuccess")
                     if (!epcSuccess) {
                         Log.e(TAG, "Failed to set EPC mode")
                     }
@@ -96,14 +86,12 @@ class UHFPlugin(private val context: Context, private val engine: FlutterEngine)
             when (call.method) {
                 "init" -> {
                     try {
-                        Log.d(TAG, "Received init method call from Flutter")
                         if (mReader == null) {
                             Log.e(TAG, "UHF reader is null during init")
                             result.error("INIT_ERROR", "UHF reader is null", null)
                             return@setMethodCallHandler
                         }
                         val success = mReader?.init(context) ?: false
-                        Log.d(TAG, "UHF reader initialization result: $success")
                         result.success(success)
                     } catch (e: Exception) {
                         Log.e(TAG, "Error during initialization", e)
@@ -127,7 +115,6 @@ class UHFPlugin(private val context: Context, private val engine: FlutterEngine)
                         }
 
                         if (!isScanning) {
-                            Log.d(TAG, "Starting scan")
                             isScanning = true
                             tagList.clear()
                             scannedTags.clear()
@@ -149,7 +136,6 @@ class UHFPlugin(private val context: Context, private val engine: FlutterEngine)
                                                     "user" to (tagInfo.user ?: ""), // 标签的用户数据
                                                     "timestamp" to System.currentTimeMillis() // 当前时间戳
                                                 )
-                                                Log.d(TAG, "Sending tag data to Flutter: $tagData")
                                                 mainHandler.post {
                                                     eventSink?.success(tagData)
                                                     Log.d(TAG, "Tag data sent to Flutter successfully")
@@ -166,7 +152,6 @@ class UHFPlugin(private val context: Context, private val engine: FlutterEngine)
                                     result.error("SCAN_ERROR", "Failed to start inventory", null)
                                     return@setMethodCallHandler
                                 }
-                                Log.d(TAG, "Started inventory successfully")
                             } catch (e: Exception) {
                                 Log.e(TAG, "Error during scan setup", e)
                                 e.printStackTrace()
@@ -184,7 +169,6 @@ class UHFPlugin(private val context: Context, private val engine: FlutterEngine)
                 "stopScan" -> {
                     try {
                         if (isScanning) {
-                            Log.d(TAG, "Stopping scan")
                             mReader?.stopInventory()
                             mReader?.setInventoryCallback(null)
                             isScanning = false

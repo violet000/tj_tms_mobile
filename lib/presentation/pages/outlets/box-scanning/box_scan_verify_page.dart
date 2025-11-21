@@ -628,7 +628,7 @@ class _BoxScanVerifyPageState extends State<BoxScanVerifyPage>
             'escortNo': escortNo,
             'deliver': deliver,
             'inconsistent': isConsistent,
-            'vehiclePlateNumber': _authenticatedVehiclePlateNumber,
+            'carNo': _authenticatedVehiclePlateNumber,
             'unrecognizedBox': unrecognizedBox?.split(',').toList(),
           });
           handoverSuccess = true;

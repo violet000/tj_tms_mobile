@@ -321,6 +321,7 @@ class _BoxScanDetailPageState extends State<BoxScanDetailPage> {
 
   // 款箱列表
   Widget cashBoxList(List<Map<String, dynamic>> items) {
+    print('box_scan_detail_page cashBoxList items: $items');
     return Column(
       children: [
         Padding(

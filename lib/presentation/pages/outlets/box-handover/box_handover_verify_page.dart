@@ -628,7 +628,7 @@ class _BoxHandoverVerifyPageState extends State<BoxHandoverVerifyPage>
             'hander': hander,
             'escortNo': escortNo, 
             'deliver': deliver,
-            'vehiclePlateNumber': vehiclePlateNumber, // 车牌号
+            'carNo': vehiclePlateNumber, // 车牌号
             'inconsistent': isConsistent,
             'unrecognizedBox': unrecognizedBoxList,
           });

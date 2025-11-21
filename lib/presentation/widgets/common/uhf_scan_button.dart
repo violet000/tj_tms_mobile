@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:tj_tms_mobile/presentation/widgets/common/logger.dart';
 import 'package:tj_tms_mobile/presentation/widgets/common/uhf_plugin_widget.dart';
 
 class UHFScanButton extends StatefulWidget {
@@ -42,7 +43,6 @@ class _UHFScanButtonState extends State<UHFScanButton> {
   bool _isScanning = false;
   final List<String> _scannedTags = [];
   String? _lastProcessedEpc;
-  DateTime? _lastProcessedTime;
   bool _isStarting = false;
 
   List<String> get scannedTags => List.unmodifiable(_scannedTags);
@@ -81,18 +81,19 @@ class _UHFScanButtonState extends State<UHFScanButton> {
             // 每个按钮应该只根据自己的点击状态来管理 _isScanning
             if (_isScanning && snapshot.hasData && snapshot.data != null) {
               final tagData = snapshot.data!;
+              AppLogger.info('UHFScanButton tagData: $tagData');
               if (tagData.containsKey('epc')) {
                 final epc = tagData['epc'] as String?;
                 if (epc != null && epc.isNotEmpty) {
-                  // 防抖处理：同一标签在1秒内只处理一次
-                  final now = DateTime.now();
-                  if (_lastProcessedEpc != epc || _lastProcessedTime == null) {
+                  // 跳过逻辑：如果上一次扫描到了某个标签，下一次再识别到相同标签时就跳过
+                  // 只有当识别到与上一次不同的标签时才处理
+                  if (_lastProcessedEpc != epc) {
                     _lastProcessedEpc = epc;
-                    _lastProcessedTime = now;
                     Future.microtask(() {
                       widget.onTagScanned?.call(epc);
                     });
                   }
+                  // 如果 epc == _lastProcessedEpc，说明是相同的标签，直接跳过不处理
                 }
               }
             }
@@ -200,7 +201,6 @@ class _UHFScanButtonState extends State<UHFScanButton> {
       await Future<void>.delayed(const Duration(milliseconds: 150));
 
       _lastProcessedEpc = null;
-      _lastProcessedTime = null;
 
       // 提前设置扫描状态，确保首次点击即可进入扫描态
       if (mounted) {
@@ -257,7 +257,6 @@ class _UHFScanButtonState extends State<UHFScanButton> {
       }
       widget.onScanStateChanged?.call(false);
       _lastProcessedEpc = null;
-      _lastProcessedTime = null;
     }
   }
 }

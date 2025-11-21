@@ -280,6 +280,7 @@ class _BoxHandoverDetailPageState extends State<BoxHandoverDetailPage> {
 
   // 款箱列表
   Widget cashBoxList(List<Map<String, dynamic>> items) {
+    print('cashBoxList items: $items');
     return Column(
       children: [
         Padding(

@@ -128,14 +128,7 @@ class Service18082 {
       Map<String, dynamic> params) async {
     return _dioService.post(
       '/manage-center/v2/outletHandover',
-      body: <String, dynamic>{
-        'implNo': params['implNo'],
-        'outTre': params['outTre'],
-        'hander': params['hander'],
-        'escortNo': params['escortNo'],
-        'deliver': params['deliver'],
-        'inconsistent': params['inconsistent'],
-      },
+      body: params,
     );
   }
 

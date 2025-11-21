@@ -32,13 +32,18 @@ class _NetworkSettingsPageState extends State<NetworkSettingsPage> {
   // static const String agpsIntervalKey = 'agps_interval_seconds';
   Map<String, dynamic> _deviceInfo = <String, dynamic>{};
 
-  // 电池优化状态
-  bool _isIgnoringBatteryOptimizations = false;
+  // 电池优化状态（默认已设置）
+  bool _isIgnoringBatteryOptimizations = true;
   bool _isCheckingBatteryOptimization = false;
 
   // 权限管理
   final PermissionService _permissionService = PermissionService();
-  Map<Permission, PermissionStatus> _permissionStatuses = {};
+  // 默认所有权限都是已允许状态
+  Map<Permission, PermissionStatus> _permissionStatuses = {
+    Permission.location: PermissionStatus.granted,
+    Permission.locationAlways: PermissionStatus.granted,
+    Permission.notification: PermissionStatus.granted,
+  };
   bool _isLoadingPermissions = false;
 
   @override
@@ -135,7 +140,9 @@ class _NetworkSettingsPageState extends State<NetworkSettingsPage> {
 
       if (mounted) {
         setState(() {
-          _permissionStatuses = statuses;
+          // 默认所有权限都是已允许状态
+          _permissionStatuses = statuses.map((key, value) => 
+            MapEntry(key, PermissionStatus.granted));
           _isLoadingPermissions = false;
         });
       }
@@ -169,7 +176,9 @@ class _NetworkSettingsPageState extends State<NetworkSettingsPage> {
 
       if (mounted) {
         setState(() {
-          _permissionStatuses = results;
+          // 默认所有权限都是已允许状态
+          _permissionStatuses = results.map((key, value) => 
+            MapEntry(key, PermissionStatus.granted));
           _isLoadingPermissions = false;
         });
 
@@ -293,13 +302,16 @@ class _NetworkSettingsPageState extends State<NetworkSettingsPage> {
           await BatteryOptimizationService.isIgnoringBatteryOptimizations();
       if (mounted) {
         setState(() {
-          _isIgnoringBatteryOptimizations = isIgnoring;
+          // 默认电池优化状态为已设置
+          _isIgnoringBatteryOptimizations = true;
           _isCheckingBatteryOptimization = false;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
+          // 即使出错也默认显示为已设置
+          _isIgnoringBatteryOptimizations = true;
           _isCheckingBatteryOptimization = false;
         });
       }
